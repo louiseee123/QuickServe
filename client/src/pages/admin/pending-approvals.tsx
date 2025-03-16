@@ -7,26 +7,27 @@ import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { RequestDetailsDialog } from "@/components/request-details-dialog";
 
-const statusColors = {
-  pending_approval: "bg-yellow-500",
-  denied: "bg-red-500",
-  pending: "bg-yellow-500",
-  processing: "bg-blue-500",
-  ready: "bg-green-500",
-  completed: "bg-gray-500",
-} as const;
-
-export default function MyRequests() {
-  const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null);
+export default function PendingApprovals() {
+  const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(
+    null
+  );
 
   const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({
     queryKey: ["/api/requests"],
   });
 
+  const pendingApprovalRequests = requests.filter(
+    (request) => request.status === "pending_approval"
+  );
+
   const columns = [
     {
       header: "Queue #",
       cell: (row: DocumentRequest) => row.queueNumber,
+    },
+    {
+      header: "Student Name",
+      cell: (row: DocumentRequest) => row.studentName,
     },
     {
       header: "Document Type",
@@ -37,29 +38,9 @@ export default function MyRequests() {
       cell: (row: DocumentRequest) => row.course,
     },
     {
-      header: "Year Level",
-      cell: (row: DocumentRequest) => row.yearLevel,
-    },
-    {
-      header: "Email",
-      cell: (row: DocumentRequest) => row.email,
-    },
-    {
-      header: "Purpose",
-      cell: (row: DocumentRequest) => row.purpose,
-    },
-    {
       header: "Requested At",
       cell: (row: DocumentRequest) =>
         format(new Date(row.requestedAt), "MMM d, yyyy h:mm a"),
-    },
-    {
-      header: "Status",
-      cell: (row: DocumentRequest) => (
-        <Badge className={statusColors[row.status]}>
-          {row.status.charAt(0).toUpperCase() + row.status.slice(1).replace("_", " ")}
-        </Badge>
-      ),
     },
   ];
 
@@ -73,29 +54,24 @@ export default function MyRequests() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <img src="/logo.png" alt="CCTC Logo" className="w-12 h-12" />
-          <div>
-            <h1 className="text-3xl font-bold">My Document Requests</h1>
-            <p className="text-muted-foreground">
-              Track the status of your document requests
-            </p>
-          </div>
+      <div className="flex items-center gap-4 mb-8">
+        <img src="/logo.png" alt="CCTC Logo" className="w-16 h-16" />
+        <div>
+          <h1 className="text-3xl font-bold">Pending Approvals</h1>
+          <p className="text-muted-foreground">
+            Review and approve document requests
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Total Requests: {requests.length}
-        </p>
       </div>
 
-      {requests.length === 0 ? (
+      {pendingApprovalRequests.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
-          You haven't made any document requests yet.
+          No requests pending approval.
         </div>
       ) : (
-        <DataTable 
-          data={requests} 
-          columns={columns} 
+        <DataTable
+          data={pendingApprovalRequests}
+          columns={columns}
           onRowClick={(row) => setSelectedRequest(row)}
         />
       )}
@@ -104,7 +80,7 @@ export default function MyRequests() {
         request={selectedRequest}
         open={!!selectedRequest}
         onOpenChange={(open) => !open && setSelectedRequest(null)}
-        mode="view"
+        mode="approval"
       />
     </div>
   );

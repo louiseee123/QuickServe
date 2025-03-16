@@ -19,7 +19,10 @@ export default function Nav() {
     { href: "/", label: "Home" },
     { href: "/request", label: "Request Document" },
     ...(user?.role === "user" ? [{ href: "/my-requests", label: "My Requests" }] : []),
-    ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+    ...(user?.role === "admin" ? [
+      { href: "/admin/pending-approvals", label: "Pending Approvals" },
+      { href: "/admin", label: "Dashboard" }
+    ] : []),
   ];
 
   if (!user) return null;
