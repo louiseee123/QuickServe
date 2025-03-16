@@ -18,6 +18,7 @@ export default function Nav() {
   const links = [
     { href: "/", label: "Home" },
     { href: "/request", label: "Request Document" },
+    ...(user?.role === "user" ? [{ href: "/my-requests", label: "My Requests" }] : []),
     ...(user?.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
   ];
 

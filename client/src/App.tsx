@@ -8,6 +8,7 @@ import Home from "@/pages/home";
 import Request from "@/pages/request";
 import Admin from "@/pages/admin";
 import Auth from "@/pages/auth";
+import MyRequests from "@/pages/my-requests";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./components/protected-route";
 
@@ -19,6 +20,7 @@ function Router() {
         <ProtectedRoute path="/" component={Home} />
         <ProtectedRoute path="/request" component={Request} />
         <ProtectedRoute path="/admin" component={Admin} />
+        <ProtectedRoute path="/my-requests" component={MyRequests} />
         <Route component={NotFound} />
       </Switch>
     </Layout>
