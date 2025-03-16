@@ -1,6 +1,8 @@
 import { documentRequests, type DocumentRequest, type InsertRequest, type RequestStatus, users, type User, type InsertUser } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { setupWebSocket } from "./websocket";
+import type { Server } from "http";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -18,6 +20,7 @@ export interface IStorage {
 
   // Session store
   sessionStore: session.Store;
+  setWebSocketServer(server: Server): void;
 }
 
 export class MemStorage implements IStorage {
@@ -25,6 +28,7 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private currentId: number;
   private currentQueueNumber: number;
+  private wsServer: ReturnType<typeof setupWebSocket> | null = null;
   readonly sessionStore: session.Store;
 
   constructor() {
@@ -86,11 +90,20 @@ export class MemStorage implements IStorage {
     }
     const updatedRequest = { ...request, status };
     this.requests.set(id, updatedRequest);
+
+    // Broadcast the status update
+    if (this.wsServer) {
+      this.wsServer.broadcastStatusUpdate(updatedRequest);
+    }
+
     return updatedRequest;
   }
 
   async getCurrentQueueNumber(): Promise<number> {
     return this.currentQueueNumber;
+  }
+  setWebSocketServer(server: Server) {
+    this.wsServer = setupWebSocket(server);
   }
 }
 
