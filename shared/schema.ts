@@ -2,7 +2,7 @@ import { pgTable, text, serial, timestamp, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const requestStatus = ["pending", "processing", "ready", "completed"] as const;
+export const requestStatus = ["pending_approval", "denied", "pending", "processing", "ready", "completed"] as const;
 
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -20,7 +20,7 @@ export const documentRequests = pgTable("document_requests", {
   email: text("email").notNull(),
   documentType: text("document_type").notNull(),
   purpose: text("purpose").notNull(),
-  status: text("status", { enum: requestStatus }).notNull().default("pending"),
+  status: text("status", { enum: requestStatus }).notNull().default("pending_approval"),
   queueNumber: integer("queue_number").notNull(),
   requestedAt: timestamp("requested_at").notNull().defaultNow(),
   userId: integer("user_id").references(() => users.id),
