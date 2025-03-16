@@ -63,8 +63,8 @@ export default function AuthPage() {
             <div className="mb-8">
               <img
                 src="/logo.png"
-                alt="QuickServe"
-                className="h-12 mx-auto mb-2"
+                alt="CCTC Logo"
+                className="h-24 mx-auto mb-4"
               />
               <h1 className="text-2xl font-bold text-center">
                 Welcome to QuickServe

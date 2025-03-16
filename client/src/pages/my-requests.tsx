@@ -27,6 +27,18 @@ export default function MyRequests() {
       cell: (row: DocumentRequest) => row.documentType,
     },
     {
+      header: "Course",
+      cell: (row: DocumentRequest) => row.course,
+    },
+    {
+      header: "Year Level",
+      cell: (row: DocumentRequest) => row.yearLevel,
+    },
+    {
+      header: "Email",
+      cell: (row: DocumentRequest) => row.email,
+    },
+    {
       header: "Purpose",
       cell: (row: DocumentRequest) => row.purpose,
     },
@@ -56,7 +68,15 @@ export default function MyRequests() {
   return (
     <div>
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Document Requests</h1>
+        <div className="flex items-center gap-4">
+          <img src="/logo.png" alt="CCTC Logo" className="w-12 h-12" />
+          <div>
+            <h1 className="text-3xl font-bold">My Document Requests</h1>
+            <p className="text-muted-foreground">
+              Track the status of your document requests
+            </p>
+          </div>
+        </div>
         <p className="text-muted-foreground">
           Total Requests: {requests.length}
         </p>

@@ -15,6 +15,9 @@ export const documentRequests = pgTable("document_requests", {
   id: serial("id").primaryKey(),
   studentId: text("student_id").notNull(),
   studentName: text("student_name").notNull(),
+  yearLevel: text("year_level").notNull(),
+  course: text("course").notNull(),
+  email: text("email").notNull(),
   documentType: text("document_type").notNull(),
   purpose: text("purpose").notNull(),
   status: text("status", { enum: requestStatus }).notNull().default("pending"),
@@ -35,6 +38,9 @@ export const insertRequestSchema = createInsertSchema(documentRequests)
   .extend({
     studentId: z.string().min(5, "Student ID is required"),
     studentName: z.string().min(2, "Full name is required"),
+    yearLevel: z.string().min(1, "Year level is required"),
+    course: z.string().min(1, "Course/Program is required"),
+    email: z.string().email("Invalid email address"),
     documentType: z.string().min(1, "Document type is required"),
     purpose: z.string().min(10, "Please provide a detailed purpose"),
   });
