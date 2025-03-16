@@ -32,15 +32,29 @@ const documentTypes = [
   "Good Moral Certificate",
 ];
 
+const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
+
+const courses = [
+  "Bachelor of Science in Information Technology",
+  "Bachelor of Science in Computer Science",
+  "Bachelor of Elementary Education",
+  "Bachelor of Secondary Education",
+  "Bachelor of Science in Business Administration",
+  "Bachelor of Science in Accountancy",
+];
+
 export default function Request() {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  
+
   const form = useForm<InsertRequest>({
     resolver: zodResolver(insertRequestSchema),
     defaultValues: {
       studentId: "",
       studentName: "",
+      yearLevel: "",
+      course: "",
+      email: "",
       documentType: "",
       purpose: "",
     },
@@ -54,9 +68,9 @@ export default function Request() {
     onSuccess: (data) => {
       toast({
         title: "Request Submitted",
-        description: `Your queue number is #${data.queueNumber}`,
+        description: `Your queue number is #${data.queueNumber}. We'll send updates to your email.`,
       });
-      navigate("/");
+      navigate("/my-requests");
     },
     onError: (error) => {
       toast({
@@ -69,82 +83,162 @@ export default function Request() {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8">Request Document</h1>
-      
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="studentId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Student ID</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="flex items-center gap-4 mb-8">
+        <img src="/logo.png" alt="CCTC Logo" className="w-16 h-16" />
+        <div>
+          <h1 className="text-3xl font-bold">Request Document</h1>
+          <p className="text-muted-foreground">
+            Fill out the form below to request your document
+          </p>
+        </div>
+      </div>
 
-          <FormField
-            control={form.control}
-            name="studentName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="bg-card border rounded-lg p-6">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit((data) => mutation.mutate(data))} className="space-y-6">
+            <div className="grid md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="studentId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Student ID</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="documentType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Document Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormField
+                control={form.control}
+                name="studentName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Full Name</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="yearLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Year Level</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select year level" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {yearLevels.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="course"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Course/Program</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select course" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {courses.map((course) => (
+                          <SelectItem key={course} value={course}>
+                            {course}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="documentType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Document Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {documentTypes.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="purpose"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Purpose</FormLabel>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select document type" />
-                    </SelectTrigger>
+                    <Textarea
+                      {...field}
+                      placeholder="Please provide a detailed purpose for requesting this document"
+                      className="min-h-[100px]"
+                    />
                   </FormControl>
-                  <SelectContent>
-                    {documentTypes.map((type) => (
-                      <SelectItem key={type} value={type}>
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="purpose"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Purpose</FormLabel>
-                <FormControl>
-                  <Textarea {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? "Submitting..." : "Submit Request"}
-          </Button>
-        </form>
-      </Form>
+            <Button type="submit" className="w-full" disabled={mutation.isPending}>
+              {mutation.isPending ? "Submitting..." : "Submit Request"}
+            </Button>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }
