@@ -1,4 +1,8 @@
-import { documentRequests, type DocumentRequest, type InsertRequest, type RequestStatus } from "@shared/schema";
+import { documentRequests, type DocumentRequest, type InsertRequest, type RequestStatus, users, type User, type InsertUser } from "@shared/schema";
+import session from "express-session";
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
 
 export interface IStorage {
   createRequest(request: InsertRequest): Promise<DocumentRequest>;
@@ -6,17 +10,48 @@ export interface IStorage {
   getAllRequests(): Promise<DocumentRequest[]>;
   updateRequestStatus(id: number, status: RequestStatus): Promise<DocumentRequest>;
   getCurrentQueueNumber(): Promise<number>;
+
+  // User methods
+  createUser(user: InsertUser): Promise<User>;
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+
+  // Session store
+  sessionStore: session.Store;
 }
 
 export class MemStorage implements IStorage {
   private requests: Map<number, DocumentRequest>;
+  private users: Map<number, User>;
   private currentId: number;
   private currentQueueNumber: number;
+  readonly sessionStore: session.Store;
 
   constructor() {
     this.requests = new Map();
+    this.users = new Map();
     this.currentId = 1;
     this.currentQueueNumber = 1;
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    });
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = this.currentId++;
+    const user: User = { ...insertUser, id, role: "user" };
+    this.users.set(id, user);
+    return user;
+  }
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
   }
 
   async createRequest(insertRequest: InsertRequest): Promise<DocumentRequest> {
@@ -28,6 +63,7 @@ export class MemStorage implements IStorage {
       status: "pending",
       queueNumber,
       requestedAt: new Date(),
+      userId: null,
     };
     this.requests.set(id, request);
     return request;
