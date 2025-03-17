@@ -17,7 +17,7 @@ export default function PendingApprovals() {
   });
 
   const pendingApprovalRequests = requests.filter(
-    (request) => request.status === "pending_approval"
+    (request) => request.status === "Pending"
   );
 
   const columns = [

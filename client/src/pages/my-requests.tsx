@@ -8,12 +8,12 @@ import { useState } from "react";
 import { RequestDetailsDialog } from "@/components/request-details-dialog";
 
 const statusColors = {
-  pending_approval: "bg-yellow-500",
-  denied: "bg-red-500",
-  pending: "bg-yellow-500",
-  processing: "bg-blue-500",
-  ready: "bg-green-500",
-  completed: "bg-gray-500",
+  Pending: "bg-yellow-500",
+  Denied: "bg-red-500",
+ Accepted: "bg-yellow-500",
+  Processing: "bg-blue-500",
+  Ready: "bg-green-500",
+  Completed: "bg-gray-500",
 } as const;
 
 export default function MyRequests() {
