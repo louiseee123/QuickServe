@@ -7,10 +7,12 @@ import Layout from "@/components/layout";
 import Home from "@/pages/home";
 import Request from "@/pages/request";
 import Admin from "@/pages/admin";
+import PendingApprovals from "@/pages/admin/pending-approvals";
 import Auth from "@/pages/auth";
 import MyRequests from "@/pages/my-requests";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./components/protected-route";
+
 
 function Router() {
   return (
@@ -20,8 +22,9 @@ function Router() {
         <ProtectedRoute path="/" component={Home} />
         <ProtectedRoute path="/request" component={Request} />
         <ProtectedRoute path="/admin" component={Admin} />
+        <ProtectedRoute path="/pending-approvals" component={PendingApprovals} />
         <ProtectedRoute path="/my-requests" component={MyRequests} />
-        <Route component={NotFound} />
+        <Route component={PendingApprovals} />
       </Switch>
     </Layout>
   );

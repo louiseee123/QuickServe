@@ -62,7 +62,7 @@ export default function AuthPage() {
           <CardContent className="pt-6">
             <div className="mb-8">
               <img
-                src="/logo.png"
+                src=".png"
                 alt="CCTC Logo"
                 className="h-24 mx-auto mb-4"
               />
