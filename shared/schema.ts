@@ -50,3 +50,4 @@ export type User = typeof users.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type DocumentRequest = typeof documentRequests.$inferSelect;
 export type RequestStatus = typeof requestStatus[number];
+// wara gud, idk what's happening anymor////////////:(((())))
