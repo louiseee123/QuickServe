@@ -1,18 +1,17 @@
 
 ## Features
-- User authentication (login/register)
-- Document request submission
-- Request status tracking with real-time updates
-- Admin dashboard for request management
-- Email notifications for status updates
+- **Seamless User Authentication** – Secure login and registration for students and staff.
+- **Easy Document Requests** – Submit requests effortlessly with a few clicks.
+- **Real-time Status Tracking** – Stay updated instantly with live request updates.
+- **Admin Dashboard** – Manage and process requests efficiently.
+- **Automated Email Notifications** – Get notified the moment your request status changes.
 
-## Real-time Updates
-The application uses WebSocket for real-time status updates:
-- Students receive instant notifications when their document status changes
-- The requests list automatically updates without refreshing
-- Connection status is logged in the browser console
+## Real-time Updates with WebSockets
+- **Instant Notifications** – Get notified the moment your document status updates.
+- **Auto-refresh Requests List** – No need to refresh the page—changes appear in real-time.
+- **Connection Monitoring** – Keep track of WebSocket connectivity in the browser console.
 
-## Pages
+## App Pages
 
 - Login Screen
 <img src='./images/Login.png'>
@@ -22,3 +21,5 @@ The application uses WebSocket for real-time status updates:
 
 - Request Document Page
 <img src='./images/Request.png'>
+
+**QuickServe makes document retrieval faster, smarter, and hassle-free for Consolatrix College of Toledo City**
