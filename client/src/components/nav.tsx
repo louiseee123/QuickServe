@@ -1,15 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { FileText, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { FileText, ChevronDown, LogOut, Menu, X, User, Settings, HelpCircle } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
+import logo from "./../Assets/QSLogo.png"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
@@ -20,19 +24,17 @@ export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
 
   const links = [
-    { href: "/", label: "Home" },
-    { href: "/request", label: "Request Document" },
-    ...(user?.role === "user" ? [{ href: "/my-requests", label: "My Requests" }] : []),
+    { href: "/", label: "Home", icon: <FileText className="h-4 w-4" /> },
+    { href: "/request", label: "Request Document", icon: <FileText className="h-4 w-4" /> },
+    ...(user?.role === "user" ? [{ href: "/my-requests", label: "My Requests", icon: <FileText className="h-4 w-4" /> }] : []),
     ...(user?.role === "admin" ? [
-      { href: "/admin/pending-approvals", label: "Pending Approvals" },
-      { href: "/admin", label: "Dashboard" }
+      { href: "/admin/pending-approvals", label: "Pending Approvals", icon: <FileText className="h-4 w-4" /> },
+      { href: "/admin", label: "Dashboard", icon: <FileText className="h-4 w-4" /> }
     ] : []),
   ];
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -43,7 +45,7 @@ export default function Nav() {
     <motion.header 
       className={cn(
         "fixed top-0 w-full z-50 transition-all duration-300",
-        scrolled ? "bg-white shadow-lg" : "bg-white/90 backdrop-blur-sm"
+        scrolled ? "bg-white shadow-lg" : "bg-[#0056b3]"
       )}
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -51,17 +53,18 @@ export default function Nav() {
     >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo */}
+          
           <Link href="/">
             <motion.a 
-              className="flex items-center gap-3"
+              className="flex items-center gap-3 cursor-pointer"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.98 }}
             >
-              <div className="bg-blue-600 p-2 rounded-lg shadow-md">
-                <FileText className="h-6 w-6 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+              <img src={logo} alt="QuickServe Logo" className="h-8 w-auto" />
+              <span className={cn(
+                "text-2xl font-bold",
+                scrolled ? "text-[#003366]" : "text-white"
+              )}>
                 QuickServe
               </span>
             </motion.a>
@@ -73,14 +76,19 @@ export default function Nav() {
               <Link key={link.href} href={link.href}>
                 <motion.a
                   className={cn(
-                    "px-5 py-2.5 rounded-lg text-sm font-medium transition-colors mx-1",
+                    "px-5 py-2.5 rounded-lg text-sm font-medium transition-all mx-1 flex items-center gap-2",
                     location === link.href 
-                      ? "bg-blue-600 text-white shadow-md" 
-                      : "text-gray-700 hover:text-blue-600 hover:bg-blue-50"
+                      ? scrolled 
+                        ? "text-white bg-[#0056b3]" 
+                        : "text-white bg-[#003366]"
+                      : scrolled
+                        ? "text-[#003366] hover:text-white hover:bg-[#0056b3]" 
+                        : "text-blue-100 hover:text-white hover:bg-[#003366]"
                   )}
                   whileHover={{ y: -2 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileTap={{ scale: 0.98 }}
                 >
+                  {link.icon}
                   {link.label}
                 </motion.a>
               </Link>
@@ -88,39 +96,59 @@ export default function Nav() {
           </div>
 
           {/* User Dropdown */}
-          <div className="hidden md:block">
+          <div className="hidden md:flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <motion.div whileHover={{ scale: 1.03 }}>
+                <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
                   <Button 
                     variant="ghost" 
-                    className="flex items-center gap-2 h-12 px-4 rounded-full bg-blue-50 hover:bg-blue-100 border border-blue-200"
+                    className={cn(
+                      "flex items-center gap-2 h-12 px-4 rounded-xl border",
+                      scrolled 
+                        ? "bg-white hover:bg-blue-50 border-[#0056b3] text-[#003366]"
+                        : "bg-[#003366] hover:bg-[#004080] border-white text-white"
+                    )}
                   >
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-blue-600 text-white font-medium">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback className={cn(
+                        "font-medium",
+                        scrolled ? "bg-[#0056b3] text-white" : "bg-white text-[#003366]"
+                      )}>
                         {user.username.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-gray-800 font-medium">
+                    <span className="font-medium">
                       {user.username}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className={cn("h-4 w-4", scrolled ? "text-[#003366]" : "text-blue-100")} />
                   </Button>
                 </motion.div>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
-                className="w-56 rounded-xl bg-white shadow-xl border border-gray-200"
+                className="w-56 bg-white border border-[#0056b3] rounded-xl shadow-xl"
                 align="end"
-                forceMount
               >
-                <DropdownMenuItem className="focus:bg-gray-100 p-3">
+                <DropdownMenuLabel className="p-3 bg-[#0056b3] text-white rounded-t-lg">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium text-gray-900">{user.username}</p>
-                    <p className="text-xs text-blue-600">{user.role}</p>
+                    <p className="text-sm font-medium">{user.username}</p>
+                    <p className="text-xs text-blue-100">{user.role}</p>
                   </div>
-                </DropdownMenuItem>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="bg-blue-100" />
+                <DropdownMenuGroup>
+                  <DropdownMenuItem className="text-[#003366] hover:bg-blue-50 p-3 cursor-pointer">
+                    <User className="mr-2 h-4 w-4 text-[#0056b3]" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-[#003366] hover:bg-blue-50 p-3 cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4 text-[#0056b3]" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator className="bg-blue-100" />
                 <DropdownMenuItem
-                  className="text-red-600 focus:text-red-700 focus:bg-red-50 cursor-pointer p-3"
+                  className="text-red-600 hover:bg-blue-50 p-3 cursor-pointer"
                   onClick={() => logout()}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -131,12 +159,19 @@ export default function Nav() {
           </div>
 
           {/* Mobile Menu Button */}
-          <button 
-            className="md:hidden p-2 rounded-lg bg-blue-600 text-white"
+          <motion.button 
+            className={cn(
+              "md:hidden p-2 rounded-lg border",
+              scrolled 
+                ? "bg-white border-[#0056b3] text-[#003366]" 
+                : "bg-[#003366] border-white text-white"
+            )}
             onClick={() => setIsMobileOpen(!isMobileOpen)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
             {isMobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          </motion.button>
         </div>
 
         {/* Mobile Navigation */}
@@ -147,47 +182,76 @@ export default function Nav() {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="md:hidden overflow-hidden"
+              className={cn(
+                "md:hidden border-t",
+                scrolled 
+                  ? "bg-white border-[#0056b3]" 
+                  : "bg-[#003366] border-white"
+              )}
             >
-              <div className="pt-2 pb-6 space-y-2">
+              <div className="pt-2 pb-6 space-y-1">
                 {links.map((link) => (
                   <Link key={link.href} href={link.href}>
                     <motion.a
                       className={cn(
-                        "block px-4 py-3 rounded-lg mx-2 font-medium",
+                        "block px-4 py-3 rounded-lg mx-2 font-medium flex items-center gap-3",
                         location === link.href 
-                          ? "bg-blue-600 text-white" 
-                          : "text-gray-700 hover:bg-blue-50"
+                          ? scrolled
+                            ? "text-white bg-[#0056b3]"
+                            : "text-white bg-[#004080]"
+                          : scrolled
+                            ? "text-[#003366] hover:bg-blue-50"
+                            : "text-blue-100 hover:bg-[#004080] hover:text-white"
                       )}
                       onClick={() => setIsMobileOpen(false)}
                       whileTap={{ scale: 0.98 }}
                     >
+                      {link.icon}
                       {link.label}
                     </motion.a>
                   </Link>
                 ))}
-                <div className="px-4 py-3">
-                  <div className="flex items-center gap-3">
+
+                {/* Mobile User Menu */}
+                <div className={cn(
+                  "px-4 py-3 mt-2 border-t",
+                  scrolled ? "border-[#0056b3]" : "border-white"
+                )}>
+                  <div className="flex items-center gap-3 py-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-blue-600 text-white">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback className={cn(
+                        "font-medium",
+                        scrolled ? "bg-[#0056b3] text-white" : "bg-white text-[#003366]"
+                      )}>
                         {user.username.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium text-gray-900">{user.username}</p>
-                      <p className="text-sm text-blue-600">{user.role}</p>
+                      <p className={cn("font-medium", scrolled ? "text-[#003366]" : "text-white")}>
+                        {user.username}
+                      </p>
+                      <p className={cn("text-sm", scrolled ? "text-[#0056b3]" : "text-blue-100")}>
+                        {user.role}
+                      </p>
                     </div>
                   </div>
-                  <button
-                    className="w-full mt-4 px-4 py-2 rounded-lg text-red-600 font-medium hover:bg-red-50 flex items-center justify-center gap-2"
+                  <motion.button
+                    className={cn(
+                      "w-full mt-2 px-4 py-2 rounded-lg font-medium flex items-center justify-center gap-2",
+                      scrolled
+                        ? "text-red-600 hover:bg-blue-50"
+                        : "text-red-300 hover:bg-[#004080]"
+                    )}
                     onClick={() => {
                       logout();
                       setIsMobileOpen(false);
                     }}
+                    whileTap={{ scale: 0.98 }}
                   >
                     <LogOut className="h-4 w-4" />
                     Sign out
-                  </button>
+                  </motion.button>
                 </div>
               </div>
             </motion.div>

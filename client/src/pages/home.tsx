@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Link } from "wouter";
-import { FileText, Clock, CheckCircle, ArrowRight, ChevronRight, BookOpen, ShieldCheck, Users, Mail, MapPin, Phone } from "lucide-react";
+import { FileText, Clock, CheckCircle, ArrowRight, ChevronRight, BookOpen, ShieldCheck, Users, Mail, MapPin, Phone, Star, User, Lock, HelpCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
@@ -11,60 +11,93 @@ import Nav from "./../components/nav";
 
 const features = [
   {
-    icon: <FileText className="h-6 w-6" />,
+    icon: <FileText className="h-8 w-8" />,
     title: "Easy Requests",
     description: "Submit documents in just a few clicks through our intuitive platform",
     color: "from-blue-400 to-blue-600",
-    bg: "bg-blue-400/10"
+    bg: "bg-blue-500/10"
   },
   {
-    icon: <Clock className="h-6 w-6" />,
+    icon: <Clock className="h-8 w-8" />,
     title: "Real-time Tracking",
     description: "Monitor your request status with live updates and notifications",
-    color: "from-purple-400 to-purple-600",
-    bg: "bg-purple-400/10"
+    color: "from-blue-500 to-blue-700",
+    bg: "bg-blue-600/10"
   },
   {
-    icon: <CheckCircle className="h-6 w-6" />,
+    icon: <CheckCircle className="h-8 w-8" />,
     title: "Fast Processing",
     description: "Priority queue system delivers documents in record time",
-    color: "from-green-400 to-green-600",
-    bg: "bg-green-400/10"
+    color: "from-blue-600 to-blue-800",
+    bg: "bg-blue-700/10"
   },
   {
-    icon: <BookOpen className="h-6 w-6" />,
+    icon: <BookOpen className="h-8 w-8" />,
     title: "Document Library",
     description: "Access frequently requested forms and templates anytime",
-    color: "from-amber-400 to-amber-600",
-    bg: "bg-amber-400/10"
+    color: "from-blue-400 to-blue-600",
+    bg: "bg-blue-500/10"
+  },
+  {
+    icon: <ShieldCheck className="h-8 w-8" />,
+    title: "Secure System",
+    description: "Military-grade encryption protects your sensitive data",
+    color: "from-blue-500 to-blue-700",
+    bg: "bg-blue-600/10"
+  },
+  {
+    icon: <Users className="h-8 w-8" />,
+    title: "24/7 Support",
+    description: "Our team is always ready to assist you",
+    color: "from-blue-600 to-blue-800",
+    bg: "bg-blue-700/10"
   }
 ];
 
 const testimonials = [
   {
     quote: "QuickServe saved me hours of waiting in line. Got my documents in just 2 days!",
-    name: "Maria Santos",
-    role: "BS Computer Science",
-    rating: 5
+    name: "John Louise Bergabeña",
+    role: "BS Architecture",
+    rating: 5,
+    avatar: "JL"
   },
   {
     quote: "The real-time tracking feature is a game changer. No more uncertainty about my requests.",
-    name: "John Dela Cruz",
-    role: "BS Business Admin",
-    rating: 5
+    name: "Nestor Alegada",
+    role: "BS Information Technology",
+    rating: 5,
+    avatar: "NE"
   },
   {
     quote: "Most efficient system I've used at any school. CCTC is leading the way!",
-    name: "Andrea Reyes",
+    name: "Chyril Hadrian Gadia",
     role: "BS Education",
-    rating: 5
+    rating: 5,
+    avatar: "CG"
   }
+];
+
+const stats = [
+  { value: "3,500+", label: "Students Served" },
+  { value: "98%", label: "Satisfaction Rate" },
+  { value: "24h", label: "Average Processing" },
+  { value: "10k+", label: "Documents Processed" }
 ];
 
 export default function Home() {
   const [currentFeature, setCurrentFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -90,16 +123,24 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentFeature((prev) => (prev + 1) % features.length);
-    }, 4000);
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
       {/* Glass Navbar */}
-      <header className="backdrop-blur-lg bg-white/20 shadow-sm sticky top-0 z-50">
+      <motion.header 
+        className={cn(
+          "backdrop-blur-lg bg-white/20 border-b border-white/10 shadow-sm sticky top-0 z-50 transition-all",
+          scrolled ? "bg-blue-900/90" : "bg-white/5"
+        )}
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
         <Nav />
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-4">
@@ -109,12 +150,12 @@ export default function Home() {
             alt="CCTC Campus" 
             className="w-full h-full object-cover opacity-20"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-blue-900/30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-blue-900/30 to-blue-900/50" />
           
-          {[...Array(15)].map((_, i) => (
+          {[...Array(20)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute rounded-full bg-blue-500/5"
+              className="absolute rounded-full bg-blue-500/10"
               initial={{
                 x: Math.random() * 100,
                 y: Math.random() * 100,
@@ -146,15 +187,15 @@ export default function Home() {
               whileHover={{ scale: 1.05 }}
               className="inline-block mb-8"
             >
-              <img src={logo} alt="CCTC Logo" className="h-20 mx-auto" />
+              <img src={logo} alt="CCTC Logo" className="h-24 mx-auto" />
             </motion.div>
             
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
               Welcome, Consolatricians!
             </h1>
             
-            <p className="text-xl text-blue-800/90 mb-10 max-w-2xl mx-auto">
-              Experience the future of document management with QuickServe
+            <p className="text-xl md:text-2xl text-blue-900/90 mb-10 max-w-3xl mx-auto">
+              Experience the future of document management with QuickServe - CCTC's revolutionary queue system
             </p>
             
             <motion.div 
@@ -165,13 +206,34 @@ export default function Home() {
               <Link href="/request">
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg px-8 py-6 text-lg"
+                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg px-8 py-6 text-lg font-semibold"
                 >
                   Request Document Now <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
               </Link>
             </motion.div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-16 bg-gradient-to-r from-blue-700 to-blue-800 text-white">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="text-4xl md:text-5xl font-bold mb-2">{stat.value}</div>
+                <div className="text-blue-200">{stat.label}</div>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -184,27 +246,27 @@ export default function Home() {
           className="mb-16 text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4 text-blue-900">Why Choose QuickServe?</h2>
-          <p className="text-lg text-blue-800/80 max-w-3xl mx-auto">
+          <p className="text-lg text-blue-800/90 max-w-3xl mx-auto">
             Our platform is designed to make document requests effortless and efficient
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feature, index) => (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.slice(0, 3).map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 30 }}
               animate={isVisible ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Card className="h-full border-0 shadow-lg bg-white/90 backdrop-blur-sm hover:shadow-xl transition-shadow">
+              <Card className="h-full border-0 shadow-lg bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all">
                 <CardContent className="p-8">
-                  <div className={`${feature.bg} w-14 h-14 rounded-xl flex items-center justify-center mb-6`}>
+                  <div className={`${feature.bg} w-16 h-16 rounded-xl flex items-center justify-center mb-6`}>
                     <div className={feature.color.replace('from-', 'text-').replace(' to-', '')}>
                       {feature.icon}
                     </div>
                   </div>
-                  <h3 className="text-xl font-semibold mb-3 text-blue-900">{feature.title}</h3>
+                  <h3 className="text-2xl font-semibold mb-3 text-blue-900">{feature.title}</h3>
                   <p className="text-blue-800/80 mb-6">{feature.description}</p>
                   <Link 
                     href="/features" 
@@ -365,6 +427,17 @@ export default function Home() {
               >
                 <Card className="h-full border-0 shadow-md bg-white/90 backdrop-blur-sm">
                   <CardContent className="p-8">
+                    <div className="flex items-center gap-4 mb-4">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-blue-600 text-white">
+                          {testimonial.avatar}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-semibold text-blue-900">{testimonial.name}</div>
+                        <div className="text-blue-800/80 text-sm">{testimonial.role}</div>
+                      </div>
+                    </div>
                     <div className="flex mb-4">
                       {[...Array(testimonial.rating)].map((_, i) => (
                         <Star key={i} className="h-5 w-5 text-amber-400 fill-amber-400" />
@@ -373,8 +446,6 @@ export default function Home() {
                     <blockquote className="text-lg italic mb-6 text-blue-900">
                       "{testimonial.quote}"
                     </blockquote>
-                    <div className="font-semibold text-blue-900">{testimonial.name}</div>
-                    <div className="text-blue-800/80 text-sm">{testimonial.role}</div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -383,53 +454,135 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Contact Section */}
-      <section className="py-20 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
+      {/* How It Works */}
+      <section className="py-20 bg-gradient-to-r from-blue-700 to-blue-800 text-white">
         <div className="container mx-auto px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Need Help?</h2>
-            <p className="text-xl mb-10 max-w-2xl mx-auto">
-              Our support team is ready to assist you with any questions
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
+            <p className="text-xl max-w-3xl mx-auto text-blue-200">
+              Simple steps to get your documents quickly and efficiently
             </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+            {[
+              {
+                icon: <User className="h-8 w-8" />,
+                title: "Create Account",
+                description: "Sign up with your student credentials"
+              },
+              {
+                icon: <FileText className="h-8 w-8" />,
+                title: "Submit Request",
+                description: "Select the documents you need"
+              },
+              {
+                icon: <CheckCircle className="h-8 w-8" />,
+                title: "Receive Documents",
+                description: "Get notified when your documents are ready"
+              }
+            ].map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
+              >
+                <div className="bg-white/10 p-6 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                  {step.icon}
+                </div>
+                <div className="text-2xl font-bold mb-3">{step.title}</div>
+                <p className="text-blue-200">{step.description}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="text-center mb-16"
+            >
+              <h2 className="text-3xl md:text-4xl font-bold mb-4 text-blue-900">Need Help?</h2>
+              <p className="text-lg text-blue-800/80 max-w-3xl mx-auto">
+                Our support team is ready to assist you with any questions
+              </p>
+            </motion.div>
             
             <div className="grid md:grid-cols-3 gap-8 mb-12">
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-                <Mail className="h-10 w-10 mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Email Us</h3>
-                <p>support@cctc.edu.ph</p>
-              </div>
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-                <MapPin className="h-10 w-10 mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Visit Us</h3>
-                <p>Main Administration Building</p>
-              </div>
-              <div className="bg-white/10 p-6 rounded-xl backdrop-blur-sm">
-                <Phone className="h-10 w-10 mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Call Us</h3>
-                <p>(032) 555-1234</p>
-              </div>
+              {[
+                {
+                  icon: <Mail className="h-8 w-8" />,
+                  title: "Email Us",
+                  description: "support@cctc.edu.ph",
+                  color: "text-blue-600"
+                },
+                {
+                  icon: <MapPin className="h-8 w-8" />,
+                  title: "Visit Us",
+                  description: "Main Administration Building",
+                  color: "text-blue-600"
+                },
+                {
+                  icon: <Phone className="h-8 w-8" />,
+                  title: "Call Us",
+                  description: "(032) 555-1234",
+                  color: "text-blue-600"
+                }
+              ].map((contact, index) => (
+                <motion.div
+                  key={contact.title}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="h-full border-0 shadow-md bg-white/90 backdrop-blur-sm">
+                    <CardContent className="p-8 text-center">
+                      <div className={`${contact.color} mb-4`}>
+                        {contact.icon}
+                      </div>
+                      <h3 className="text-xl font-semibold mb-2 text-blue-900">{contact.title}</h3>
+                      <p className="text-blue-800/80">{contact.description}</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
       {/* Final CTA */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-gradient-to-br from-blue-600 to-blue-700 text-white">
         <div className="container mx-auto px-6 text-center">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-6 text-blue-900">Ready to Get Started?</h2>
-            <p className="text-xl mb-8 text-blue-800/80 max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Get Started?</h2>
+            <p className="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
               Join thousands of Consolatricians who are already benefiting from QuickServe
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/request">
                 <Button 
                   size="lg" 
-                  className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white shadow-lg px-8 py-6 text-lg"
+                  className="bg-white text-blue-600 hover:bg-blue-50 shadow-lg px-8 py-6 text-lg font-semibold"
                 >
                   Request Document Now
                 </Button>
@@ -438,7 +591,7 @@ export default function Home() {
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-blue-600 text-blue-600 hover:bg-blue-50 px-8 py-6 text-lg"
+                  className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg font-semibold"
                 >
                   Watch Demo
                 </Button>
@@ -451,14 +604,18 @@ export default function Home() {
   );
 }
 
-function Star({ className }: { className?: string }) {
+function Avatar({ className, children }: { className?: string; children: React.ReactNode }) {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      className={className}
-    >
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-    </svg>
+    <div className={cn("rounded-full bg-gray-100 flex items-center justify-center", className)}>
+      {children}
+    </div>
+  );
+}
+
+function AvatarFallback({ className, children }: { className?: string; children: React.ReactNode }) {
+  return (
+    <div className={cn("w-full h-full flex items-center justify-center font-medium", className)}>
+      {children}
+    </div>
   );
 }

@@ -19,8 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
+import qslogo from "./../Assets/QSLogo.png";
 import schoolBg from "./../assets/bgcctc.jpg";
-import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle } from "lucide-react";
 
 type AuthFormData = {
   username: string;
@@ -71,6 +72,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const controls = useAnimation();
   const bgControls = useAnimation();
 
@@ -78,15 +80,16 @@ export default function AuthPage() {
     if (user) {
       navigate("/");
     }
-    // Start background animations
+    
+    // Background animation with subtle parallax effect
     bgControls.start({
-      x: [0, 100, 0],
-      y: [0, 50, 0],
+      x: [0, 50, 0],
+      y: [0, 30, 0],
       transition: {
-        duration: 120,
+        duration: 90,
         repeat: Infinity,
         repeatType: "reverse",
-        ease: "linear"
+        ease: "easeInOut"
       }
     });
   }, [user, navigate, bgControls]);
@@ -104,9 +107,9 @@ export default function AuthPage() {
     const data = form.getValues();
     
     try {
-      // Animate button press
+      // Button press animation
       await controls.start({
-        scale: 0.98,
+        scale: 0.95,
         transition: { duration: 0.1 }
       });
       
@@ -119,12 +122,12 @@ export default function AuthPage() {
       // Success animation
       await controls.start({
         scale: 1,
-        transition: { type: "spring", stiffness: 500 }
+        transition: { type: "spring", stiffness: 500, damping: 15 }
       });
       
       navigate("/");
     } catch (error) {
-      // Error animation
+      // Error shake animation
       await controls.start({
         x: [0, -10, 10, -10, 10, 0],
         transition: { duration: 0.6 }
@@ -135,8 +138,11 @@ export default function AuthPage() {
 
   const handleTabChange = (value: "login" | "register") => {
     setActiveTab(value);
+    // Reset form errors when switching tabs
+    form.clearErrors();
+    // Play tab switch animation
     controls.start({
-      scale: 0.95,
+      scale: 0.98,
       transition: { duration: 0.1 }
     });
     setTimeout(() => {
@@ -148,10 +154,53 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[#0a1a2f] overflow-hidden">
+    <div className="min-h-screen flex bg-[#0a1a2f] overflow-hidden relative">
+      {/* Floating help button */}
+      <motion.button
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 1.5 }}
+        onClick={() => setShowHelp(!showHelp)}
+        className="fixed bottom-6 right-6 z-50 bg-cyan-600 hover:bg-cyan-700 text-white p-3 rounded-full shadow-lg transition-all"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <HelpCircle className="h-6 w-6" />
+      </motion.button>
+
+      {/* Help modal */}
+      <AnimatePresence>
+        {showHelp && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
+            className="fixed bottom-20 right-6 z-50 bg-white/10 backdrop-blur-lg p-6 rounded-xl border border-white/20 max-w-xs shadow-2xl"
+          >
+            <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-cyan-400" />
+              Need Help?
+            </h3>
+            <p className="text-blue-200 text-sm mb-4">
+              For login issues or account registration, please contact the CCTC administration office or email support.
+            </p>
+            <div className="flex items-center gap-2 text-blue-200 text-sm">
+              <Mail className="h-4 w-4 text-cyan-400" />
+              support@cctc.edu.ph
+            </div>
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-2 right-2 text-blue-200 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Left side - Auth form with animated background */}
-      <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden">
-        {/* Dynamic background with parallax effect */}
+      <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden min-h-screen">
+        {/* Dynamic background with optimized particles */}
         <motion.div 
           className="absolute inset-0 overflow-hidden z-0"
           animate={bgControls}
@@ -159,27 +208,28 @@ export default function AuthPage() {
           <img
             src={schoolBg}
             alt="School Campus"
-            className="w-full h-full object-cover opacity-30"
+            className="w-full h-full object-cover opacity-20"
+            loading="lazy"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-indigo-900/90" />
           
-          {/* Animated particles */}
-          {[...Array(30)].map((_, i) => (
+          {/* Optimized animated particles */}
+          {[...Array(15)].map((_, i) => (
             <motion.div
               key={i}
-              className="absolute rounded-full bg-white/10"
+              className="absolute rounded-full bg-white/5"
               initial={{
                 x: Math.random() * 100,
                 y: Math.random() * 100,
-                width: Math.random() * 400 + 100,
-                height: Math.random() * 400 + 100,
+                width: Math.random() * 300 + 100,
+                height: Math.random() * 300 + 100,
                 opacity: 0.05
               }}
               animate={{
-                x: [0, Math.random() * 200 - 100],
-                y: [0, Math.random() * 200 - 100],
+                x: [0, Math.random() * 150 - 75],
+                y: [0, Math.random() * 150 - 75],
                 transition: {
-                  duration: Math.random() * 40 + 20,
+                  duration: Math.random() * 30 + 15,
                   repeat: Infinity,
                   repeatType: "reverse",
                   ease: "linear"
@@ -189,14 +239,14 @@ export default function AuthPage() {
           ))}
         </motion.div>
 
-        {/* Auth card with glass morphism */}
+        {/* Auth card with enhanced glass morphism */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, type: "spring" }}
           className="w-full max-w-md z-10"
         >
-          <Card className="w-full border-0 shadow-2xl bg-white/5 backdrop-blur-lg overflow-hidden border border-white/10">
+          <Card className="w-full border-0 shadow-2xl bg-white/5 backdrop-blur-lg overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300">
             {/* Animated accent bar */}
             <motion.div
               className="h-1.5 bg-gradient-to-r from-cyan-400 to-blue-600 w-full"
@@ -212,9 +262,10 @@ export default function AuthPage() {
                 transition={{ delay: 0.4, type: "spring" }}
               >
                 <img
-                  src={logo}
-                  alt="CCTC Logo"
+                  src={qslogo}
+                  alt="QuickServe Logo"
                   className="h-20 mx-auto mb-3"
+                  loading="eager"
                 />
               </motion.div>
               <motion.div
@@ -226,7 +277,7 @@ export default function AuthPage() {
                   QuickServe Portal
                 </CardTitle>
                 <CardDescription className="text-blue-200/80 mt-2">
-                  Document Request Management System
+                  Secure Document Request System
                 </CardDescription>
               </motion.div>
             </CardHeader>
@@ -321,7 +372,8 @@ export default function AuthPage() {
                                           <Input 
                                             placeholder={activeTab === "login" ? "Enter your username" : "Choose a username"} 
                                             {...field} 
-                                            className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10"
+                                            className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
+                                            autoComplete={activeTab === "login" ? "username" : "new-username"}
                                           />
                                           <UserPlus className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
                                         </div>
@@ -350,13 +402,15 @@ export default function AuthPage() {
                                             type={showPassword ? "text" : "password"}
                                             placeholder={activeTab === "login" ? "Enter your password" : "Choose a password"}
                                             {...field}
-                                            className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10"
+                                            className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
+                                            autoComplete={activeTab === "login" ? "current-password" : "new-password"}
                                           />
                                           <LockKeyhole className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
                                           <button
                                             type="button"
                                             className="absolute right-3 top-3 text-blue-200/60 hover:text-cyan-400 transition-colors"
                                             onClick={() => setShowPassword(!showPassword)}
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
                                           >
                                             {showPassword ? (
                                               <EyeOff className="h-5 w-5" />
@@ -386,7 +440,7 @@ export default function AuthPage() {
                                   type="submit" 
                                   className={cn(
                                     "w-full h-12 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700",
-                                    "text-white font-medium shadow-lg hover:shadow-xl transition-all",
+                                    "text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300",
                                     "relative overflow-hidden group"
                                   )}
                                   disabled={isSubmitting}
@@ -431,13 +485,13 @@ export default function AuthPage() {
 
       {/* Right side - Premium hero section */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-b from-[#0a1a2f] to-[#0c1120] relative overflow-hidden border-l border-white/10">
-        {/* Decorative elements */}
+        {/* Decorative elements with reduced motion for better performance */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 -right-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl" />
           <div className="absolute bottom-1/3 -left-20 w-80 h-80 rounded-full bg-blue-600/10 blur-3xl" />
           
-          {/* Floating particles */}
-          {[...Array(20)].map((_, i) => (
+          {/* Optimized floating particles */}
+          {[...Array(15)].map((_, i) => (
             <motion.div
               key={i}
               className="absolute rounded-full bg-white/5"
@@ -448,11 +502,11 @@ export default function AuthPage() {
                 height: Math.random() * 6 + 2,
               }}
               animate={{
-                y: [0, Math.random() * 100 - 50],
-                x: [0, Math.random() * 100 - 50],
+                y: [0, Math.random() * 80 - 40],
+                x: [0, Math.random() * 80 - 40],
                 opacity: [0.2, 0.8, 0.2],
                 transition: {
-                  duration: Math.random() * 20 + 10,
+                  duration: Math.random() * 15 + 10,
                   repeat: Infinity,
                   repeatType: "reverse"
                 }
@@ -475,10 +529,11 @@ export default function AuthPage() {
                 src={logo}
                 alt="CCTC Logo"
                 className="w-full h-full object-contain p-3"
+                loading="eager"
               />
             </motion.div>
             <h2 className="text-5xl font-bold mb-6 leading-tight bg-gradient-to-r from-cyan-400 to-white bg-clip-text text-transparent">
-              Welcome to <br />Consolatrix College
+              Welcome to <br />CCTC's QuickServe
             </h2>
             <p className="text-lg text-blue-200 mb-10">
               Experience seamless document processing with our next-generation request system.
@@ -494,23 +549,30 @@ export default function AuthPage() {
                 transition={{ delay: 0.6 + i * 0.15 }}
                 className="flex items-start gap-5 group"
               >
-                <div className="bg-cyan-500/10 p-2.5 rounded-lg border border-cyan-400/20 group-hover:bg-cyan-500/20 transition-colors mt-1">
+                <motion.div
+                  whileHover={{ rotate: 5 }}
+                  className="bg-cyan-500/10 p-2.5 rounded-lg border border-cyan-400/20 group-hover:bg-cyan-500/20 transition-colors mt-1"
+                >
                   {feature.icon}
-                </div>
+                </motion.div>
                 <div>
-                  <h3 className="text-xl font-semibold text-white">{feature.title}</h3>
-                  <p className="text-blue-200/80">{feature.description}</p>
+                  <h3 className="text-xl font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="text-blue-200/80 group-hover:text-blue-100 transition-colors">
+                    {feature.description}
+                  </p>
                 </div>
               </motion.div>
             ))}
           </div>
 
-          {/* Floating help text */}
+          {/* Floating help text - moved lower on the page */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="mt-16 bg-white/5 p-5 rounded-xl border border-white/10 backdrop-blur-sm"
+            transition={{ delay: 1.2 }}
+            className="mt-24 bg-white/5 p-5 rounded-xl border border-white/10 backdrop-blur-sm"
           >
             <p className="text-blue-200/80 text-sm">
               Need help? Contact our support team at 
