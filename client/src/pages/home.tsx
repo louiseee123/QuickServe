@@ -6,7 +6,7 @@ import { FileText, Clock, CheckCircle, ArrowRight, ChevronRight, BookOpen, Shiel
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
-import campusBg from "./../assets/bgcctc.jpg";
+import campusBg from "./../Assets/bgcctc.jpg";
 import Nav from "./../components/nav";
 
 const features = [
