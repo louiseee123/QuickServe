@@ -223,7 +223,7 @@ export default function Request() {
                               <div className="relative">
                                 <Input 
                                   {...field} 
-                                  className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12"
+                                  className="placeholder:text-gray-400text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12"
                                   placeholder="2023-12345"
                                 />
                                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -251,7 +251,7 @@ export default function Request() {
                               <div className="relative">
                                 <Input 
                                   {...field} 
-                                  className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12"
+                                  className="text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 placeholder:text-gray-400"
                                   placeholder="Juan M. Dela Cruz"
                                 />
                                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -276,7 +276,7 @@ export default function Request() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <div className="relative">
-                                  <SelectTrigger className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
+                                  <SelectTrigger className="placeholder:text-gray-400 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left text-gray-700">
                                     <SelectValue placeholder="Select year level" />
                                   </SelectTrigger>
                                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -287,12 +287,12 @@ export default function Request() {
                                   </div>
                                 </div>
                               </FormControl>
-                              <SelectContent className="bg-white border-gray-200 shadow-lg">
+                              <SelectContent className="text-gray-700 bg-white border-gray-200 shadow-lg">
                                 {yearLevels.map((year) => (
                                   <SelectItem 
                                     key={year} 
                                     value={year}
-                                    className="hover:bg-blue-50 focus:bg-blue-50"
+                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
                                   >
                                     {year}
                                   </SelectItem>
@@ -313,7 +313,7 @@ export default function Request() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <div className="relative">
-                                  <SelectTrigger className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
+                                  <SelectTrigger className="placeholder:text-gray-300 text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
                                     <SelectValue placeholder="Select your course" />
                                   </SelectTrigger>
                                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -328,7 +328,7 @@ export default function Request() {
                                   <SelectItem 
                                     key={course} 
                                     value={course}
-                                    className="hover:bg-blue-50 focus:bg-blue-50"
+                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
                                   >
                                     {course}
                                   </SelectItem>
@@ -351,8 +351,8 @@ export default function Request() {
                                 <Input 
                                   type="email" 
                                   {...field} 
-                                  className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12"
-                                  placeholder="your.email@example.com"
+                                  className="text-gray-700  bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 placeholder:text-gray-400"
+                                  placeholder="example@email.com"
                                 />
                                 <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -376,7 +376,7 @@ export default function Request() {
                             <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
                                 <div className="relative">
-                                  <SelectTrigger className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
+                                  <SelectTrigger className="text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
                                     <SelectValue placeholder="Select document type" />
                                   </SelectTrigger>
                                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
@@ -395,7 +395,7 @@ export default function Request() {
                                   <SelectItem 
                                     key={type} 
                                     value={type}
-                                    className="hover:bg-blue-50 focus:bg-blue-50"
+                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
                                   >
                                     {type}
                                   </SelectItem>
@@ -418,10 +418,11 @@ export default function Request() {
                             <div className="relative">
                               <Textarea
                                 {...field}
-                                className="bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 min-h-[120px] pl-10"
-                                placeholder="Please provide a detailed purpose for requesting this document (e.g., For employment, scholarship application, etc.)"
+                                className="placeholder:text-gray-400 text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 min-h-[120px] pl-10"
+                                placeholder="Please provide a detailed purpose for requesting this document (e.g., For employment, scholarship application, etc.)" 
+                                
                               />
-                              <div className="absolute top-4 left-3 text-gray-400">
+                              <div className="absolute top-4 left-3 text-gray-700">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                   <circle cx="12" cy="12" r="10"></circle>
                                   <line x1="12" y1="16" x2="12" y2="12"></line>

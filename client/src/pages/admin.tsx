@@ -5,6 +5,8 @@ import { DocumentRequest, requestStatus } from "@shared/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
+import { generateExcelReport } from '@/lib/completereportGenerator';
+import * as XLSX from 'xlsx';
 import {
   Select,
   SelectContent,
@@ -50,10 +52,35 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState } from "react";
 
 const statusColors = {
-  pending: "bg-yellow-100 text-yellow-800",
   processing: "bg-blue-100 text-blue-800",
+  ready: "bg-yellow-100 text-yellow-800",
   completed: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+};
+const exportCompletedRequests = () => {
+  // Filter only completed requests
+  const completedRequests = requests.filter(request => request.status === 'processing');
+  
+  // Prepare data for Excel
+  const data = completedRequests.map(request => ({
+    'Queue #': request.queueNumber,
+    'Student ID': request.studentId,
+    'Student Name': request.studentName,
+    'Document Type': request.documentType,
+    'Course': request.course,
+    'Requested At': format(new Date(request.requestedAt), "MMM d, yyyy h:mm a"),
+    'Completed At': request.updatedAt ? format(new Date(request.updatedAt), "MMM d, yyyy h:mm a") : 'N/A',
+    'Notes': request.notes || 'N/A'
+  }));
+
+  // Create worksheet
+  const ws = XLSX.utils.json_to_sheet(data);
+  
+  // Create workbook
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Completed Requests");
+  
+  // Generate Excel file
+  XLSX.writeFile(wb, `Completed_Requests_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
 };
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -69,22 +96,35 @@ export default function Admin() {
   });
 
   // Filter requests based on search and filters
-  const filteredRequests = requests.filter(request => {
-    const matchesSearch = 
-      request.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.documentType.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesDate = dateFilter === "all" ? true : 
-      dateFilter === "today" ? new Date(request.requestedAt).toDateString() === new Date().toDateString() :
-      dateFilter === "week" ? new Date(request.requestedAt) > subDays(new Date(), 7) :
-      dateFilter === "month" ? new Date(request.requestedAt) > subDays(new Date(), 30) : true;
-    
-    const matchesStatus = statusFilter === "all" ? true : request.status === statusFilter;
-    
-    return matchesSearch && matchesDate && matchesStatus;
-  });
-
+  // Update your filteredRequests calculation to include more searchable fields
+const filteredRequests = requests.filter(request => {
+  // Enhanced search - checks multiple fields
+  const matchesSearch = searchTerm === "" || 
+    request.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.documentType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.course.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    request.queueNumber.toString().includes(searchTerm) ||
+    (request.notes && request.notes.toLowerCase().includes(searchTerm.toLowerCase()));
+  
+  // Date filter logic (unchanged)
+  const matchesDate = dateFilter === "all" ? true : 
+    dateFilter === "today" ? new Date(request.requestedAt).toDateString() === new Date().toDateString() :
+    dateFilter === "week" ? new Date(request.requestedAt) > subDays(new Date(), 7) :
+    dateFilter === "month" ? new Date(request.requestedAt) > subDays(new Date(), 30) : true;
+  
+  // Status filter logic (updated for our new statuses)
+  const matchesStatus = statusFilter === "all" ? true : request.status === statusFilter;
+  
+  return matchesSearch && matchesDate && matchesStatus;
+});
+const [isFiltering, setIsFiltering] = useState(false);
+// Add this function to your component
+const clearFilters = () => {
+  setSearchTerm("");
+  setDateFilter("all");
+  setStatusFilter("all");
+};
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       const res = await apiRequest("PATCH", `/api/requests/${id}/status`, { status });
@@ -102,14 +142,13 @@ export default function Admin() {
     },
   });
 
-  // Analytics data
-  const requestStats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    processing: requests.filter(r => r.status === 'processing').length,
-    completed: requests.filter(r => r.status === 'completed').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
-  };
+ 
+const requestStats = {
+  total: requests.length,
+  processing: requests.filter(r => r.status === 'processing').length,
+  ready: requests.filter(r => r.status === 'ready').length,
+  completed: requests.filter(r => r.status === 'completed').length,
+};
 
   // Document type distribution
   const documentTypeData = requests.reduce((acc, request) => {
@@ -134,20 +173,19 @@ export default function Admin() {
 
   // Status change over time (last 7 days)
   const statusTrendData = Array.from({ length: 7 }, (_, i) => {
-    const date = subDays(new Date(), 6 - i);
-    const dateString = format(date, 'MMM dd');
-    const dayRequests = requests.filter(r => 
-      new Date(r.requestedAt).toDateString() === date.toDateString()
-    );
-    
-    return {
-      date: dateString,
-      pending: dayRequests.filter(r => r.status === 'pending').length,
-      processing: dayRequests.filter(r => r.status === 'processing').length,
-      completed: dayRequests.filter(r => r.status === 'completed').length,
-      rejected: dayRequests.filter(r => r.status === 'rejected').length,
-    };
-  });
+  const date = subDays(new Date(), 6 - i);
+  const dateString = format(date, 'MMM dd');
+  const dayRequests = requests.filter(r => 
+    new Date(r.requestedAt).toDateString() === date.toDateString()
+  );
+  
+  return {
+    date: dateString,
+    processing: dayRequests.filter(r => r.status === 'processing').length,
+    ready: dayRequests.filter(r => r.status === 'ready').length,
+    completed: dayRequests.filter(r => r.status === 'completed').length,
+  };
+});
 
   // Processing time analysis (for completed requests)
   const completedRequests = requests.filter(r => r.status === 'completed');
@@ -191,29 +229,38 @@ export default function Admin() {
       ),
     },
     {
-      header: "Status",
-      cell: (row: DocumentRequest) => (
-        <Select
-          defaultValue={row.status}
-          onValueChange={(status) => updateStatus.mutate({ id: row.id, status })}
+  header: "Status",
+  cell: (row: DocumentRequest) => (
+    <Select
+      defaultValue={row.status}
+      onValueChange={(status) => updateStatus.mutate({ id: row.id, status })}
+    >
+      <SelectTrigger className={`w-[140px] ${statusColors[row.status as keyof typeof statusColors]}`}>
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent className="text-gray-700 bg-white border-[#0056b3]/20">
+        <SelectItem 
+          value="processing"
+          className={`hover:bg-blue-50 ${statusColors.processing}`}
         >
-          <SelectTrigger className={`w-[140px] ${statusColors[row.status as keyof typeof statusColors]}`}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent className="bg-white border-[#0056b3]/20">
-            {requestStatus.map((status) => (
-              <SelectItem 
-                key={status} 
-                value={status}
-                className={`hover:bg-[#0056b3]/10 ${statusColors[status as keyof typeof statusColors]}`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      ),
-    },
+          Processing
+        </SelectItem>
+        <SelectItem 
+          value="ready"
+          className={`hover:bg-yellow-50 ${statusColors.ready}`}
+        >
+          Ready
+        </SelectItem>
+        <SelectItem 
+          value="completed"
+          className={`hover:bg-green-50 ${statusColors.completed}`}
+        >
+          Completed
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  ),
+},
     {
       header: "Actions",
       cell: (row: DocumentRequest) => (
@@ -263,10 +310,21 @@ export default function Admin() {
               <p className="text-[#0056b3]">Manage and track all document requests</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10 gap-2">
-                <Calendar className="h-4 w-4" />
-                Generate Report
-              </Button>
+            <Button 
+  variant="outline" 
+  className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10 gap-2"
+  onClick={() => {
+    const count = exportCompletedRequests();
+    toast({
+      title: "Report Generated",
+      description: `Exported ${count} completed requests`,
+    });
+  }}
+  disabled={requests.filter(r => r.status === 'completed').length === 0}
+>
+  <FileText className="h-4 w-4" />
+  Generate Report
+</Button>
               <Button className="bg-[#0056b3] hover:bg-[#003366] text-white gap-2">
                 <Download className="h-4 w-4" />
                 Export Data
@@ -275,139 +333,152 @@ export default function Admin() {
           </div>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search requests..."
-                className="pl-10"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={dateFilter} onValueChange={setDateFilter}>
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-[#0056b3]" />
-                  <SelectValue placeholder="Date Range" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Time</SelectItem>
-                <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="week">Last 7 Days</SelectItem>
-                <SelectItem value="month">Last 30 Days</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-[#0056b3]" />
-                  <SelectValue placeholder="Status" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="processing">Processing</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10">
-              Clear Filters
-            </Button>
-          </div>
+<div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+  <div className="relative">
+    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+    <Input
+      placeholder="Search by name, ID, document, course..."
+      className="pl-10"
+      value={searchTerm}
+      onChange={(e) => setSearchTerm(e.target.value)}
+    />
+  </div>
+  
+  <Select value={dateFilter} onValueChange={setDateFilter}>
+    <SelectTrigger className="w-full">
+      <div className="flex items-center gap-2">
+        <Calendar className="h-4 w-4 text-[#0056b3]" />
+        <SelectValue placeholder="Date Range" />
+      </div>
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Time</SelectItem>
+      <SelectItem value="today">Today</SelectItem>
+      <SelectItem value="week">Last 7 Days</SelectItem>
+      <SelectItem value="month">Last 30 Days</SelectItem>
+    </SelectContent>
+  </Select>
+  
+  <Select value={statusFilter} onValueChange={setStatusFilter}>
+    <SelectTrigger className="w-full">
+      <div className="flex items-center gap-2">
+        <Filter className="h-4 w-4 text-[#0056b3]" />
+        <SelectValue placeholder="Status" />
+      </div>
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All Statuses</SelectItem>
+      <SelectItem value="processing">Processing</SelectItem>
+      <SelectItem value="ready">Ready</SelectItem>
+      <SelectItem value="completed">Completed</SelectItem>
+    </SelectContent>
+  </Select>
+  
+  <Button 
+    variant="outline" 
+    className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10"
+    onClick={clearFilters}
+    disabled={searchTerm === "" && dateFilter === "all" && statusFilter === "all"}
+  >
+    Clear Filters
+  </Button>
+</div>
+{/* Requests Table */}
+<motion.div
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.5 }}
+  className="mt-6"
+>
+  <Card className="border-[#0056b3]/20">
+    <CardHeader className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div>
+        <CardTitle className="text-[#003366]">Document Requests</CardTitle>
+        <p className="text-sm text-gray-500 mt-1">
+          Showing {filteredRequests.length} of {requests.length} requests
+          {(searchTerm !== "" || dateFilter !== "all" || statusFilter !== "all") && (
+            <span className="text-[#0056b3] ml-2">
+              (filtered)
+            </span>
+          )}
+        </p>
+      </div>
+      {/* ... rest of your header ... */}
+    </CardHeader>
+    {/* ... rest of your table ... */}
+  </Card>
+</motion.div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Requests</CardTitle>
-                  <FileText className="h-5 w-5 text-[#0056b3]" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.total}</div>
-                  <p className="text-xs text-gray-500 mt-1">All time document requests</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+<div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.1 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Total Requests</CardTitle>
+        <FileText className="h-5 w-5 text-[#0056b3]" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.total}</div>
+        <p className="text-xs text-gray-500 mt-1">All time document requests</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Pending</CardTitle>
-                  <Clock className="h-5 w-5 text-yellow-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.pending}</div>
-                  <p className="text-xs text-gray-500 mt-1">Awaiting processing</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Processing</CardTitle>
+        <User className="h-5 w-5 text-blue-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.processing}</div>
+        <p className="text-xs text-gray-500 mt-1">Currently being processed</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Processing</CardTitle>
-                  <User className="h-5 w-5 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.processing}</div>
-                  <p className="text-xs text-gray-500 mt-1">Currently being processed</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.3 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Ready</CardTitle>
+        <Clock className="h-5 w-5 text-yellow-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.ready}</div>
+        <p className="text-xs text-gray-500 mt-1">Ready for pickup</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.completed}</div>
-                  <p className="text-xs text-gray-500 mt-1">Successfully fulfilled</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Avg. Processing</CardTitle>
-                  <Clock className="h-5 w-5 text-[#0056b3]" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">
-                    {avgProcessingTime.toFixed(1)}h
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">For completed requests</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.4 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
+        <CheckCircle className="h-5 w-5 text-green-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.completed}</div>
+        <p className="text-xs text-gray-500 mt-1">Successfully fulfilled</p>
+      </CardContent>
+    </Card>
+  </motion.div>
+</div>
 
           {/* Analytics Tabs */}
           <Tabs defaultValue="overview" className="w-full">
@@ -428,18 +499,17 @@ export default function Admin() {
             
             <TabsContent value="overview">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-                <Card className="border-[#0056b3]/20 h-full">
+                <Card className="text-gray-500 border-[#0056b3]/20 h-full">
                   <CardHeader>
                     <CardTitle className="text-[#003366]">Requests by Status</CardTitle>
                   </CardHeader>
                   <CardContent className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={[
-                        { name: 'Pending', value: requestStats.pending },
-                        { name: 'Processing', value: requestStats.processing },
-                        { name: 'Completed', value: requestStats.completed },
-                        { name: 'Rejected', value: requestStats.rejected },
-                      ]}>
+  { name: 'Processing', value: requestStats.processing },
+  { name: 'Ready', value: requestStats.ready },
+  { name: 'Completed', value: requestStats.completed },
+]}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="name" stroke="#6b7280" />
                         <YAxis stroke="#6b7280" />
@@ -469,25 +539,19 @@ export default function Admin() {
                   <CardContent className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChartIcon>
-                        <Pie
-                          data={[
-                            { name: 'Pending', value: requestStats.pending },
-                            { name: 'Processing', value: requestStats.processing },
-                            { name: 'Completed', value: requestStats.completed },
-                            { name: 'Rejected', value: requestStats.rejected },
-                          ]}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={80}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                        >
-                          {[0, 1, 2, 3].map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
+                        // In the pie chart:
+<Pie
+  data={[
+    { name: 'Processing', value: requestStats.processing },
+    { name: 'Ready', value: requestStats.ready },
+    { name: 'Completed', value: requestStats.completed },
+  ]}
+  // ... rest of the pie chart props
+>
+  {[0, 1, 2].map((entry, index) => (
+    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+  ))}
+</Pie>
                         <Tooltip 
                           contentStyle={{ 
                             backgroundColor: 'white',
