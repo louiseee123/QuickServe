@@ -1,128 +1,74 @@
 import { useQuery } from "@tanstack/react-query";
 import type { DocumentRequest } from "@shared/schema";
-import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { Loader2, FileText, Clock, CheckCircle, AlertCircle, Download, CreditCard } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { RequestDetailsDialog } from "@/components/request-details-dialog";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { motion } from "framer-motion";
-import Nav from "@/components/nav"; // Make sure this path is correct
+import Nav from "./../components/nav";
 
 const statusColors = {
-  Pending: "bg-yellow-100 text-yellow-800",
-  Denied: "bg-red-100 text-red-800",
-  Accepted: "bg-blue-100 text-blue-800",
-  Processing: "bg-blue-100 text-blue-800",
-  Ready: "bg-green-100 text-green-800",
-  Completed: "bg-gray-100 text-gray-800",
-  'Payment Pending': "bg-purple-100 text-purple-800",
+  Pending: "bg-yellow-500 text-yellow-900",
+  Denied: "bg-red-500 text-red-50",
+  Accepted: "bg-yellow-500 text-yellow-900",
+  Processing: "bg-blue-500 text-blue-50",
+  Ready: "bg-green-500 text-green-50",
+  Completed: "bg-gray-500 text-gray-900",
 } as const;
-
-const paymentRequiredDocs = [
-  "Certification of Grades",
-  "Transcript of Records",
-  "Diploma",
-  "Certification of Enrollment"
-];
 
 export default function MyRequests() {
   const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({
-    queryKey: ["/api/requests/my-requests"],
+    queryKey: ["/api/requests"],
   });
-
-  // Stats calculations
-  const requestStats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'Pending').length,
-    processing: requests.filter(r => r.status === 'Processing').length,
-    paymentPending: requests.filter(r => 
-      r.status === 'Accepted' && 
-      paymentRequiredDocs.includes(r.documentType)
-    ).length,
-    ready: requests.filter(r => r.status === 'Ready').length,
-    completed: requests.filter(r => r.status === 'Completed').length,
-  };
 
   const columns = [
     {
       header: "Queue #",
-      cell: (row: DocumentRequest) => (
-        <span className="font-medium text-primary">#{row.queueNumber}</span>
-      ),
+      cell: (row: DocumentRequest) => row.queueNumber,
     },
     {
-      header: "Document",
-      cell: (row: DocumentRequest) => (
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-primary" />
-          <span>{row.documentType}</span>
-        </div>
-      ),
+      header: "Document Type",
+      cell: (row: DocumentRequest) => row.documentType,
     },
     {
-      header: "Details",
-      cell: (row: DocumentRequest) => (
-        <div className="text-sm">
-          <div>{row.course} - {row.yearLevel}</div>
-          <div className="text-muted-foreground">{row.purpose}</div>
-        </div>
-      ),
+      header: "Course",
+      cell: (row: DocumentRequest) => row.course,
+    },
+    {
+      header: "Year Level",
+      cell: (row: DocumentRequest) => row.yearLevel,
+    },
+    {
+      header: "Email",
+      cell: (row: DocumentRequest) => row.email,
+    },
+    {
+      header: "Purpose",
+      cell: (row: DocumentRequest) => row.purpose,
     },
     {
       header: "Requested At",
-      cell: (row: DocumentRequest) => (
-        <span className="text-sm text-muted-foreground">
-          {format(new Date(row.requestedAt), "MMM d, yyyy h:mm a")}
-        </span>
-      ),
+      cell: (row: DocumentRequest) =>
+        format(new Date(row.requestedAt), "MMM d, yyyy h:mm a"),
     },
     {
       header: "Status",
-      cell: (row: DocumentRequest) => {
-        const status = paymentRequiredDocs.includes(row.documentType) && 
-                      row.status === 'Accepted' 
-                      ? 'Payment Pending' 
-                      : row.status;
-        
-        return (
-          <Badge className={`${statusColors[status]} whitespace-nowrap`}>
-            {status.split('_').join(' ')}
-          </Badge>
-        );
-      },
-    },
-    {
-      header: "Actions",
       cell: (row: DocumentRequest) => (
-        <div className="flex gap-2">
-          {row.status === 'Ready' && (
-            <Button variant="outline" size="sm" className="gap-1">
-              <Download className="h-3.5 w-3.5" />
-              Download
-            </Button>
-          )}
-          {paymentRequiredDocs.includes(row.documentType) && 
-           row.status === 'Accepted' && (
-            <Button size="sm" className="gap-1 bg-purple-600 hover:bg-purple-700">
-              <CreditCard className="h-3.5 w-3.5" />
-              Pay Now
-            </Button>
-          )}
-        </div>
+        <Badge className={`px-3 py-1 rounded-full font-medium ${statusColors[row.status]}`}>
+          {row.status.charAt(0).toUpperCase() +
+            row.status.slice(1).replace("_", " ")}
+        </Badge>
       ),
     },
   ];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
-        <Nav />
-        <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex flex-col min-h-screen">
+        <Nav className="bg-white border-b border-gray-200 shadow-sm fixed w-full z-50" />
+        <div className="flex flex-1 items-center justify-center pt-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </div>
@@ -130,143 +76,76 @@ export default function MyRequests() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <Nav />
-      
-      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col gap-8"
-        >
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      <Nav className="bg-white border-b border-gray-200 shadow-sm fixed w-full z-50" />
+
+      <main className="flex-1 max-w-7xl mx-auto px-4 py-8 pt-24"> {/* 👈 Notice pt-24 */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+          <div className="flex items-center gap-4">
+            
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-primary">My Document Requests</h1>
-              <p className="text-muted-foreground">Track and manage your document requests</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Button variant="outline" className="gap-2">
-                <FileText className="h-4 w-4" />
-                New Request
-              </Button>
+              <p className="text-sm text-gray-700">
+                Track the status of your requests easily
+              </p>
             </div>
           </div>
+          <p className="text-sm text-gray-700">
+            Total Requests: <span className="font-semibold">{requests.length}</span>
+          </p>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Requests</CardTitle>
-                  <FileText className="h-5 w-5 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl sm:text-3xl font-bold">{requestStats.total}</div>
-                  <p className="text-xs text-muted-foreground mt-1">All your document requests</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Pending Payment</CardTitle>
-                  <CreditCard className="h-5 w-5 text-purple-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl sm:text-3xl font-bold">{requestStats.paymentPending}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Awaiting your payment</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Processing</CardTitle>
-                  <Clock className="h-5 w-5 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl sm:text-3xl font-bold">{requestStats.processing}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Currently being processed</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow h-full">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Ready</CardTitle>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl sm:text-3xl font-bold">{requestStats.ready}</div>
-                  <p className="text-xs text-muted-foreground mt-1">Ready for download</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+        {requests.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center text-gray-500 border border-dashed border-gray-300 rounded-lg">
+            <img src="/empty-state.svg" alt="No Requests" className="w-32 h-32 mb-4 opacity-50" />
+            <p className="text-lg font-medium text-gray-700">No document requests yet</p>
+            <p className="text-sm mt-1">
+              Once you make a request, it will appear here for tracking.
+            </p>
           </div>
+        ) : (
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-gray-700">
+                <thead className="bg-blue-50 border-b border-blue-200">
+                  <tr>
+                    {columns.map((col, i) => (
+                      <th
+                        key={i}
+                        className="px-4 py-3 text-left text-sm font-semibold text-blue-800"
+                      >
+                        {col.header}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {requests.map((row, rowIndex) => (
+                    <tr
+                      key={rowIndex}
+                      onClick={() => setSelectedRequest(row)}
+                      className="hover:bg-blue-50 cursor-pointer border-b last:border-0"
+                    >
+                      {columns.map((col, colIndex) => (
+                        <td key={colIndex} className="px-4 py-3">
+                          {col.cell(row)}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
 
-          {/* Requests Table */}
-          {requests.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-12 text-muted-foreground">
-                You haven't made any document requests yet.
-                <div className="mt-4">
-                  <Button>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Make Your First Request
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5 }}
-            >
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle>Your Requests</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <DataTable 
-                    data={requests} 
-                    columns={columns} 
-                    onRowClick={(row) => setSelectedRequest(row)}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          )}
-
-          <RequestDetailsDialog
-            request={selectedRequest}
-            open={!!selectedRequest}
-            onOpenChange={(open) => !open && setSelectedRequest(null)}
-            mode="view"
-          />
-        </motion.div>
-      </div>
+        <RequestDetailsDialog
+          request={selectedRequest}
+          open={!!selectedRequest}
+          onOpenChange={(open) => !open && setSelectedRequest(null)}
+          mode="view"
+        />
+      </main>
     </div>
   );
 }

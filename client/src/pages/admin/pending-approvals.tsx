@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import Nav from "@/components/nav";
 import { Button } from "@/components/ui/button";
+import { generateExcelReport } from '@/lib/reportGenerator';
 import {
   Select,
   SelectContent,
@@ -66,12 +67,10 @@ export default function PendingApprovals() {
 
   // Stats calculations
   const requestStats = {
-    total: requests.length,
-    pending: requests.filter(r => r.status === 'pending').length,
-    processing: requests.filter(r => r.status === 'processing').length,
-    completed: requests.filter(r => r.status === 'completed').length,
-    rejected: requests.filter(r => r.status === 'rejected').length,
-  };
+  accepted: requests.filter(r => r.status === 'completed').length,
+  denied: requests.filter(r => r.status === 'rejected').length,
+  total: requests.filter(r => r.status === 'completed' || r.status === 'rejected').length,
+};
 
   const columns = [
     {
@@ -114,61 +113,43 @@ export default function PendingApprovals() {
         </div>
       ),
     },
-    {
-      header: "Status",
-      cell: (row: DocumentRequest) => (
-        <Select
-          defaultValue={row.status}
-          onValueChange={(status) => updateStatus.mutate({ id: row.id, status })}
+   {
+  header: "Status",
+  cell: (row: DocumentRequest) => (
+    <Select
+      defaultValue={row.status}
+      onValueChange={(status) => updateStatus.mutate({ id: row.id, status })}
+    >
+      <SelectTrigger className={`w-[150px] ${statusColors[row.status as keyof typeof statusColors]}`}>
+        <div className="flex items-center gap-2">
+          {statusIcons[row.status as keyof typeof statusIcons]}
+          <SelectValue />
+          <ChevronDown className="h-4 w-4 opacity-50" />
+        </div>
+      </SelectTrigger>
+      <SelectContent className="bg-white border-[#0056b3]/20 shadow-lg">
+        <SelectItem 
+          value="completed"
+          className={`hover:bg-green-50 ${statusColors.completed}`}
         >
-          <SelectTrigger className={`w-[150px] ${statusColors[row.status as keyof typeof statusColors]}`}>
-            <div className="flex items-center gap-2">
-              {statusIcons[row.status as keyof typeof statusIcons]}
-              <SelectValue />
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </div>
-          </SelectTrigger>
-          <SelectContent className="bg-white border-[#0056b3]/20 shadow-lg">
-            <SelectItem 
-              value="pending"
-              className={`hover:bg-yellow-50 ${statusColors.pending}`}
-            >
-              <div className="flex items-center gap-2">
-                {statusIcons.pending}
-                Pending
-              </div>
-            </SelectItem>
-            <SelectItem 
-              value="processing"
-              className={`hover:bg-blue-50 ${statusColors.processing}`}
-            >
-              <div className="flex items-center gap-2">
-                {statusIcons.processing}
-                Processing
-              </div>
-            </SelectItem>
-            <SelectItem 
-              value="completed"
-              className={`hover:bg-green-50 ${statusColors.completed}`}
-            >
-              <div className="flex items-center gap-2">
-                {statusIcons.completed}
-                Completed
-              </div>
-            </SelectItem>
-            <SelectItem 
-              value="rejected"
-              className={`hover:bg-red-50 ${statusColors.rejected}`}
-            >
-              <div className="flex items-center gap-2">
-                {statusIcons.rejected}
-                Rejected
-              </div>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      ),
-    },
+          <div className="flex items-center gap-2">
+            {statusIcons.completed}
+            Accept
+          </div>
+        </SelectItem>
+        <SelectItem 
+          value="rejected"
+          className={`hover:bg-red-50 ${statusColors.rejected}`}
+        >
+          <div className="flex items-center gap-2">
+            {statusIcons.rejected}
+            Deny
+          </div>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  ),
+},
     {
       header: "Actions",
       cell: (row: DocumentRequest) => (
@@ -213,83 +194,72 @@ export default function PendingApprovals() {
               <p className="text-[#0056b3]">Review and manage all pending document requests</p>
             </div>
             <div className="flex gap-3">
-              <Button variant="outline" className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10 gap-2">
-                <FileText className="h-4 w-4" />
-                Generate Report
-              </Button>
+              <Button 
+  variant="outline" 
+  className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10 gap-2"
+  onClick={() => generateExcelReport(requests.filter(r => 
+    r.status === 'completed' || r.status === 'rejected'
+  ))}
+>
+  <FileText className="h-4 w-4" />
+  Generate Report
+</Button>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Requests</CardTitle>
-                  <FileText className="h-5 w-5 text-[#0056b3]" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.total}</div>
-                  <p className="text-xs text-gray-500 mt-1">All document requests</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+         {/* Stats Cards */}
+<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.1 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Total Decisions</CardTitle>
+        <FileText className="h-5 w-5 text-[#0056b3]" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.total}</div>
+        <p className="text-xs text-gray-500 mt-1">All approval decisions</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Pending Approval</CardTitle>
-                  <Clock className="h-5 w-5 text-yellow-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.pending}</div>
-                  <p className="text-xs text-gray-500 mt-1">Awaiting your review</p>
-                </CardContent>
-              </Card>
-            </motion.div>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Accepted</CardTitle>
+        <CheckCircle className="h-5 w-5 text-green-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.accepted}</div>
+        <p className="text-xs text-gray-500 mt-1">Approved requests</p>
+      </CardContent>
+    </Card>
+  </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Processing</CardTitle>
-                  <User className="h-5 w-5 text-blue-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.processing}</div>
-                  <p className="text-xs text-gray-500 mt-1">Currently being processed</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Completed</CardTitle>
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-[#003366]">{requestStats.completed}</div>
-                  <p className="text-xs text-gray-500 mt-1">Successfully fulfilled</p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.3 }}
+  >
+    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-sm font-medium text-gray-600">Denied</CardTitle>
+        <AlertCircle className="h-5 w-5 text-red-500" />
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold text-[#003366]">{requestStats.denied}</div>
+        <p className="text-xs text-gray-500 mt-1">Rejected requests</p>
+      </CardContent>
+    </Card>
+  </motion.div>
+</div>
 
           {/* Requests Table */}
           <motion.div
