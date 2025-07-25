@@ -20,7 +20,7 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import qslogo from "./../Assets/QSLogo.png";
-import schoolBg from "./../assets/bgcctc.jpg";
+import schoolBg from "./../Assets/bgcctc.jpg";
 import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle } from "lucide-react";
 
 type AuthFormData = {
