@@ -29,7 +29,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import Nav from "@/components/nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import logo from "@/assets/logocctc.png";
+import logo from "@/Assets/logocctc.png";
 
 const documentTypes = [
   "Transcript of Records",
