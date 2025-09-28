@@ -33,9 +33,19 @@ router.post('/signin', async (req: Request, res: Response) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Get user role from Firestore
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.data();
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    let userData = userDoc.data();
+
+    if (!userDoc.exists()) {
+      // If the user document doesn't exist, create it with a default role
+      await setDoc(userDocRef, {
+        email: user.email,
+        role: 'user',
+      });
+      userData = { email: user.email, role: 'user' };
+    }
 
     res.status(200).send({ uid: user.uid, email: user.email, role: userData?.role });
   } catch (error: any) {
@@ -55,7 +65,12 @@ router.post('/request', async (req: Request, res: Response) => {
             status: 'pending',
         };
         const docRef = await addDoc(collection(db, 'requests'), newRequest);
-        res.status(201).send({ id: docRef.id, ...newRequest });
+        const newRequestWithId = { id: docRef.id, ...newRequest };
+
+        // Notify all clients
+        (req.app as any).sendRequestUpdate(newRequestWithId);
+
+        res.status(201).send(newRequestWithId);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
@@ -86,11 +101,19 @@ router.put('/request/:id', async (req: Request, res: Response) => {
         if (downloadUrl) updateData.downloadUrl = downloadUrl;
         
         await updateDoc(requestRef, updateData);
-        res.status(200).send({ id, ...updateData });
+
+        const updatedDoc = await getDoc(requestRef);
+        const updatedRequest = { id: updatedDoc.id, ...updatedDoc.data() };
+
+        // Notify all clients
+        (req.app as any).sendRequestUpdate(updatedRequest);
+
+        res.status(200).send(updatedRequest);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
 });
+
 
 // Create a user profile
 router.post('/profile', async (req: Request, res: Response) => {
