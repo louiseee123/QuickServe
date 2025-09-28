@@ -5,9 +5,8 @@ import { z } from "zod";
 export const requestStatus = ["Pending", "Denied", "Accepted", "Processing", "Ready", "Completed"] as const;
 
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+  id: text("id").primaryKey(),
+  email: text("email").notNull().unique(),
   role: text("role", { enum: ["admin", "user"] }).notNull().default("user"),
 });
 
@@ -23,15 +22,13 @@ export const documentRequests = pgTable("document_requests", {
   status: text("status", { enum: requestStatus }).notNull().default("Pending"),
   queueNumber: integer("queue_number").notNull(),
   requestedAt: timestamp("requested_at").notNull().defaultNow(),
-  userId: integer("user_id").references(() => users.id),
+  userId: text("user_id").references(() => users.id),
 });
 
-export const insertUserSchema = createInsertSchema(users)
-  .pick({ username: true, password: true })
-  .extend({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    username: z.string().min(3, "Username must be at least 3 characters"),
-  });
+export const insertUserSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+});
 
 export const insertRequestSchema = createInsertSchema(documentRequests)
   .omit({ id: true, status: true, queueNumber: true, requestedAt: true, userId: true })
@@ -50,4 +47,3 @@ export type User = typeof users.$inferSelect;
 export type InsertRequest = z.infer<typeof insertRequestSchema>;
 export type DocumentRequest = typeof documentRequests.$inferSelect;
 export type RequestStatus = typeof requestStatus[number];
-// wara gud, idk what's happening anymor////////////:(((())))

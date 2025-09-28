@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema } from "@shared/schema";
+import { insertUserSchema, InsertUser } from "@shared/schema";
 import {
   Form,
   FormControl,
@@ -22,11 +22,6 @@ import logo from "./../Assets/logocctc.png";
 import qslogo from "./../Assets/QSLogo.png";
 import schoolBg from "./../Assets/bgcctc.jpg";
 import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle } from "lucide-react";
-
-type AuthFormData = {
-  username: string;
-  password: string;
-};
 
 const tabVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -94,10 +89,10 @@ export default function AuthPage() {
     });
   }, [user, navigate, bgControls]);
 
-  const form = useForm<AuthFormData>({
+  const form = useForm<InsertUser>({
     resolver: zodResolver(insertUserSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -114,9 +109,9 @@ export default function AuthPage() {
       });
       
       if (action === "login") {
-        await login(data.username, data.password);
+        await login(data.email, data.password);
       } else {
-        await register(data.username, data.password);
+        await register(data.email, data.password);
       }
       
       // Success animation
@@ -356,11 +351,11 @@ export default function AuthPage() {
                             <div className="space-y-5">
                               <FormField
                                 control={form.control}
-                                name="username"
+                                name="email"
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormLabel className="text-white/90 font-medium">
-                                      {activeTab === "login" ? "Username" : "Choose a username"}
+                                      Email Address
                                     </FormLabel>
                                     <FormControl>
                                       <motion.div
@@ -370,12 +365,12 @@ export default function AuthPage() {
                                       >
                                         <div className="relative">
                                           <Input 
-                                            placeholder={activeTab === "login" ? "Enter your username" : "Choose a username"} 
+                                            placeholder="Enter your email" 
                                             {...field} 
                                             className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
-                                            autoComplete={activeTab === "login" ? "username" : "new-username"}
+                                            autoComplete="email"
                                           />
-                                          <UserPlus className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
+                                          <Mail className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
                                         </div>
                                       </motion.div>
                                     </FormControl>
