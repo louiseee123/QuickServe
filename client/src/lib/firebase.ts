@@ -1,17 +1,14 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  "projectId": "quickserve-capstone",
+  "appId": "1:1029131144860:web:933116ad4604f324a1a759",
+  "storageBucket": "quickserve-capstone.appspot.com",
+  "apiKey": "AIzaSyDL-LhXtQY_I1nsErM15qrAtEIgJjFyDDA",
+  "authDomain": "quickserve-capstone.firebaseapp.com",
+  "messagingSenderId": "1029131144860"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
 export const auth = getAuth(app);
