@@ -73,7 +73,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Fetch user role from Firestore immediately after login
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let role = 'user'; // Default role
+      if (userDoc.exists()) {
+        role = userDoc.data().role || 'user';
+      }
+      
+      const appUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role,
+      };
+
+      setUser(appUser);
       toast({ title: "Welcome back!" });
     } catch (error: any) {
       setError(error);
