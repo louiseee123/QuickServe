@@ -6,7 +6,7 @@ const firebaseConfig = {
   "appId": "1:1029131144860:web:933116ad4604f324a1a759",
   "storageBucket": "quickserve-capstone.appspot.com",
   "apiKey": "AIzaSyDL-LhXtQY_I1nsErM15qrAtEIgJjFyDDA",
-  "authDomain": "quickserve-capstone.firebaseapp.com",
+  "authDomain": "localhost", // Changed for local development
   "messagingSenderId": "1029131144860"
 };
 

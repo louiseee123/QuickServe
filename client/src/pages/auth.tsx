@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertUserSchema, InsertUser } from "@shared/schema";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -61,12 +61,27 @@ const featureList = [
   }
 ];
 
+const authSchema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  confirmPassword: z.string().optional(),
+}).refine(data => {
+  // If the action is "register", then confirmPassword must match password
+  if (data.confirmPassword && data.password !== data.confirmPassword) {
+    return false;
+  }
+  return true;
+}, { message: "Passwords do not match", path: ["confirmPassword"] });
+
+type AuthFormValues = z.infer<typeof authSchema>;
+
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register } = useAuth();
+  const { user, login, register, loginWithGoogle } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const controls = useAnimation();
   const bgControls = useAnimation();
@@ -78,8 +93,7 @@ export default function AuthPage() {
     
     // Background animation with subtle parallax effect
     bgControls.start({
-      x: [0, 50, 0],
-      y: [0, 30, 0],
+      scale: [1, 1.05, 1],
       transition: {
         duration: 90,
         repeat: Infinity,
@@ -89,11 +103,12 @@ export default function AuthPage() {
     });
   }, [user, navigate, bgControls]);
 
-  const form = useForm<InsertUser>({
-    resolver: zodResolver(insertUserSchema),
+  const form = useForm<AuthFormValues>({
+    resolver: zodResolver(authSchema),
     defaultValues: {
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
@@ -111,6 +126,10 @@ export default function AuthPage() {
       if (action === "login") {
         await login(data.email, data.password);
       } else {
+        if (data.password !== data.confirmPassword) {
+          form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
+          throw new Error("Passwords do not match");
+        }
         await register(data.email, data.password);
       }
       
@@ -130,9 +149,19 @@ export default function AuthPage() {
       setIsSubmitting(false);
     }
   };
+  
+  const handleGoogleSignIn = async () => {
+    try {
+      await loginWithGoogle();
+      navigate("/");
+    } catch (error) {
+      console.error("Google sign-in failed", error);
+    }
+  };
 
   const handleTabChange = (value: "login" | "register") => {
     setActiveTab(value);
+    form.reset(); // Reset form state
     // Reset form errors when switching tabs
     form.clearErrors();
     // Play tab switch animation
@@ -198,13 +227,14 @@ export default function AuthPage() {
         {/* Dynamic background with optimized particles */}
         <motion.div 
           className="absolute inset-0 overflow-hidden z-0"
-          animate={bgControls}
         >
-          <img
+          <motion.img
             src={schoolBg}
             alt="School Campus"
             className="w-full h-full object-cover opacity-20"
             loading="lazy"
+            animate={bgControls}
+            style={{ transform: "scale(1.1)" }} // Slightly enlarge the image to prevent shrinking effect
           />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-indigo-900/90" />
           
@@ -329,7 +359,7 @@ export default function AuthPage() {
                   </TabsList>
                 </motion.div>
 
-                <div className="mt-8 relative h-72">
+                <div className="mt-8 relative h-96"> {/* Increased height of the form container */}
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeTab}
@@ -342,10 +372,7 @@ export default function AuthPage() {
                       <TabsContent value={activeTab} className="h-full">
                         <Form {...form}>
                           <form
-                            onSubmit={(e) => {
-                              e.preventDefault();
-                              handleSubmit(activeTab);
-                            }}
+                            onSubmit={form.handleSubmit(() => handleSubmit(activeTab))}
                             className="space-y-6 h-full flex flex-col"
                           >
                             <div className="space-y-5">
@@ -420,16 +447,61 @@ export default function AuthPage() {
                                   </FormItem>
                                 )}
                               />
+                              {activeTab === "register" && (
+                                <FormField
+                                  control={form.control}
+                                  name="confirmPassword"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-white/90 font-medium">
+                                        Confirm Password
+                                      </FormLabel>
+                                      <FormControl>
+                                        <motion.div
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: 0.3 }}
+                                        >
+                                          <div className="relative">
+                                            <Input
+                                              type={showConfirmPassword ? "text" : "password"}
+                                              placeholder="Confirm your password"
+                                              {...field}
+                                              className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
+                                              autoComplete="new-password"
+                                            />
+                                            <LockKeyhole className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
+                                            <button
+                                              type="button"
+                                              className="absolute right-3 top-3 text-blue-200/60 hover:text-cyan-400 transition-colors"
+                                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                              aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                                            >
+                                              {showConfirmPassword ? (
+                                                <EyeOff className="h-5 w-5" />
+                                              ) : (
+                                                <Eye className="h-5 w-5" />
+                                              )}
+                                            </button>
+                                          </div>
+                                        </motion.div>
+                                      </FormControl>
+                                      <FormMessage className="text-red-400/90" />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
                             </div>
                             
                             <motion.div
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              transition={{ delay: 0.3 }}
+                              transition={{ delay: 0.4 }}
                               className="mt-auto"
                             >
                               <motion.div
                                 animate={controls}
+                                className={activeTab === 'register' ? "grid grid-cols-2 gap-4" : ""}
                               >
                                 <Button 
                                   type="submit" 
@@ -447,7 +519,7 @@ export default function AuthPage() {
                                     </>
                                   ) : (
                                     <>
-                                      <span className="relative z-10 flex items-center gap-2">
+                                      <span className="relative z-10 flex items-center justify-center gap-2">
                                         {activeTab === "login" ? (
                                           <>
                                             <LockKeyhole className="h-5 w-5" />
@@ -464,7 +536,22 @@ export default function AuthPage() {
                                     </>
                                   )}
                                 </Button>
+                                
+                                {/* Google Sign-in Button */}
+                                <Button 
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleGoogleSignIn}
+                                  className={cn(
+                                    "w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors flex items-center justify-center gap-2",
+                                    activeTab === 'login' ? "mt-4" : ""
+                                  )}
+                                >
+                                  <img src="https://www.google.com/favicon.ico" alt="Google logo" className="h-5 w-5" />
+                                  {activeTab === "login" ? "Sign in with Google" : "Google"}
+                                </Button>
                               </motion.div>
+
                             </motion.div>
                           </form>
                         </Form>

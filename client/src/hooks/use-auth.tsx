@@ -7,6 +7,8 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -17,6 +19,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -104,6 +107,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const userCredential = await signInWithPopup(auth, provider);
+      const firebaseUser = userCredential.user;
+
+      // Fetch user role from Firestore
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      let role = 'user'; // Default role
+      if (userDoc.exists()) {
+        role = userDoc.data().role || 'user';
+      }
+
+      const appUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role,
+      };
+      
+      setUser(appUser);
+      toast({ title: "Signed in with Google successfully!" });
+    } catch (error: any) {
+      setError(error);
+      toast({
+        variant: "destructive",
+        title: "Google sign-in failed",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
   const logout = async () => {
     try {
       await signOut(auth);
@@ -128,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         register,
+        loginWithGoogle,
       }}
     >
       {children}
