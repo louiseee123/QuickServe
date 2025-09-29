@@ -7,7 +7,9 @@ import {
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup
 } from "firebase/auth";
 
 type AuthContextType = {
@@ -17,6 +19,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -63,13 +66,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // Manually set user to trigger redirect
+      const appUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role: "user", // Assign a default role
+      };
+      setUser(appUser);
+      
       toast({ title: "Welcome back!" });
     } catch (error: any) {
       setError(error);
       toast({
         variant: "destructive",
         title: "Login failed",
+        description: error.message,
+      });
+      throw error;
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const userCredential = await signInWithPopup(auth, provider);
+      const firebaseUser = userCredential.user;
+      const appUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role: "user", // Assign a default role
+      };
+      setUser(appUser);
+      toast({ title: "Signed in with Google successfully!" });
+    } catch (error: any) {
+      setError(error);
+      toast({
+        variant: "destructive",
+        title: "Google sign-in failed",
         description: error.message,
       });
       throw error;
@@ -100,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         register,
+        loginWithGoogle,
       }}
     >
       {children}
