@@ -1,8 +1,9 @@
 
 import {Router, Request, Response} from "express";
 import * as admin from "firebase-admin";
-import { UserRecord } from "firebase-admin/auth";
-import { DocumentData, DocumentReference, Firestore, QueryDocumentSnapshot, QuerySnapshot } from "firebase-admin/firestore";
+import {UserRecord} from "firebase-admin/auth";
+import {DocumentData, DocumentReference, Firestore, 
+    QueryDocumentSnapshot, QuerySnapshot} from "firebase-admin/firestore";
 
 const router = Router(); // eslint-disable-line new-cap
 const db: Firestore = admin.firestore();
@@ -27,9 +28,9 @@ router.post("/signup", async (req: Request, res: Response) => {
     res.status(201).send({uid: userRecord.uid, email: userRecord.email, role});
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -42,16 +43,17 @@ router.post("/signin", async (req: Request, res: Response) => {
   const {email} = req.body;
   try {
     const userRecord: UserRecord = await auth.getUserByEmail(email);
-    const userDoc: DocumentData = await db.collection("users").doc(userRecord.uid).get();
+    const userDoc: DocumentData = await db.collection("users")
+        .doc(userRecord.uid).get();
     const userData: DocumentData | undefined = userDoc.data();
     res.status(200).send({
       uid: userRecord.uid, email: userRecord.email, role: userData?.role,
     });
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -68,13 +70,14 @@ router.post("/request", async (req: Request, res: Response) => {
       dateRequested: new Date(),
       status: "pending",
     };
-    const docRef: DocumentReference = await db.collection("requests").add(newRequest);
+    const docRef: DocumentReference = await db.collection("requests")
+        .add(newRequest);
     res.status(201).send({id: docRef.id, ...newRequest});
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -83,13 +86,14 @@ router.post("/request", async (req: Request, res: Response) => {
 router.get("/requests", async (req: Request, res: Response) => {
   try {
     const snapshot: QuerySnapshot = await db.collection("requests").get();
-    const requests = snapshot.docs.map((doc: QueryDocumentSnapshot) => ({id: doc.id, ...doc.data()}));
+    const requests = snapshot.docs.map((doc: QueryDocumentSnapshot) => 
+        ({id: doc.id, ...doc.data()}));
     res.status(200).send(requests);
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -101,7 +105,7 @@ router.put("/request/:id", async (req: Request, res: Response) => {
 
   try {
     const requestRef: DocumentReference = db.collection("requests").doc(id);
-    const updateData: {[key: string]: any} = {status};
+    const updateData: {[key: string]: string | Date | undefined} = {status};
     if (lecturerId) {
       updateData.lecturerId = lecturerId;
     }
@@ -118,9 +122,9 @@ router.put("/request/:id", async (req: Request, res: Response) => {
     res.status(200).send({id, ...updateData});
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -133,9 +137,9 @@ router.post("/profile", async (req: Request, res: Response) => {
     res.status(201).send({uid, ...profileData});
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -144,7 +148,8 @@ router.post("/profile", async (req: Request, res: Response) => {
 router.get("/profile/:uid", async (req: Request, res: Response) => {
   const {uid} = req.params;
   try {
-    const docSnap: DocumentData = await db.collection("profiles").doc(uid).get();
+    const docSnap: DocumentData = await db.collection("profiles")
+        .doc(uid).get();
     if (docSnap.exists) {
       res.status(200).send(docSnap.data());
     } else {
@@ -152,9 +157,9 @@ router.get("/profile/:uid", async (req: Request, res: Response) => {
     }
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });
@@ -168,9 +173,9 @@ router.put("/profile/:uid", async (req: Request, res: Response) => {
     res.status(200).send({uid, ...profileData});
   } catch (error: unknown) {
     if (error instanceof Error) {
-        res.status(400).send({error: error.message});
+      res.status(400).send({error: error.message});
     } else {
-        res.status(400).send({error: "An unknown error occurred"});
+      res.status(400).send({error: "An unknown error occurred"});
     }
   }
 });

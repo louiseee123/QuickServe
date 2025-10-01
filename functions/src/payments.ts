@@ -19,17 +19,18 @@ const stripe = new Stripe(functions.config().stripe.secret_key, {
   apiVersion: "2024-04-10",
 });
 
-export const createPaymentIntent = functions.https.onCall(async (data, context) => {
+export const createPaymentIntent = functions.https.onCall(async (data, 
+    context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated",
-        "You must be logged in to make a payment.");
+      "You must be logged in to make a payment.");
   }
 
   const {documentType, documentId} = data;
 
   if (!documentType || !documentId) {
     throw new functions.https.HttpsError("invalid-argument",
-        "Missing required data: documentType and documentId.");
+      "Missing required data: documentType and documentId.");
   }
 
   const basePrice = documentPrices[documentType];
@@ -37,7 +38,7 @@ export const createPaymentIntent = functions.https.onCall(async (data, context) 
   // If there's no price, the document is free.
   if (!basePrice) {
     throw new functions.https.HttpsError("invalid-argument",
-        "This document does not require payment.");
+      "This document does not require payment.");
   }
 
   // Calculate the total amount to charge to cover Stripe's fee.
@@ -67,7 +68,7 @@ export const createPaymentIntent = functions.https.onCall(async (data, context) 
   } catch (error) {
     console.error("Stripe PaymentIntent creation failed:", error);
     throw new functions.https.HttpsError("internal",
-        "Failed to create payment intent.");
+      "Failed to create payment intent.");
   }
 });
 
@@ -81,8 +82,9 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
 
   try {
     event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
-  } catch (err: any) {
-    res.status(400).send(`Webhook Error: ${err.message}`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Unknown error";
+    res.status(400).send(`Webhook Error: ${message}`);
     return;
   }
 
@@ -95,7 +97,7 @@ export const stripeWebhook = functions.https.onRequest(async (req, res) => {
         // Use a Firestore transaction to safely update the document
         await admin.firestore().runTransaction(async (transaction) => {
           const docRef = admin.firestore().collection("document_requests")
-              .doc(documentId);
+            .doc(documentId);
           transaction.update(docRef, {paymentStatus: "Paid"});
         });
         console.log("Successfully updated payment status for document: " +
