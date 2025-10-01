@@ -1,518 +1,298 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
-import { insertRequestSchema, type InsertRequest } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import Nav from "@/components/nav";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import type { Document, DocumentRequest, InsertRequest, DocumentInsert } from "@shared/schema";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileText, ArrowRight, CheckCircle, HelpCircle, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
-import { cn } from "@/lib/utils";
-import Nav from "@/components/nav";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import logo from "@/Assets/logocctc.png";
 
-const documentTypes = [
-  "Transcript of Records",
-  "Certification",
-  "Form 137",
-  "Diploma",
-  "Good Moral Certificate",
-];
-
-const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year"];
-
+// --- Constants for Dropdowns ---
 const courses = [
-  "Bachelor of Science in Information Technology",
-  "Bachelor of Science in Computer Science",
-  "Bachelor of Elementary Education",
-  "Bachelor of Secondary Education",
-  "Bachelor of Science in Business Administration",
-  "Bachelor of Science in Accountancy",
+  { acronym: "BSIT", name: "Bachelor of Science in Information Technology" },
+  { acronym: "BSHM", name: "Bachelor of Science in Hospitality Management" },
+  { acronym: "BEED", name: "Bachelor of Elementary Education" },
+  { acronym: "BSED", name: "Bachelor of Secondary Education" },
+  { acronym: "BPED", name: "Bachelor of Physical Education" },
 ];
 
-const steps = [
-  {
-    title: "Fill out the form",
-    description: "Provide your details and document requirements",
-    icon: <FileText className="h-5 w-5" />,
-  },
-  {
-    title: "Review your request",
-    description: "Double-check all information before submitting",
-    icon: <CheckCircle className="h-5 w-5" />,
-  },
-  {
-    title: "Get confirmation",
-    description: "Receive your queue number and tracking details",
-    icon: <HelpCircle className="h-5 w-5" />,
-  },
-];
+const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year", "Irregular"];
+
+interface SelectedDocument extends Document {
+  details?: string;
+}
 
 export default function Request() {
-  const { toast } = useToast();
-  const [, navigate] = useLocation();
-  const { user } = useAuth();
+  const { user, token } = useAuth(); // Added token from useAuth
+  // --- State Management ---
+  const [studentName, setStudentName] = useState("");
+  const [studentId, setStudentId] = useState("");
+  const [email, setEmail] = useState("");
+  const [course, setCourse] = useState("");
+  const [yearLevel, setYearLevel] = useState("");
+  const [purpose, setPurpose] = useState("");
+  const [selectedDocs, setSelectedDocs] = useState<Map<number, SelectedDocument>>(new Map());
 
-  const form = useForm<InsertRequest>({
-    resolver: zodResolver(insertRequestSchema),
-    defaultValues: {
-      studentId: user?.studentId || "",
-      studentName: user?.name || "",
-      yearLevel: "",
-      course: "",
-      email: user?.email || "",
-      documentType: "",
-      purpose: "",
+  const [, setLocation] = useLocation();
+
+  // --- Data Fetching ---
+  const { data: availableDocuments = [], isLoading: isLoadingDocuments } = useQuery<Document[]>({
+    queryKey: ["documents"],
+    queryFn: async () => {
+      const response = await fetch('/api/documents');
+      if (!response.ok) {
+        throw new Error('Failed to fetch documents');
+      }
+      return response.json();
     },
   });
 
-  const mutation = useMutation({
-    mutationFn: async (data: InsertRequest) => {
-      const res = await apiRequest("POST", "/api/requests", data);
-      return res.json();
+  // --- API Mutation ---
+  const mutation = useMutation<DocumentRequest, any, InsertRequest>({
+    mutationFn: async (newRequest) => {
+      if (!token) throw new Error("Authentication token not found.");
+      const response = await fetch("/api/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(newRequest),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Server Error Response:", errorData);
+        throw errorData; 
+      }
+      return response.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: "Request Submitted Successfully!",
-        description: `Your queue number is #${data.queueNumber}. You'll receive updates via email.`,
-      });
-      navigate("/my-requests");
+      toast.success("Request submitted! Redirecting to checkout...");
+      setLocation(`/checkout/${data.id}`);
     },
     onError: (error) => {
-      toast({
-        variant: "destructive",
-        title: "Submission Error",
-        description: error.message || "Please try again later",
-      });
-    },
+      if (error && Array.isArray(error.error)) {
+        const errorMessages = error.error.map(
+          (e: any) => `- ${e.path.join('.') || 'error'}: ${e.message}`
+        ).join('\n');
+        toast.error(`Submission failed:\n${errorMessages}`, {
+          style: { whiteSpace: 'pre-line' },
+        });
+      } else {
+        toast.error(error.error || error.message || "An unexpected error occurred.");
+      }
+    }
   });
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50">
-      <Nav />
-      
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="py-12"
-      >
-        <div className="container mx-auto px-4 sm:px-6">
-          {/* Hero Section */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-16 text-center pt-16"
-          >
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              className="inline-block mb-8"
-            >
-              <img src={logo} alt="CCTC Logo" className="h-24 mx-auto" />
-            </motion.div>
-            
-            <div className="max-w-3xl mx-auto">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 bg-gradient-to-r from-blue-700 to-indigo-800 bg-clip-text text-transparent">
-                Document Request Portal
-              </h1>
-              
-              <p className="text-lg text-gray-700 max-w-3xl mx-auto">
-                Request your official academic documents from CCTC with our streamlined process
-              </p>
-            </div>
-          </motion.section>
+  // --- Event Handlers ---
+  const handleDocSelection = (doc: Document, isSelected: boolean) => {
+    setSelectedDocs(prev => {
+      const newMap = new Map(prev);
+      if (isSelected) {
+        newMap.set(doc.id, { ...doc, details: '' });
+      } else {
+        newMap.delete(doc.id);
+      }
+      return newMap;
+    });
+  };
 
-          {/* Process Steps */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mb-16"
-          >
-            <div className="flex flex-col md:flex-row gap-4 md:gap-8 justify-center">
-              {steps.map((step, index) => (
-                <motion.div
-                  key={step.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex-1"
-                >
-                  <div className="flex flex-col items-center text-center">
-                    <div className="relative mb-6">
-                      <div className="absolute inset-0 bg-blue-100 rounded-full blur-md opacity-70"></div>
-                      <div className="relative bg-white p-4 rounded-full shadow-sm border border-blue-100">
-                        <div className="bg-blue-600 p-3 rounded-full text-white">
-                          {step.icon}
-                        </div>
+  const handleDocDetailsChange = (docId: number, details: string) => {
+    setSelectedDocs(prev => {
+      const newMap = new Map(prev);
+      const doc = newMap.get(docId);
+      if (doc) {
+        newMap.set(docId, { ...doc, details });
+      }
+      return newMap;
+    });
+  };
+  
+  // --- Memoized Calculations ---
+  const { totalAmount, totalProcessingDays } = useMemo(() => {
+    let amount = 0;
+    let days = 0;
+    for (const doc of selectedDocs.values()) {
+      amount += doc.price;
+      days += Math.max(doc.processingTimeDays || 0, 1); // Ensure at least 1 day per document
+    }
+    return { totalAmount: amount, totalProcessingDays: Math.max(days, 1) }; // Ensure total is at least 1
+  }, [selectedDocs]);
+
+  const isFormValid = useMemo(() => {
+    return studentName && studentId && email && course && yearLevel && purpose && selectedDocs.size > 0;
+  }, [studentName, studentId, email, course, yearLevel, purpose, selectedDocs]);
+
+  // --- Submit Handler ---
+  const handleRequest = () => {
+    if (!isFormValid) {
+        toast.error("Please fill out all fields and ensure the request is valid before submitting.");
+        return;
+    }
+    
+    if (!user) {
+      toast.error("You must be logged in to make a request.");
+      return;
+    }
+
+    const documents: DocumentInsert[] = Array.from(selectedDocs.values()).map(doc => ({
+      name: doc.name,
+      details: (doc.name === 'Certification' || doc.name === 'Others') ? doc.details : undefined,
+      price: doc.price, 
+      processingTimeDays: Math.max(doc.processingTimeDays || 0, 1), // Ensure at least 1 day
+    }));
+    
+    const newRequest: InsertRequest = {
+      studentName, 
+      studentId, 
+      email, 
+      course, 
+      yearLevel, 
+      purpose,
+      totalAmount: totalAmount,
+      estimatedCompletionDays: totalProcessingDays,
+      userId: user.id,
+      documents,
+    };
+    
+    console.log("Submitting request payload:", newRequest);
+    mutation.mutate(newRequest);
+  };
+
+  // --- Render ---
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+      <Nav />
+      <main className="container mx-auto pt-32 px-4 pb-16 flex justify-center">
+        <Card className="w-full max-w-4xl bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
+          <CardHeader className="text-center p-8">
+             <CardTitle className="text-3xl font-bold text-gray-800">Request a Document</CardTitle>
+             <CardDescription className="text-gray-600 pt-2">Complete the form below to submit your document request.</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8">
+            {/* Student Details Form */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b">
+              <div className="space-y-2">
+                <Label htmlFor="student-name">Full Name</Label>
+                <Input id="student-name" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="student-id">Student ID</Label>
+                <Input id="student-id" value={studentId} onChange={(e) => setStudentId(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="course">Course</Label>
+                <Select onValueChange={setCourse} value={course}>
+                  <SelectTrigger><SelectValue placeholder="Select your course..." /></SelectTrigger>
+                  <SelectContent>{courses.map(c => <SelectItem key={c.acronym} value={c.name}>{c.name}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="year-level">Year Level</Label>
+                <Select onValueChange={setYearLevel} value={yearLevel}>
+                  <SelectTrigger><SelectValue placeholder="Select your year level..." /></SelectTrigger>
+                  <SelectContent>{yearLevels.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Document Selection */}
+            <div className="space-y-4 mb-8 pb-8 border-b">
+              <Label className="text-lg font-medium text-gray-800">Select Documents</Label>
+              {isLoadingDocuments ? <p>Loading documents...</p> : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {availableDocuments.map(doc => (
+                    <motion.div key={doc.id} layout className="p-4 border rounded-lg flex flex-col gap-2 transition-all hover:shadow-md">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor={`doc-${doc.id}`} className="flex items-center gap-3 font-semibold text-md cursor-pointer">
+                          <Checkbox id={`doc-${doc.id}`} onCheckedChange={(checked) => handleDocSelection(doc, !!checked)} />
+                          {doc.name}
+                        </Label>
+                        <span className="font-bold text-gray-700">PHP {doc.price.toFixed(2)}</span>
                       </div>
-                      {index < steps.length - 1 && (
-                        <div className="hidden md:block absolute top-1/2 right-0 left-full transform -translate-y-1/2">
-                          <ChevronRight className="h-8 w-8 text-gray-300" />
+                      <AnimatePresence>
+                        {selectedDocs.has(doc.id) && (doc.name === 'Certification' || doc.name === 'Others') && (
+                          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="pt-2">
+                            <Input 
+                              placeholder={`Specify for ${doc.name}...`} 
+                              className="mt-1"
+                              value={selectedDocs.get(doc.id)?.details || ''}
+                              onChange={(e) => handleDocDetailsChange(doc.id, e.target.value)}
+                            />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Detailed Purpose */}
+            <div className="space-y-2 mb-8">
+              <Label htmlFor="purpose">Detailed Purpose for Request</Label>
+              <Textarea id="purpose" value={purpose} onChange={(e) => setPurpose(e.target.value)} required rows={4} placeholder="Please provide a detailed reason for your request(s)..."/>
+            </div>
+
+            {/* Summary Section */}
+            <AnimatePresence>
+              {selectedDocs.size > 0 && (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Request Summary</h3>
+                  <div className="space-y-3">
+                    {Array.from(selectedDocs.values()).map(doc => (
+                      <div key={doc.id} className="flex justify-between items-start bg-gray-50 p-3 rounded-lg">
+                        <div>
+                          <p className="font-semibold">{doc.name}</p>
+                          {doc.details && <p className="text-sm text-gray-600 pl-2">&ndash; {doc.details}</p>}
                         </div>
-                      )}
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600">
-                      {step.description}
-                    </p>
+                        <p className="font-semibold whitespace-nowrap">PHP {doc.price.toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-6 space-y-4">
+                     <div className="flex justify-between text-xl font-bold text-gray-800">
+                        <span>Total Amount:</span>
+                        <span>PHP {totalAmount.toFixed(2)}</span>
+                      </div>
+                      <div>
+                        <Label className="text-lg font-medium text-gray-800">Estimated Processing Time</Label>
+                        <div className="flex items-center gap-4 mt-2">
+                           <Progress value={(totalProcessingDays / 30) * 100} className="w-full h-3" />
+                           <span className="font-bold text-lg text-gray-700">{totalProcessingDays} days</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1">This is an estimate. Actual processing time may vary.</p>
+                      </div>
                   </div>
                 </motion.div>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Request Form */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="max-w-5xl mx-auto"
-          >
-            <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-100">
-              <div className="bg-gradient-to-r from-blue-700 to-indigo-700 p-8">
-                <div className="flex items-center gap-4">
-                  <div className="bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                    <FileText className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-white">Document Request Form</h2>
-                    <p className="text-blue-100 mt-1">Please fill out all required fields</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="p-8">
-                <Form {...form}>
-                  <form 
-                    onSubmit={form.handleSubmit((data) => mutation.mutate(data))} 
-                    className="space-y-8"
-                  >
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <FormField
-                        control={form.control}
-                        name="studentId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Student ID</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input 
-                                  {...field} 
-                                  className="placeholder:text-gray-400text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12"
-                                  placeholder="2023-12345"
-                                />
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                  </svg>
-                                </div>
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="studentName"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Full Name</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input 
-                                  {...field} 
-                                  className="text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 placeholder:text-gray-400"
-                                  placeholder="Juan M. Dela Cruz"
-                                />
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="12" cy="7" r="4"></circle>
-                                  </svg>
-                                </div>
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="yearLevel"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Year Level</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <div className="relative">
-                                  <SelectTrigger className="placeholder:text-gray-400 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left text-gray-700">
-                                    <SelectValue placeholder="Select year level" />
-                                  </SelectTrigger>
-                                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                                    </svg>
-                                  </div>
-                                </div>
-                              </FormControl>
-                              <SelectContent className="text-gray-700 bg-white border-gray-200 shadow-lg">
-                                {yearLevels.map((year) => (
-                                  <SelectItem 
-                                    key={year} 
-                                    value={year}
-                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
-                                  >
-                                    {year}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="course"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Course/Program</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <div className="relative">
-                                  <SelectTrigger className="placeholder:text-gray-300 text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
-                                    <SelectValue placeholder="Select your course" />
-                                  </SelectTrigger>
-                                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                                    </svg>
-                                  </div>
-                                </div>
-                              </FormControl>
-                              <SelectContent className="bg-white border-gray-200 shadow-lg">
-                                {courses.map((course) => (
-                                  <SelectItem 
-                                    key={course} 
-                                    value={course}
-                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
-                                  >
-                                    {course}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Email Address</FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input 
-                                  type="email" 
-                                  {...field} 
-                                  className="text-gray-700  bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 placeholder:text-gray-400"
-                                  placeholder="example@email.com"
-                                />
-                                <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                                    <polyline points="22,6 12,13 2,6"></polyline>
-                                  </svg>
-                                </div>
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="documentType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-gray-700">Document Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <div className="relative">
-                                  <SelectTrigger className="text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 pl-10 h-12 text-left">
-                                    <SelectValue placeholder="Select document type" />
-                                  </SelectTrigger>
-                                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                      <polyline points="14 2 14 8 20 8"></polyline>
-                                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                                      <polyline points="10 9 9 9 8 9"></polyline>
-                                    </svg>
-                                  </div>
-                                </div>
-                              </FormControl>
-                              <SelectContent className="bg-white border-gray-200 shadow-lg">
-                                {documentTypes.map((type) => (
-                                  <SelectItem 
-                                    key={type} 
-                                    value={type}
-                                    className="hover:bg-gray-800 focus:bg-gray-800 text-gray-700 hover:text-white focus:text-white"
-                                  >
-                                    {type}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage className="text-red-500" />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="purpose"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">Purpose</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Textarea
-                                {...field}
-                                className="placeholder:text-gray-400 text-gray-700 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-blue-500 min-h-[120px] pl-10"
-                                placeholder="Please provide a detailed purpose for requesting this document (e.g., For employment, scholarship application, etc.)" 
-                                
-                              />
-                              <div className="absolute top-4 left-3 text-gray-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <circle cx="12" cy="12" r="10"></circle>
-                                  <line x1="12" y1="16" x2="12" y2="12"></line>
-                                  <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                              </div>
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-red-500" />
-                        </FormItem>
-                      )}
-                    />
-
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3 }}
-                      className="pt-4"
-                    >
-                      <Button 
-                        type="submit" 
-                        size="lg"
-                        className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg py-6 text-lg font-semibold rounded-lg transition-all duration-300 transform hover:scale-[1.01]"
-                        disabled={mutation.isPending}
-                      >
-                        {mutation.isPending ? (
-                          <span className="flex items-center gap-2">
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Processing Request...
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2">
-                            Submit Request 
-                            <motion.span
-                              initial={{ x: 0 }}
-                              animate={{ x: 4 }}
-                              transition={{ 
-                                repeat: Infinity, 
-                                repeatType: "reverse", 
-                                duration: 0.8 
-                              }}
-                            >
-                              <ArrowRight className="h-5 w-5" />
-                            </motion.span>
-                          </span>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </form>
-                </Form>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Help Section */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className="mt-20 text-center"
-          >
-            <div className="inline-block bg-white/80 backdrop-blur-sm px-8 py-6 rounded-xl border border-gray-200 shadow-sm">
-              <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-                Need help with your request?
-              </h3>
-              <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-                Our registrar's office is happy to assist you with any questions about document requests.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  registrar@cctc.edu.ph
-                </Button>
-                <Button variant="outline" className="border-indigo-500 text-indigo-600 hover:bg-indigo-50">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  (032) 123-4567
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </motion.main>
+              )}
+            </AnimatePresence>
+          </CardContent>
+          <CardFooter className="p-8 mt-4 bg-gray-50/70">
+            <Button 
+              size="lg" 
+              className="w-full h-14 text-lg font-bold" 
+              onClick={handleRequest} 
+              disabled={!isFormValid || mutation.isLoading}
+            >
+              {mutation.isLoading ? "Submitting..." : "Submit Request"}
+            </Button>
+          </CardFooter>
+        </Card>
+      </main>
     </div>
   );
 }

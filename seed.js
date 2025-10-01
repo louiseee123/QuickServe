@@ -1,0 +1,1 @@
+fetch('http://localhost:5000/api/seed-documents', { method: 'POST' }).then(res => res.json()).then(console.log);

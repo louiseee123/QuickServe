@@ -1,25 +1,14 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection
     match /users/{userId} {
-      // Users can read their own profile, admins can read any profile
-      allow read: if request.auth.uid == userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      // Only authenticated users can create their own user document
-      allow create: if request.auth.uid == userId;
-      // Users can only update their own profile.
-      allow update: if request.auth.uid == userId;
+      allow read, write: if request.auth.uid == userId;
     }
-
-    // Document requests collection
+    match /documents/{documentId} {
+      allow read, write: if true;
+    }
     match /document_requests/{requestId} {
-      // A user can create a request for themselves. The userId in the request must match their own uid.
-      allow create: if request.auth.uid == request.resource.data.user_id;
-      // A user can read their own requests. An admin can read all requests.
-      allow read: if request.auth.uid == resource.data.user_id || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      // An admin can update the status of any request.
-      allow update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read, write: if true;
     }
   }
 }

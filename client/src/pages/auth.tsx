@@ -66,7 +66,6 @@ const authSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string().optional(),
 }).refine(data => {
-  // If the action is "register", then confirmPassword must match password
   if (data.confirmPassword && data.password !== data.confirmPassword) {
     return false;
   }
@@ -83,6 +82,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const controls = useAnimation();
   const bgControls = useAnimation();
 
@@ -91,7 +91,6 @@ export default function AuthPage() {
       navigate("/");
     }
     
-    // Background animation with subtle parallax effect
     bgControls.start({
       scale: [1, 1.05, 1],
       transition: {
@@ -102,6 +101,15 @@ export default function AuthPage() {
       }
     });
   }, [user, navigate, bgControls]);
+
+  useEffect(() => {
+    if (authError) {
+      controls.start({
+        x: [0, -10, 10, -10, 10, 0],
+        transition: { duration: 0.6 }
+      });
+    }
+  }, [authError, controls]);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -114,10 +122,10 @@ export default function AuthPage() {
 
   const handleSubmit = async (action: "login" | "register") => {
     setIsSubmitting(true);
+    setAuthError(null);
     const data = form.getValues();
     
     try {
-      // Button press animation
       await controls.start({
         scale: 0.95,
         transition: { duration: 0.1 }
@@ -133,7 +141,6 @@ export default function AuthPage() {
         await register(data.email, data.password);
       }
       
-      // Success animation
       await controls.start({
         scale: 1,
         transition: { type: "spring", stiffness: 500, damping: 15 }
@@ -141,11 +148,7 @@ export default function AuthPage() {
       
       navigate("/");
     } catch (error) {
-      // Error shake animation
-      await controls.start({
-        x: [0, -10, 10, -10, 10, 0],
-        transition: { duration: 0.6 }
-      });
+      setAuthError((error as Error).message);
       setIsSubmitting(false);
     }
   };
@@ -156,15 +159,15 @@ export default function AuthPage() {
       navigate("/");
     } catch (error) {
       console.error("Google sign-in failed", error);
+      setAuthError((error as Error).message);
     }
   };
 
   const handleTabChange = (value: "login" | "register") => {
     setActiveTab(value);
-    form.reset(); // Reset form state
-    // Reset form errors when switching tabs
+    form.reset();
     form.clearErrors();
-    // Play tab switch animation
+    setAuthError(null);
     controls.start({
       scale: 0.98,
       transition: { duration: 0.1 }
@@ -179,7 +182,6 @@ export default function AuthPage() {
 
   return (
     <div className="min-h-screen flex bg-[#0a1a2f] overflow-hidden relative">
-      {/* Floating help button */}
       <motion.button
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -192,7 +194,6 @@ export default function AuthPage() {
         <HelpCircle className="h-6 w-6" />
       </motion.button>
 
-      {/* Help modal */}
       <AnimatePresence>
         {showHelp && (
           <motion.div
@@ -222,9 +223,7 @@ export default function AuthPage() {
         )}
       </AnimatePresence>
 
-      {/* Left side - Auth form with animated background */}
       <div className="flex-1 flex items-center justify-center p-4 relative overflow-hidden min-h-screen">
-        {/* Dynamic background with optimized particles */}
         <motion.div 
           className="absolute inset-0 overflow-hidden z-0"
         >
@@ -234,11 +233,10 @@ export default function AuthPage() {
             className="w-full h-full object-cover opacity-20"
             loading="lazy"
             animate={bgControls}
-            style={{ transform: "scale(1.1)" }} // Slightly enlarge the image to prevent shrinking effect
+            style={{ transform: "scale(1.1)" }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/80 to-indigo-900/90" />
           
-          {/* Optimized animated particles */}
           {[...Array(15)].map((_, i) => (
             <motion.div
               key={i}
@@ -264,7 +262,6 @@ export default function AuthPage() {
           ))}
         </motion.div>
 
-        {/* Auth card with enhanced glass morphism */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -272,7 +269,6 @@ export default function AuthPage() {
           className="w-full max-w-md z-10"
         >
           <Card className="w-full border-0 shadow-2xl bg-white/5 backdrop-blur-lg overflow-hidden border border-white/10 hover:border-white/20 transition-all duration-300">
-            {/* Animated accent bar */}
             <motion.div
               className="h-1.5 bg-gradient-to-r from-cyan-400 to-blue-600 w-full"
               initial={{ width: 0 }}
@@ -319,7 +315,6 @@ export default function AuthPage() {
                   transition={{ delay: 0.6 }}
                 >
                   <TabsList className="grid grid-cols-2 w-full bg-white/5 h-12 relative border border-white/10 rounded-lg">
-                    {/* Animated underline */}
                     <motion.div
                       className={cn(
                         "absolute bottom-0 left-0 h-[2px] bg-cyan-400",
@@ -359,7 +354,7 @@ export default function AuthPage() {
                   </TabsList>
                 </motion.div>
 
-                <div className="mt-8 relative h-96"> {/* Increased height of the form container */}
+                <div className="mt-8 relative h-96"> 
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeTab}
@@ -537,7 +532,6 @@ export default function AuthPage() {
                                   )}
                                 </Button>
                                 
-                                {/* Google Sign-in Button */}
                                 <Button 
                                   type="button"
                                   variant="outline"
@@ -565,14 +559,11 @@ export default function AuthPage() {
         </motion.div>
       </div>
 
-      {/* Right side - Premium hero section */}
       <div className="hidden lg:flex flex-1 bg-gradient-to-b from-[#0a1a2f] to-[#0c1120] relative overflow-hidden border-l border-white/10">
-        {/* Decorative elements with reduced motion for better performance */}
         <div className="absolute inset-0">
           <div className="absolute top-1/4 -right-20 w-96 h-96 rounded-full bg-cyan-500/10 blur-3xl" />
           <div className="absolute bottom-1/3 -left-20 w-80 h-80 rounded-full bg-blue-600/10 blur-3xl" />
           
-          {/* Optimized floating particles */}
           {[...Array(15)].map((_, i) => (
             <motion.div
               key={i}
@@ -649,7 +640,6 @@ export default function AuthPage() {
             ))}
           </div>
 
-          {/* Floating help text - moved lower on the page */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

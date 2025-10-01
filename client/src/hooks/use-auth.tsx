@@ -1,16 +1,16 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { User } from "@shared/schema";
-import { auth, db, functions } from "@/lib/firebase";
-import { httpsCallable } from "firebase/functions";
+import { auth, db } from "@/lib/firebase";
 import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
   GoogleAuthProvider,
-  signInWithPopup
+  signInWithPopup,
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
 type AuthContextType = {
   user: User | null;
@@ -33,20 +33,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch user role from Firestore
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocRef = doc(db, "users", firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
         
-        let role = 'user'; // Default role
-        if (userDoc.exists()) {
-          role = userDoc.data().role || 'user';
-        }
-
         const appUser: User = {
           id: firebaseUser.uid,
           email: firebaseUser.email!,
-          role,
+          role: "user",
+          avatar: firebaseUser.photoURL,
+          name: firebaseUser.displayName,
+          ...(userDoc.exists() ? userDoc.data() : {}),
         };
+
         setUser(appUser);
       } else {
         setUser(null);
@@ -59,8 +57,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string) => {
     try {
-      const createUser = httpsCallable(functions, "createUser");
-      await createUser({ email, password, role: "user" });
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      const role = "user";
+      const userDocRef = doc(db, "users", firebaseUser.uid);
+      await setDoc(userDocRef, { role });
+
+      const appUser: User = {
+        id: firebaseUser.uid,
+        email: firebaseUser.email!,
+        role,
+        avatar: firebaseUser.photoURL,
+        name: firebaseUser.displayName,
+      };
+
+      setUser(appUser);
 
       toast({ title: "Account created successfully!" });
     } catch (error: any) {
@@ -77,24 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const firebaseUser = userCredential.user;
-
-      // Fetch user role from Firestore immediately after login
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      let role = 'user'; // Default role
-      if (userDoc.exists()) {
-        role = userDoc.data().role || 'user';
-      }
-      
-      const appUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email!,
-        role,
-      };
-
-      setUser(appUser);
+      // The onAuthStateChanged listener will handle setting the user state
       toast({ title: "Welcome back!" });
     } catch (error: any) {
       setError(error);
@@ -113,22 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userCredential = await signInWithPopup(auth, provider);
       const firebaseUser = userCredential.user;
 
-      // Fetch user role from Firestore
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocRef = doc(db, "users", firebaseUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      let role = 'user'; // Default role
-      if (userDoc.exists()) {
-        role = userDoc.data().role || 'user';
+      if (!userDoc.exists()) {
+        await setDoc(userDocRef, { role: "user" });
       }
-
-      const appUser: User = {
-        id: firebaseUser.uid,
-        email: firebaseUser.email!,
-        role,
-      };
-      
-      setUser(appUser);
+      // The onAuthStateChanged listener will handle setting the user state
       toast({ title: "Signed in with Google successfully!" });
     } catch (error: any) {
       setError(error);
