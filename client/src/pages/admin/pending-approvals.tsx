@@ -1,301 +1,194 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { DocumentRequest } from "@shared/schema";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
-import { Loader2, FileText, Clock, AlertCircle, CheckCircle, User, ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { RequestDetailsDialog } from "@/components/request-details-dialog";
-import { motion } from "framer-motion";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import Nav from "@/components/nav";
 import { Button } from "@/components/ui/button";
-import { generateExcelReport } from '@/lib/reportGenerator';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { queryClient } from "@/lib/queryClient";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { format } from "date-fns";
+import { Eye, Check, X, Loader2, Calendar as CalendarIcon, Mail, User, GraduationCap, School, FileText, Hash } from "lucide-react";
+import Nav from "@/components/nav";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useState } from "react";
 
-const statusColors = {
-  pending: "bg-yellow-100 text-yellow-800",
-  processing: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  rejected: "bg-red-100 text-red-800",
+
+const statusColors: { [key: string]: string } = {
+    pending_payment: "bg-yellow-400",
+    pending_approval: "bg-orange-400",
+    approved: "bg-green-500",
+    denied: "bg-red-500",
+    in_progress: "bg-blue-500",
+    completed: "bg-indigo-500",
 };
 
-const statusIcons = {
-  pending: <Clock className="h-4 w-4 text-yellow-500" />,
-  processing: <User className="h-4 w-4 text-blue-500" />,
-  completed: <CheckCircle className="h-4 w-4 text-green-500" />,
-  rejected: <AlertCircle className="h-4 w-4 text-red-500" />,
-};
 
 export default function PendingApprovals() {
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({ 
+    queryKey: ["/api/requests/pending-approvals"] 
+  });
+
   const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null);
+  const [isReviewOpen, setReviewOpen] = useState(false);
 
-  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({
-    queryKey: ["/api/requests"],
-  });
-
-  const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/requests/${id}/status`, { status });
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
-      toast({ title: "Status updated successfully" });
-    },
-    onError: () => {
-      toast({
-        variant: "destructive",
-        title: "Failed to update status",
+  const mutation = useMutation<void, Error, { id: number; status: 'pending_payment' | 'denied' }>({
+    mutationFn: async ({ id, status }) => {
+      const response = await fetch(`/api/requests/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
       });
+      if (!response.ok) {
+        throw new Error(`Failed to ${status} request`);
+      }
+    },
+    onSuccess: (_, { status }) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/requests/pending-approvals"] });
+      toast.success(`Request has been ${status}.`);
+      setReviewOpen(false);
+    },
+    onError: (error) => {
+      toast.error(error.message);
     },
   });
 
-  const pendingApprovalRequests = requests.filter(
-    (request) => request.status === "pending"
-  );
-
-  // Stats calculations
-  const requestStats = {
-  accepted: requests.filter(r => r.status === 'completed').length,
-  denied: requests.filter(r => r.status === 'rejected').length,
-  total: requests.filter(r => r.status === 'completed' || r.status === 'rejected').length,
-};
+  const handleAction = (id: number, status: 'pending_payment' | 'denied') => {
+    mutation.mutate({ id, status });
+  };
 
   const columns = [
-    {
-      header: "Queue #",
-      cell: (row: DocumentRequest) => (
-        <span className="font-medium text-[#003366]">#{row.queueNumber}</span>
-      ),
-    },
-    {
-      header: "Student",
-      cell: (row: DocumentRequest) => (
-        <div className="flex items-center gap-2">
-          <User className="h-4 w-4 text-[#0056b3]" />
-          <div>
-            <div className="font-medium">{row.studentName}</div>
-            <div className="text-xs text-gray-500">{row.studentId}</div>
-          </div>
+    { header: "Request ID", accessorKey: "id" },
+    { header: "Student Name", accessorKey: "studentName" },
+    { 
+      header: "Documents", 
+      cell: ({ row }: any) => (
+        <div className="flex flex-col">
+          {row.original.documentRequests.map((dr: any) => (
+            <span key={dr.id}>{dr.documentType}</span>
+          ))}
         </div>
-      ),
+      )
     },
-    {
-      header: "Document",
-      cell: (row: DocumentRequest) => (
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4 text-[#0056b3]" />
-          <span>{row.documentType}</span>
-        </div>
-      ),
+    { 
+      header: "Date Requested", 
+      accessorKey: "createdAt", 
+      cell: ({ row }: any) => format(new Date(row.original.createdAt), "PPp") 
     },
-    {
-      header: "Details",
-      cell: (row: DocumentRequest) => (
-        <div className="text-sm">
-          <Badge variant="outline" className="border-[#0056b3]/30 text-[#003366]">
-            {row.course}
-          </Badge>
-          <div className="text-xs text-gray-500 mt-1">
-            {format(new Date(row.requestedAt), "MMM d, yyyy h:mm a")}
-          </div>
-        </div>
-      ),
+    { 
+        header: "Status", 
+        accessorKey: "status",
+        cell: ({ row }: any) => (
+            <Badge className={`${statusColors[row.original.status] || 'bg-gray-400'} text-white`}>
+                {row.original.status.replace('_',' ').toUpperCase()}
+            </Badge>
+        )
     },
-   {
-  header: "Status",
-  cell: (row: DocumentRequest) => (
-    <Select
-      defaultValue={row.status}
-      onValueChange={(status) => updateStatus.mutate({ id: row.id, status })}
-    >
-      <SelectTrigger className={`w-[150px] ${statusColors[row.status as keyof typeof statusColors]}`}>
-        <div className="flex items-center gap-2">
-          {statusIcons[row.status as keyof typeof statusIcons]}
-          <SelectValue />
-          <ChevronDown className="h-4 w-4 opacity-50" />
-        </div>
-      </SelectTrigger>
-      <SelectContent className="bg-white border-[#0056b3]/20 shadow-lg">
-        <SelectItem 
-          value="completed"
-          className={`hover:bg-green-50 ${statusColors.completed}`}
-        >
-          <div className="flex items-center gap-2">
-            {statusIcons.completed}
-            Accept
-          </div>
-        </SelectItem>
-        <SelectItem 
-          value="rejected"
-          className={`hover:bg-red-50 ${statusColors.rejected}`}
-        >
-          <div className="flex items-center gap-2">
-            {statusIcons.rejected}
-            Deny
-          </div>
-        </SelectItem>
-      </SelectContent>
-    </Select>
-  ),
-},
     {
       header: "Actions",
-      cell: (row: DocumentRequest) => (
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10"
-          onClick={() => setSelectedRequest(row)}
-        >
-          Review
-        </Button>
+      cell: ({ row }: any) => (
+        <div className="flex gap-2">
+          <Button variant="outline" size="icon" onClick={() => { setSelectedRequest(row.original); setReviewOpen(true); }}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-green-600 hover:bg-green-100" onClick={() => handleAction(row.original.id, 'pending_payment')} disabled={mutation.isLoading}>
+            <Check className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-red-600 hover:bg-red-100" onClick={() => handleAction(row.original.id, 'denied')} disabled={mutation.isLoading}>
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
       ),
     },
   ];
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
         <Nav />
-        <div className="container mx-auto pt-24 flex items-center justify-center min-h-[400px]">
-          <Loader2 className="h-8 w-8 animate-spin text-[#0056b3]" />
-        </div>
+        <main className="container mx-auto py-8 pt-24 flex justify-center items-center h-screen">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
+        </main>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
       <Nav />
-      
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="container mx-auto pt-24 px-8 pb-8"
-      >
-        <div className="flex flex-col gap-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-[#003366]">Pending Approvals Dashboard</h1>
-              <p className="text-[#0056b3]">Review and manage all pending document requests</p>
-            </div>
-            <div className="flex gap-3">
-              <Button 
-  variant="outline" 
-  className="border-[#0056b3] text-[#0056b3] hover:bg-[#0056b3]/10 gap-2"
-  onClick={() => generateExcelReport(requests.filter(r => 
-    r.status === 'completed' || r.status === 'rejected'
-  ))}
->
-  <FileText className="h-4 w-4" />
-  Generate Report
-</Button>
-            </div>
-          </div>
+      <main className="container mx-auto py-8 pt-32">
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-gray-800">Pending Approvals</CardTitle>
+            <CardDescription className="text-gray-600">Review and approve or deny document requests.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DataTable columns={columns} data={requests} />
+          </CardContent>
+        </Card>
+      </main>
 
-         {/* Stats Cards */}
-<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.1 }}
-  >
-    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">Total Decisions</CardTitle>
-        <FileText className="h-5 w-5 text-[#0056b3]" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold text-[#003366]">{requestStats.total}</div>
-        <p className="text-xs text-gray-500 mt-1">All approval decisions</p>
-      </CardContent>
-    </Card>
-  </motion.div>
-
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.2 }}
-  >
-    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">Accepted</CardTitle>
-        <CheckCircle className="h-5 w-5 text-green-500" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold text-[#003366]">{requestStats.accepted}</div>
-        <p className="text-xs text-gray-500 mt-1">Approved requests</p>
-      </CardContent>
-    </Card>
-  </motion.div>
-
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.3 }}
-  >
-    <Card className="border-[#0056b3]/20 hover:shadow-lg transition-shadow">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">Denied</CardTitle>
-        <AlertCircle className="h-5 w-5 text-red-500" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold text-[#003366]">{requestStats.denied}</div>
-        <p className="text-xs text-gray-500 mt-1">Rejected requests</p>
-      </CardContent>
-    </Card>
-  </motion.div>
-</div>
-
-          {/* Requests Table */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="mt-6"
-          >
-            <Card className="border-[#0056b3]/20">
-              <CardHeader>
-                <CardTitle className="text-[#003366]">Pending Approval Requests</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {pendingApprovalRequests.length === 0 ? (
-                  <div className="text-center py-8 text-[#0056b3]">
-                    No requests pending approval
-                  </div>
-                ) : (
-                  <DataTable 
-                    data={pendingApprovalRequests} 
-                    columns={columns} 
-                    className="border-none"
-                  />
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        <RequestDetailsDialog
-          request={selectedRequest}
-          open={!!selectedRequest}
-          onOpenChange={(open) => !open && setSelectedRequest(null)}
-          mode="approval"
-        />
-      </motion.main>
+      {/* Review Dialog */}
+      <Dialog open={isReviewOpen} onOpenChange={setReviewOpen}>
+        <DialogContent className="sm:max-w-[625px]">
+            {selectedRequest && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-bold">Review Request #{selectedRequest.id}</DialogTitle>
+                        <DialogDescription>Review the student's information and requested documents before taking action.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-6 py-4">
+                        {/* Student Info Section */}
+                        <div className="grid grid-cols-2 gap-x-8 gap-y-4 p-4 border rounded-lg">
+                            <InfoItem icon={User} label="Student Name" value={selectedRequest.studentName} />
+                            <InfoItem icon={Hash} label="Student ID" value={selectedRequest.studentId} />
+                            <InfoItem icon={Mail} label="Email" value={selectedRequest.email} />
+                            <InfoItem icon={GraduationCap} label="Course" value={selectedRequest.course} />
+                            <InfoItem icon={School} label="Year Level" value={selectedRequest.yearLevel} />
+                            <InfoItem icon={CalendarIcon} label="Date Requested" value={format(new Date(selectedRequest.createdAt), "PPP")} />
+                        </div>
+                        
+                        {/* Purpose Section */}
+                         <div className="p-4 border rounded-lg">
+                             <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4"/> Purpose</h4>
+                            <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedRequest.purpose}</p>
+                        </div>
+                        
+                        {/* Documents Section */}
+                        <div className="p-4 border rounded-lg">
+                            <h4 className="font-semibold mb-3">Requested Documents</h4>
+                            <div className="space-y-3">
+                                {selectedRequest.documentRequests.map((doc, index) => (
+                                    <div key={index} className="flex justify-between items-start bg-gray-50 p-3 rounded-md">
+                                        <div>
+                                            <p className="font-medium">{doc.documentType}</p>
+                                            {doc.details && <p className="text-sm text-gray-600 pl-2">&ndash; {doc.details}</p>}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-4">
+                        <Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
+                        <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleAction(selectedRequest.id, 'denied')} disabled={mutation.isLoading}>Deny</Button>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAction(selectedRequest.id, 'pending_payment')} disabled={mutation.isLoading}>Approve</Button>
+                    </DialogFooter>
+                </>
+            )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+// Helper component for displaying info items
+const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
+    <div className="flex items-start gap-3">
+        <Icon className="h-5 w-5 text-gray-500 mt-1" />
+        <div>
+            <p className="text-sm font-medium text-gray-500">{label}</p>
+            <p className="font-semibold text-gray-800">{value}</p>
+        </div>
+    </div>
+);

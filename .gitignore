@@ -1,6 +1,31 @@
-node_modules
-dist
+# Dependencies
+/node_modules
+
+# Build-related
+/dist
+/functions/lib
+
+# Firebase
+.firebase
+firebase-debug.log
+
+# Environment variables
+.env
+.env.*
+!/.env.example
+
+# Service account keys
+service-account-key.json
+
+# Other
 .DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+npm-debug.log
+
+# Drizzle
+drizzle/
+
+# Stripe
+stripe.tar.gz
+
+# Logs
+ui-debug.log

@@ -1,14 +1,16 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   "projectId": "quickserve-capstone",
   "appId": "1:1029131144860:web:933116ad4604f324a1a759",
   "storageBucket": "quickserve-capstone.appspot.com",
   "apiKey": "AIzaSyDL-LhXtQY_I1nsErM15qrAtEIgJjFyDDA",
-  "authDomain": "localhost", // Changed for local development
+  "authDomain": "quickserve-capstone.firebaseapp.com",
   "messagingSenderId": "1029131144860"
 };
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+export const db = getFirestore(app);

@@ -13,6 +13,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { DocumentRequest } from "@shared/schema";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
 
 interface RequestDetailsDialogProps {
   request: DocumentRequest | null;
@@ -29,23 +31,29 @@ export function RequestDetailsDialog({
 }: RequestDetailsDialogProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [rejectionReason, setRejectionReason] = useState("");
 
   const statusMutation = useMutation({
     mutationFn: async ({
       id,
       status,
+      rejectionReason,
     }: {
       id: number;
       status: "pending" | "denied";
+      rejectionReason?: string;
     }) => {
-      const res = await apiRequest("PATCH", `/api/requests/${id}/status`, {
-        status,
-      });
+      const payload: { status: string; rejectionReason?: string } = { status };
+      if (rejectionReason) {
+        payload.rejectionReason = rejectionReason;
+      }
+      const res = await apiRequest("PATCH", `/api/requests/${id}/status`, payload);
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/requests"] });
       onOpenChange(false);
+      setRejectionReason("");
       toast({
         title: "Status Updated",
         description: "The request status has been updated successfully.",
@@ -116,6 +124,26 @@ export function RequestDetailsDialog({
               {request.purpose}
             </p>
           </div>
+
+          {request.rejectionReason && (
+            <div>
+              <h3 className="font-semibold">Rejection Reason</h3>
+              <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {request.rejectionReason}
+              </p>
+            </div>
+          )}
+
+          {mode === "approval" && request.status === "pending_approval" && (
+            <div className="grid gap-2">
+              <h3 className="font-semibold">Reason for Denial</h3>
+              <Textarea
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                placeholder="Provide a reason for denying the request..."
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
@@ -124,9 +152,13 @@ export function RequestDetailsDialog({
               <Button
                 variant="destructive"
                 onClick={() =>
-                  statusMutation.mutate({ id: request.id, status: "denied" })
+                  statusMutation.mutate({
+                    id: request.id,
+                    status: "denied",
+                    rejectionReason,
+                  })
                 }
-                disabled={statusMutation.isPending}
+                disabled={statusMutation.isPending || rejectionReason.trim() === ""}
               >
                 Deny Request
               </Button>

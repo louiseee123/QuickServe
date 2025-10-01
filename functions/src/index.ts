@@ -18,3 +18,6 @@ app.use("/", apiRoutes);
 
 // Expose the Express app as a Cloud Function named "api"
 export const api = functions.https.onRequest(app);
+
+// Export payment functions
+export { createPaymentIntent, stripeWebhook } from './payments';

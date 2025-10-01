@@ -1,44 +1,60 @@
-import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/hooks/use-auth";
-import Layout from "@/components/layout";
-import Home from "@/pages/home";
-import Request from "@/pages/request";
-import Admin from "@/pages/admin";
-import PendingApprovals from "@/pages/admin/pending-approvals";
-import Auth from "@/pages/auth";
-import MyRequests from "@/pages/my-requests";
-import NotFound from "@/pages/not-found";
-import { ProtectedRoute } from "./components/protected-route";
 
+import { Switch, Route, Redirect } from "wouter";
+import Home from "./pages/home";
+import AuthPage from "./pages/auth";
+import RequestDocument from "./pages/request";
+import MyRequests from "./pages/my-requests";
+import AdminDashboard from "./pages/admin/dashboard";
+import PendingApprovals from "./pages/admin/pending-approvals";
+import PaymentLogs from "./pages/admin/payment-logs";
+import { useAuth } from "./hooks/use-auth";
+import CheckoutPage from "./pages/checkout";
 
-function Router() {
+const App = () => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <div>Loading...</div>; // Or a proper loading spinner
+  }
+
   return (
-    <Layout>
-      <Switch>
-        <Route path="/auth" component={Auth} />
-        <ProtectedRoute path="/" component={Home} />
-        <ProtectedRoute path="/request" component={Request} />
-        <ProtectedRoute path="/admin" component={Admin} />
-        <ProtectedRoute path="/pending-approvals" component={PendingApprovals} />
-        <ProtectedRoute path="/my-requests" component={MyRequests} />
-        <Route component={PendingApprovals} />
-      </Switch>
-    </Layout>
-  );
-}
+    <Switch>
+      <Route path="/">
+        {user ? <Home /> : <Redirect to="/login" />}
+      </Route>
+      <Route path="/login">
+        {!user ? <AuthPage /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/signup">
+        {!user ? <AuthPage /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/request">
+        {user ? <RequestDocument /> : <Redirect to="/login" />}
+      </Route>
+      <Route path="/my-requests">
+        {user ? <MyRequests /> : <Redirect to="/login" />}
+      </Route>
+      <Route path="/checkout/:id">
+        {user ? <CheckoutPage /> : <Redirect to="/login" />}
+      </Route>
+      
+      {/* Admin Routes */}
+      <Route path="/admin/dashboard">
+        {user?.role === "admin" ? <AdminDashboard /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/admin/pending-approvals">
+        {user?.role === "admin" ? <PendingApprovals /> : <Redirect to="/" />}
+      </Route>
+      <Route path="/admin/payment-logs">
+        {user?.role === "admin" ? <PaymentLogs /> : <Redirect to="/" />}
+      </Route>
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
+      {/* Redirect any other path to home */}
+      <Route>
+        <Redirect to="/" />
+      </Route>
+    </Switch>
   );
-}
+};
 
 export default App;
