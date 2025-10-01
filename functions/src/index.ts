@@ -20,4 +20,4 @@ app.use("/", apiRoutes);
 export const api = functions.https.onRequest(app);
 
 // Export payment functions
-export { createPaymentIntent, stripeWebhook } from './payments';
+export {createPaymentIntent, stripeWebhook} from "./payments";
