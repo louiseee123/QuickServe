@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +14,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { fetchWithAuth } from "../lib/api";
+import { FilePlus, User, CheckSquare } from 'lucide-react';
 import "./request.css";
 
 // --- Constants for Dropdowns ---
@@ -162,7 +162,34 @@ export default function Request() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 modern-form">
-      <main className="container mx-auto pt-32 px-4 pb-16 flex justify-center">
+      <main className="container mx-auto pt-32 px-4 pb-16 flex flex-col items-center">
+        {/* 3-Step Guide */}
+        <div className="w-full max-w-5xl mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div className="flex flex-col items-center">
+                    <div className="bg-white rounded-full p-4 mb-4 shadow-md">
+                        <User className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-lg text-blue-800">Step 1: Fill in your Details</h3>
+                    <p className="text-sm text-gray-600">Provide your personal and academic information.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="bg-white rounded-full p-4 mb-4 shadow-md">
+                        <FilePlus className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-lg text-blue-800">Step 2: Select Documents</h3>
+                    <p className="text-sm text-gray-600">Choose the documents you need and specify any details.</p>
+                </div>
+                <div className="flex flex-col items-center">
+                    <div className="bg-white rounded-full p-4 mb-4 shadow-md">
+                        <CheckSquare className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="font-bold text-lg text-blue-800">Step 3: Review and Submit</h3>
+                    <p className="text-sm text-gray-600">Verify your request and submit it for processing.</p>
+                </div>
+            </div>
+        </div>
+
         <Card className="w-full max-w-4xl bg-white shadow-xl rounded-2xl border border-gray-200/80">
           <CardHeader className="text-center p-8">
              <CardTitle className="text-3xl font-bold text-blue-600">Request a Document</CardTitle>

@@ -10,21 +10,21 @@ import campusBg from "./../Assets/bgcctc.jpg";
 
 const features = [
   {
-    icon: <FileText className="h-8 w-8" />,
+    icon: <FileText className="h-12 w-12" />,
     title: "Easy Requests",
     description: "Submit documents in just a few clicks through our intuitive platform",
     color: "from-blue-400 to-blue-600",
     bg: "bg-blue-500/10"
   },
   {
-    icon: <Clock className="h-8 w-8" />,
+    icon: <Clock className="h-12 w-12" />,
     title: "Real-time Tracking",
     description: "Monitor your request status with live updates and notifications",
     color: "from-blue-500 to-blue-700",
     bg: "bg-blue-600/10"
   },
   {
-    icon: <CheckCircle className="h-8 w-8" />,
+    icon: <CheckCircle className="h-12 w-12" />,
     title: "Fast Processing",
     description: "Priority queue system delivers documents in record time",
     color: "from-blue-600 to-blue-800",
@@ -246,8 +246,8 @@ export default function Home() {
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
               <Card className="h-full border-0 shadow-lg bg-white/90 backdrop-blur-sm hover:shadow-xl transition-all">
-                <CardContent className="p-8">
-                  <div className={`${feature.bg} w-16 h-16 rounded-xl flex items-center justify-center mb-6`}>
+                <CardContent className="p-8 text-center">
+                  <div className={`${feature.bg} w-24 h-24 rounded-full flex items-center justify-center mb-6 mx-auto`}>
                     <div className={feature.color.replace('from-', 'text-').replace(' to-', '')}>
                       {feature.icon}
                     </div>
@@ -347,9 +347,10 @@ export default function Home() {
                       {features[currentFeature].description}
                     </p>
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-8 aspect-video flex items-center justify-center">
-                      <div className="text-7xl font-bold text-blue-500/20">
-                        {currentFeature + 1}
-                      </div>
+                      <p className="text-center text-blue-500/80">
+                        <strong className="block text-2xl font-bold text-blue-600">Streamlined Workflow</strong>
+                        <span className="mt-2">From request to release, a fully digital and transparent process.</span>
+                      </p>
                     </div>
                   </motion.div>
                 </AnimatePresence>
