@@ -1,42 +1,38 @@
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { format } from 'date-fns';
+import { Eye, Check, X, User, Hash, Mail, GraduationCap, School, Calendar, FileText, Loader2 } from 'lucide-react';
+import Nav from '@/components/nav';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { useState } from 'react';
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { DocumentRequest } from "@shared/schema";
-import { DataTable } from "@/components/ui/data-table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { format } from "date-fns";
-import { Eye, Check, X, Loader2, Calendar as CalendarIcon, Mail, User, GraduationCap, School, FileText, Hash } from "lucide-react";
-import Nav from "@/components/nav";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { toast } from "sonner";
-import { useState } from "react";
-
-
-const statusColors: { [key: string]: string } = {
-    pending_payment: "bg-yellow-400",
-    pending_approval: "bg-orange-400",
-    approved: "bg-green-500",
-    denied: "bg-red-500",
-    in_progress: "bg-blue-500",
-    completed: "bg-indigo-500",
+const statusColors = {
+  pending_payment: 'bg-yellow-400',
+  pending_approval: 'bg-orange-400',
+  approved: 'bg-green-500',
+  denied: 'bg-red-500',
+  in_progress: 'bg-blue-500',
+  completed: 'bg-indigo-500',
 };
-
 
 export default function PendingApprovals() {
   const queryClient = useQueryClient();
-  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({ 
-    queryKey: ["/api/requests/pending-approvals"] 
+  const { data: requests = [], isLoading } = useQuery({
+    queryKey: ['/api/requests/pending-approvals'],
   });
 
-  const [selectedRequest, setSelectedRequest] = useState<DocumentRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState(null);
   const [isReviewOpen, setReviewOpen] = useState(false);
 
-  const mutation = useMutation<void, Error, { id: number; status: 'pending_payment' | 'denied' }>({
+  const mutation = useMutation({
     mutationFn: async ({ id, status }) => {
       const response = await fetch(`/api/requests/${id}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status }),
       });
       if (!response.ok) {
@@ -44,7 +40,7 @@ export default function PendingApprovals() {
       }
     },
     onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ["/api/requests/pending-approvals"] });
+      queryClient.invalidateQueries({ queryKey: ['/api/requests/pending-approvals'] });
       toast.success(`Request has been ${status}.`);
       setReviewOpen(false);
     },
@@ -53,40 +49,40 @@ export default function PendingApprovals() {
     },
   });
 
-  const handleAction = (id: number, status: 'pending_payment' | 'denied') => {
+  const handleAction = (id, status) => {
     mutation.mutate({ id, status });
   };
 
   const columns = [
-    { header: "Request ID", accessorKey: "id" },
-    { header: "Student Name", accessorKey: "studentName" },
-    { 
-      header: "Documents", 
-      cell: ({ row }: any) => (
+    { header: 'Request ID', accessorKey: 'id' },
+    { header: 'Student Name', accessorKey: 'studentName' },
+    {
+      header: 'Documents',
+      cell: ({ row }) => (
         <div className="flex flex-col">
-          {row.original.documentRequests.map((dr: any) => (
+          {row.original.documentRequests.map((dr) => (
             <span key={dr.id}>{dr.documentType}</span>
           ))}
         </div>
-      )
-    },
-    { 
-      header: "Date Requested", 
-      accessorKey: "createdAt", 
-      cell: ({ row }: any) => format(new Date(row.original.createdAt), "PPp") 
-    },
-    { 
-        header: "Status", 
-        accessorKey: "status",
-        cell: ({ row }: any) => (
-            <Badge className={`${statusColors[row.original.status] || 'bg-gray-400'} text-white`}>
-                {row.original.status.replace('_',' ').toUpperCase()}
-            </Badge>
-        )
+      ),
     },
     {
-      header: "Actions",
-      cell: ({ row }: any) => (
+      header: 'Date Requested',
+      accessorKey: 'createdAt',
+      cell: ({ row }) => format(new Date(row.original.createdAt), 'PPp'),
+    },
+    {
+      header: 'Status',
+      accessorKey: 'status',
+      cell: ({ row }) => (
+        <Badge className={`${statusColors[row.original.status] || 'bg-gray-400'} text-white`}>
+          {row.original.status.replace('_', ' ').toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      header: 'Actions',
+      cell: ({ row }) => (
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={() => { setSelectedRequest(row.original); setReviewOpen(true); }}>
             <Eye className="h-4 w-4" />
@@ -145,12 +141,12 @@ export default function PendingApprovals() {
                             <InfoItem icon={Mail} label="Email" value={selectedRequest.email} />
                             <InfoItem icon={GraduationCap} label="Course" value={selectedRequest.course} />
                             <InfoItem icon={School} label="Year Level" value={selectedRequest.yearLevel} />
-                            <InfoItem icon={CalendarIcon} label="Date Requested" value={format(new Date(selectedRequest.createdAt), "PPP")} />
+                            <InfoItem icon={Calendar} label="Date Requested" value={format(new Date(selectedRequest.createdAt), 'PPP')} />
                         </div>
                         
                         {/* Purpose Section */}
                          <div className="p-4 border rounded-lg">
-                             <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4"/> Purpose</h4>
+                             <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Purpose</h4>
                             <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedRequest.purpose}</p>
                         </div>
                         
@@ -183,7 +179,7 @@ export default function PendingApprovals() {
 }
 
 // Helper component for displaying info items
-const InfoItem = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
+const InfoItem = ({ icon: Icon, label, value }) => (
     <div className="flex items-start gap-3">
         <Icon className="h-5 w-5 text-gray-500 mt-1" />
         <div>

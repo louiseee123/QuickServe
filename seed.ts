@@ -1,6 +1,6 @@
 
-import { db } from '../../firebase';
-import { seedDocuments } from './documents.seed';
+import { db } from './server/firebase';
+import { seedDocuments } from './server/src/db/documents.seed';
 
 async function seed() {
   console.log('Seeding Firestore database...');

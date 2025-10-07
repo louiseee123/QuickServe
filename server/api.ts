@@ -1,7 +1,6 @@
 
 import { Router, Request, Response } from 'express';
 import { db } from './firebase';
-import { doc, getDoc, collection, addDoc, getDocs, updateDoc, query, where, orderBy } from 'firebase/firestore';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { insertRequestSchema } from '@shared/schema';
@@ -18,9 +17,37 @@ const router = Router();
 // Documents endpoint
 router.get('/documents', async (req: Request, res: Response) => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'documents'));
+    const querySnapshot = await db.collection('documents').get();
     const documents = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     res.status(200).send(documents);
+  } catch (error: any) {
+    res.status(400).send({ error: error.message });
+  }
+});
+
+// Seed documents endpoint
+router.post('/seed-documents', async (req: Request, res: Response) => {
+  try {
+    const documents = [
+      { name: 'Transcript of Records', price: 150 },
+      { name: 'Honorable Dismissal', price: 50 },
+      { name: 'Authentication and Verification', price: 75 },
+      { name: 'Course Description', price: 100 },
+      { name: 'Certificate of Grades', price: 120 },
+      { name: 'Certificate of Graduation', price: 200 },
+      { name: 'Certificate of Enrollment', price: 80 },
+      { name: 'Certificate of Registration', price: 80 },
+      { name: 'Certified True Copy of Diploma', price: 60 },
+      { name: 'Certified True Copy of Grades', price: 60 },
+      { name: 'Test Document', price: 1 },
+    ];
+
+    const collectionRef = db.collection('documents');
+    for (const doc of documents) {
+      await collectionRef.add(doc);
+    }
+
+    res.status(200).send({ message: 'Documents seeded successfully' });
   } catch (error: any) {
     res.status(400).send({ error: error.message });
   }
@@ -29,37 +56,40 @@ router.get('/documents', async (req: Request, res: Response) => {
 // Create a new document request
 router.post('/request', async (req: Request, res: Response) => {
     try {
-        // 1. Validate the entire request body, including the documents array.
         const validatedRequest = insertRequestSchema.parse(req.body);
 
-        // 2. Create the complete request object to be saved.
         const newRequest = {
-            ...validatedRequest, // This now includes the 'documents' array.
+            ...validatedRequest,
             requestedAt: new Date(),
-            status: 'pending_payment',
+            status: 'pending',
             paymentStatus: 'unpaid',
-            // This random number is not safe for production, but we'll leave it for now.
             queueNumber: Math.floor(Math.random() * 1000), 
         };
         
-        // 3. Add the single, complete request document to the 'requests' collection.
-        const docRef = await addDoc(collection(db, 'requests'), newRequest);
+        const docRef = await db.collection('requests').add(newRequest);
         
-        // 4. Return the newly created request, including its new ID.
         const newRequestWithId = { id: docRef.id, ...newRequest };
         res.status(201).send(newRequestWithId);
 
     } catch (error: any) {
-        // Handle validation errors from Zod
         if (error.errors) {
             return res.status(400).send({ error: error.errors });
         }
-        // Handle other errors
         console.error("Error creating request:", error);
         res.status(400).send({ error: error.message });
     }
 });
 
+// Get all document requests for admin
+router.get('/requests/all', async (req: Request, res: Response) => {
+    try {
+        const querySnapshot = await db.collection("requests").orderBy("requestedAt", "desc").get();
+        const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        res.status(200).send(requests);
+    } catch (error: any) {
+        res.status(400).send({ error: error.message });
+    }
+});
 
 // Get document requests for a user
 router.get('/requests', async (req: Request, res: Response) => {
@@ -68,10 +98,25 @@ router.get('/requests', async (req: Request, res: Response) => {
         return res.status(400).send({ error: 'userId is required' });
     }
     try {
-        const q = query(collection(db, "requests"), where("userId", "==", userId), orderBy("requestedAt", "desc"));
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await db.collection("requests").where("userId", "==", userId).orderBy("requestedAt", "desc").get();
         const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.status(200).send(requests);
+    } catch (error: any) {
+        res.status(400).send({ error: error.message });
+    }
+});
+
+// Update request status
+router.patch('/request/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!status) {
+        return res.status(400).send({ error: 'status is required' });
+    }
+    try {
+        const requestRef = db.collection('requests').doc(id);
+        await requestRef.update({ status });
+        res.status(200).send({ message: 'Request status updated successfully' });
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
@@ -83,27 +128,22 @@ router.post('/create-checkout-session', async (req, res) => {
   const { requestId } = req.body;
 
   try {
-    const requestDocRef = doc(db, 'requests', requestId);
-    const requestDoc = await getDoc(requestDocRef);
+    const requestDocRef = db.collection('requests').doc(requestId);
+    const requestDoc = await requestDocRef.get();
     
-    if (!requestDoc.exists()) {
+    if (!requestDoc.exists) {
       return res.status(404).send({ error: 'Request not found' });
     }
 
     const request = requestDoc.data();
-    // Corrected to check for totalAmount and allow it to be 0
     if (!request || typeof request.totalAmount === 'undefined') {
       return res.status(404).send({ error: 'Request data or totalAmount not found' });
     }
     
-    // If the total is 0, we can't create a Stripe session. 
-    // We'll handle this case on the frontend, but as a safeguard:
     if (request.totalAmount === 0) {
-        // Here, we could auto-approve the request, but for now, we'll send an error.
         return res.status(400).send({ error: "Cannot create a checkout session for a free request." });
     }
     
-    // Corrected to read document names from the documents array on the main request object
     const documentNames = request.documents.map((d: any) => d.name).join(', ');
 
     const session = await stripe.checkout.sessions.create({
@@ -116,7 +156,6 @@ router.post('/create-checkout-session', async (req, res) => {
               name: `Document Request: ${documentNames}`,
               description: `Request ID: ${requestId}`,
             },
-            // Corrected to use totalAmount and ensure it's in cents
             unit_amount: request.totalAmount * 100,
           },
           quantity: 1,
@@ -153,15 +192,13 @@ router.post('/stripe-webhook', express.raw({type: 'application/json'}), async (r
 
     if (requestId) {
       try {
-        const requestRef = doc(db, 'requests', requestId);
-        // Update the request status upon successful payment
-        await updateDoc(requestRef, {
+        const requestRef = db.collection('requests').doc(requestId);
+        await requestRef.update({
           paymentStatus: 'paid',
-          status: 'processing', // Move to processing once paid
+          status: 'processing',
         });
 
-        // Record the payment in a separate 'payments' collection for auditing
-        await addDoc(collection(db, 'payments'), {
+        await db.collection('payments').add({
           requestId,
           amount: session.amount_total! / 100,
           currency: session.currency,
