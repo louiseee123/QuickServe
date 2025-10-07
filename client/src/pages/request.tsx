@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import Nav from "@/components/nav";
 import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { Document, DocumentRequest, InsertRequest, DocumentInsert } from "@shared/schema";
@@ -162,8 +161,7 @@ export default function Request() {
 
   // --- Render ---
   return (
-    <div className="min-h-screen bg-gray-50 modern-form">
-      <Nav />
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 modern-form">
       <main className="container mx-auto pt-32 px-4 pb-16 flex justify-center">
         <Card className="w-full max-w-4xl bg-white shadow-xl rounded-2xl border border-gray-200/80">
           <CardHeader className="text-center p-8">

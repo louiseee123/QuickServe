@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import Nav from "@/components/nav";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Search, Loader2 } from "lucide-react";
@@ -71,7 +70,6 @@ export default function MyRequests() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-      <Nav />
       <motion.main 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
