@@ -1,0 +1,46 @@
+
+.modern-form .form-label {
+  @apply block text-gray-700 text-sm font-semibold mb-2;
+}
+
+.modern-form .form-input,
+.modern-form .form-select,
+.modern-form .form-textarea {
+  @apply w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300;
+}
+
+.modern-form .form-checkbox {
+  @apply w-5 h-5 bg-gray-100 border-2 border-gray-300 rounded text-blue-500 focus:ring-blue-500 transition-all duration-300;
+}
+
+.modern-form .form-button {
+  @apply w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transform-gpu hover:-translate-y-1 transition-all duration-300;
+}
+
+.modern-form .form-button:disabled {
+  @apply bg-gray-400 cursor-not-allowed;
+}
+
+.modern-form .summary-card {
+  @apply bg-white p-6 rounded-xl shadow-lg border border-gray-200;
+}
+
+.modern-form .summary-title {
+  @apply text-xl font-bold text-gray-800 mb-4;
+}
+
+.modern-form .summary-item {
+  @apply flex justify-between items-start bg-gray-50 p-3 rounded-lg mb-3;
+}
+
+.modern-form .summary-total {
+  @apply flex justify-between text-xl font-bold text-gray-800 pt-4 border-t border-gray-200;
+}
+
+.modern-form .progress-bar-container {
+  @apply bg-gray-200 rounded-full h-3;
+}
+
+.modern-form .progress-bar {
+  @apply bg-blue-500 h-3 rounded-full;
+}
