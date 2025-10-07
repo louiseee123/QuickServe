@@ -162,7 +162,7 @@ export default function Request() {
   // --- Render ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 modern-form">
-      <main className="container mx-auto pt-32 px-4 pb-16 flex flex-col items-center">
+      <main className="container mx-auto pt-24 px-4 pb-16 flex flex-col items-center">
         {/* 3-Step Guide */}
         <div className="w-full max-w-5xl mb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
