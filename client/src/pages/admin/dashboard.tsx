@@ -6,7 +6,6 @@ import { useState, useMemo } from "react";
 import { RequestDetailsDialog } from "@/components/request-details-dialog";
 import { motion } from "framer-motion";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import Nav from "@/components/nav";
 import { Button } from "@/components/ui/button";
 import { generateExcelReport } from "@/lib/reportGenerator";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
@@ -120,7 +119,6 @@ export default function AdminDashboard() {
     if (isLoading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-                <Nav />
                 <div className="container mx-auto pt-24 flex items-center justify-center min-h-[400px]">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
@@ -130,8 +128,6 @@ export default function AdminDashboard() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-            <Nav />
-            
             <motion.main
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}

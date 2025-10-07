@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { format } from 'date-fns';
 import { Eye, Check, X, User, Hash, Mail, GraduationCap, School, Calendar, FileText, Loader2 } from 'lucide-react';
-import Nav from '@/components/nav';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -101,7 +100,6 @@ export default function PendingApprovals() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-        <Nav />
         <main className="container mx-auto py-8 pt-24 flex justify-center items-center h-screen">
           <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
         </main>
@@ -111,7 +109,6 @@ export default function PendingApprovals() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <Nav />
       <main className="container mx-auto py-8 pt-32">
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
           <CardHeader>

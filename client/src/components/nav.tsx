@@ -58,7 +58,7 @@ export default function Nav() {
 
   return (
     <motion.header
-      className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-lg border-b border-gray-200/80"
+      className="fixed top-0 w-full z-50 bg-blue-900/80 backdrop-blur-lg border-b border-white/10 shadow-xl"
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
@@ -72,7 +72,7 @@ export default function Nav() {
               whileTap={{ scale: 0.95 }}
             >
               <img src={logo} alt="QuickServe Logo" className="h-10 w-auto" />
-              <span className="text-xl font-bold text-gray-800">
+              <span className="text-xl font-bold text-white transition-colors">
                 QuickServe
               </span>
             </motion.div>
@@ -85,10 +85,10 @@ export default function Nav() {
                   className={cn(
                     "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
                     location === link.href
-                      ? "bg-blue-100/80 text-blue-800"
-                      : "text-gray-600 hover:bg-blue-50/80 hover:text-blue-800"
+                      ? "bg-white/10 text-white"
+                      : "text-blue-100 hover:bg-white/5"
                   )}
-                  whileHover={{ y: -2 }}
+                  whileHover={{ y: -2, scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   {link.icon}
@@ -101,35 +101,35 @@ export default function Nav() {
           <div className="hidden md:flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <motion.div whileHover={{ scale: 1.05 }}>
                   <Button
                     variant="outline"
-                    className="flex items-center gap-2 h-12 px-4 rounded-full transition-colors border-gray-200/90 hover:border-gray-300"
+                    className="flex items-center gap-2 h-12 px-4 rounded-full transition-colors border-white/20 bg-white/5 hover:bg-white/10 text-white"
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={user.avatar || undefined} />
-                      <AvatarFallback className="font-medium bg-blue-100 text-blue-700">
+                      <AvatarFallback className="font-medium bg-white/10 text-blue-100">
                         {user.email.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium text-gray-700">
+                    <span className="font-medium text-white transition-colors">
                       {user.email}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-600" />
+                    <ChevronDown className="h-4 w-4 text-blue-100 transition-colors" />
                   </Button>
                 </motion.div>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                className="w-56"
+                className="w-56 bg-blue-800/90 backdrop-blur-lg border-white/10 text-white mt-2 rounded-xl shadow-xl"
                 align="end"
               >
                 <DropdownMenuLabel className="p-3">
-                  <p className="text-sm font-medium text-gray-800">{user.email}</p>
-                  <p className="text-xs text-gray-500">{user.role}</p>
+                  <p className="text-sm font-medium text-white truncate">{user.email}</p>
+                  <p className="text-xs text-blue-200 capitalize">{user.role}</p>
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem
-                  className="text-red-600 focus:bg-red-50 focus:text-red-700 p-3 cursor-pointer"
+                  className="text-red-300 focus:bg-red-500/50 focus:text-white p-3 cursor-pointer text-sm font-medium"
                   onClick={() => logout()}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
@@ -140,7 +140,7 @@ export default function Nav() {
           </div>
 
           <motion.button
-            className="md:hidden p-2 rounded-lg border text-gray-700 border-gray-200/90"
+            className="md:hidden p-2 rounded-lg border text-white border-white/20 transition-colors"
             onClick={() => setIsMobileOpen(!isMobileOpen)}
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
@@ -155,7 +155,7 @@ export default function Nav() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-gray-200/80"
+              className="md:hidden border-t border-white/10 pb-6"
             >
               <div className="pt-2 pb-6 space-y-2">
                 {links.map((link) => (
@@ -164,8 +164,8 @@ export default function Nav() {
                       className={cn(
                         "block px-4 py-3 rounded-lg font-medium flex items-center gap-3 transition-colors",
                         location === link.href
-                          ? "bg-blue-100/80 text-blue-800"
-                          : "text-gray-600 hover:bg-blue-50/80 hover:text-blue-800"
+                          ? "bg-white/10 text-white"
+                          : "text-blue-100 hover:bg-white/5"
                       )}
                       onClick={() => setIsMobileOpen(false)}
                     >
@@ -175,21 +175,21 @@ export default function Nav() {
                   </Link>
                 ))}
 
-                <div className="pt-4 mt-4 border-t border-gray-200/80">
+                <div className="pt-4 mt-4 border-t border-white/10">
                     <div className="flex items-center gap-3 px-4 py-2">
                         <Avatar className="h-10 w-10">
                             <AvatarImage src={user.avatar || undefined} />
-                            <AvatarFallback className="font-medium bg-blue-100 text-blue-700">
+                            <AvatarFallback className="font-medium bg-white/10 text-blue-100">
                                 {user.email.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                         </Avatar>
                         <div>
-                            <p className="font-medium text-gray-800">{user.email}</p>
-                            <p className="text-sm text-gray-500">{user.role}</p>
+                            <p className="font-medium text-white truncate">{user.email}</p>
+                            <p className="text-sm text-blue-200 capitalize">{user.role}</p>
                         </div>
                     </div>
                      <motion.button
-                        className="w-full mt-3 px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 bg-red-100/80 text-red-700"
+                        className="w-full mt-3 px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 bg-red-400/80 text-white"
                         onClick={() => {
                           logout();
                           setIsMobileOpen(false);
