@@ -28,6 +28,18 @@ const documents: Document[] = [
     name: 'Honorable Dismissal',
     price: 100,
   },
+  {
+    name: 'Certification',
+    price: 100,
+  },
+  {
+    name: 'Others',
+    price: 100,
+  },
+  {
+    name: 'Test Document',
+    price: 1,
+  },
 ];
 
 export const seedDocuments = async (db: Firestore) => {

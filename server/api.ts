@@ -25,34 +25,6 @@ router.get('/documents', async (req: Request, res: Response) => {
   }
 });
 
-// Seed documents endpoint
-router.post('/seed-documents', async (req: Request, res: Response) => {
-  try {
-    const documents = [
-      { name: 'Transcript of Records', price: 150 },
-      { name: 'Honorable Dismissal', price: 50 },
-      { name: 'Authentication and Verification', price: 75 },
-      { name: 'Course Description', price: 100 },
-      { name: 'Certificate of Grades', price: 120 },
-      { name: 'Certificate of Graduation', price: 200 },
-      { name: 'Certificate of Enrollment', price: 80 },
-      { name: 'Certificate of Registration', price: 80 },
-      { name: 'Certified True Copy of Diploma', price: 60 },
-      { name: 'Certified True Copy of Grades', price: 60 },
-      { name: 'Test Document', price: 1 },
-    ];
-
-    const collectionRef = db.collection('documents');
-    for (const doc of documents) {
-      await collectionRef.add(doc);
-    }
-
-    res.status(200).send({ message: 'Documents seeded successfully' });
-  } catch (error: any) {
-    res.status(400).send({ error: error.message });
-  }
-});
-
 // Create a new document request
 router.post('/request', async (req: Request, res: Response) => {
     try {

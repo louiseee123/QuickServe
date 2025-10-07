@@ -9,6 +9,8 @@ import PendingApprovals from "./pages/admin/pending-approvals";
 import PaymentLogs from "./pages/admin/payment-logs";
 import { useAuth } from "./hooks/use-auth";
 import CheckoutPage from "./pages/checkout";
+import Layout from "./components/layout"; // Import the main layout
+import FooterOnlyLayout from "./components/footer-only-layout";
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -18,42 +20,42 @@ const App = () => {
   }
 
   return (
-    <Switch>
-      <Route path="/">
-        {user ? <Home /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/login">
-        {!user ? <AuthPage /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/signup">
-        {!user ? <AuthPage /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/request">
-        {user ? <RequestDocument /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/my-requests">
-        {user ? <MyRequests /> : <Redirect to="/login" />}
-      </Route>
-      <Route path="/checkout/:id">
-        {user ? <CheckoutPage /> : <Redirect to="/login" />}
-      </Route>
-      
-      {/* Admin Routes */}
-      <Route path="/admin/dashboard">
-        {user?.role === "admin" ? <AdminDashboard /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin/pending-approvals">
-        {user?.role === "admin" ? <PendingApprovals /> : <Redirect to="/" />}
-      </Route>
-      <Route path="/admin/payment-logs">
-        {user?.role === "admin" ? <PaymentLogs /> : <Redirect to="/" />}
-      </Route>
+      <Switch>
+        <Route path="/">
+          {user ? <Layout><Home /></Layout> : <Redirect to="/login" />}
+        </Route>
+        <Route path="/login">
+          {!user ? <FooterOnlyLayout><AuthPage /></FooterOnlyLayout> : <Redirect to="/" />}
+        </Route>
+        <Route path="/signup">
+          {!user ? <FooterOnlyLayout><AuthPage /></FooterOnlyLayout> : <Redirect to="/" />}
+        </Route>
+        <Route path="/request">
+          {user ? <Layout><RequestDocument /></Layout> : <Redirect to="/login" />}
+        </Route>
+        <Route path="/my-requests">
+          {user ? <Layout><MyRequests /></Layout> : <Redirect to="/login" />}
+        </Route>
+        <Route path="/checkout/:id">
+          {user ? <Layout><CheckoutPage /></Layout> : <Redirect to="/login" />}
+        </Route>
+        
+        {/* Admin Routes */}
+        <Route path="/admin/dashboard">
+          {user?.role === "admin" ? <Layout><AdminDashboard /></Layout> : <Redirect to="/" />}
+        </Route>
+        <Route path="/admin/pending-approvals">
+          {user?.role === "admin" ? <Layout><PendingApprovals /></Layout> : <Redirect to="/" />}
+        </Route>
+        <Route path="/admin/payment-logs">
+          {user?.role === "admin" ? <Layout><PaymentLogs /></Layout> : <Redirect to="/" />}
+        </Route>
 
-      {/* Redirect any other path to home */}
-      <Route>
-        <Redirect to="/" />
-      </Route>
-    </Switch>
+        {/* Redirect any other path to home */}
+        <Route>
+          <Redirect to="/" />
+        </Route>
+      </Switch>
   );
 };
 

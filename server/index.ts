@@ -3,8 +3,14 @@ import http from "http";
 import apiRoutes from "./api";
 import { setupVite, serveStatic, log } from "./vite";
 import { setupAuth } from "./auth";
+import cors from 'cors';
+import documentsRouter from './src/routes/documents';
 
 const app = express();
+
+// Enable CORS for all routes
+app.use(cors({ origin: 'http://localhost:5173' }));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
@@ -41,6 +47,7 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  app.use('/api/documents', documentsRouter);
   app.use("/api", apiRoutes);
 
   const server = http.createServer(app);

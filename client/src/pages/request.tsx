@@ -49,7 +49,13 @@ export default function Request() {
   // --- Data Fetching ---
   const { data: availableDocuments = [], isLoading: isLoadingDocuments } = useQuery<Document[]>({
     queryKey: ["documents"],
-    queryFn: async () => fetchWithAuth('/api/documents'),
+    queryFn: async () => {
+      const response = await fetch('/api/documents');
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    },
   });
 
   // --- API Mutation ---

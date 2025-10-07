@@ -1,9 +1,9 @@
-import { initializeApp, applicationDefault } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import admin from 'firebase-admin';
+import serviceAccountKey from './serviceAccountKey.json' assert { type: 'json' };
 
-initializeApp({
-  credential: applicationDefault(),
-  projectId: 'quickserve-capstone',
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccountKey)
 });
 
-export const db = getFirestore();
+export const db = admin.firestore();
+export const auth = admin.auth();

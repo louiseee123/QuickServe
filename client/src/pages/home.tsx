@@ -7,7 +7,6 @@ import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import campusBg from "./../Assets/bgcctc.jpg";
-import Nav from "./../components/nav";
 
 const features = [
   {
@@ -129,19 +128,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">
-      {/* Glass Navbar */}
-      <motion.header 
-        className={cn(
-          "backdrop-blur-lg bg-white/20 border-b border-white/10 shadow-sm sticky top-0 z-50 transition-all",
-          scrolled ? "bg-blue-900/90" : "bg-white/5"
-        )}
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
-      >
-        <Nav />
-      </motion.header>
-
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-4">
         <div className="absolute inset-0 z-0">

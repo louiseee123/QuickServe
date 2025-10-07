@@ -1,11 +1,11 @@
 
 import { auth } from "./firebase";
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const user = auth.currentUser;
   if (!user) {
-    // If the user is not authenticated, you might want to redirect to login
-    // or handle it in a way that makes sense for your application.
     throw new Error("User not authenticated. Please log in.");
   }
 
@@ -17,14 +17,15 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
     Authorization: `Bearer ${token}`,
   };
 
-  const response = await fetch(url, { ...options, headers });
+  const fullUrl = `${API_URL}${url}`;
+
+  const response = await fetch(fullUrl, { ...options, headers });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
     throw new Error(errorData.message || "An error occurred with the API request.");
   }
 
-  // If the response has no content, we can return a success indicator
   if (response.status === 204 || response.headers.get("content-length") === "0") {
     return { success: true }; 
   }
