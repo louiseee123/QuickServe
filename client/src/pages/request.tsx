@@ -49,7 +49,7 @@ export default function Request() {
   const { data: availableDocuments = [], isLoading: isLoadingDocuments } = useQuery<Document[]>({
     queryKey: ["documents"],
     queryFn: async () => {
-      const response = await fetch('/api/documents');
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/documents`);
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
@@ -61,7 +61,7 @@ export default function Request() {
   const mutation = useMutation<DocumentRequest, any, InsertRequest>({
     mutationFn: async (newRequest) => {
       if (!token) throw new Error("Authentication token not found.");
-      const response = await fetch("/api/request", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/request`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

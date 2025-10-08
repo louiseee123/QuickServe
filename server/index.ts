@@ -9,7 +9,7 @@ import documentsRouter from './src/routes/documents';
 const app = express();
 
 // Enable CORS for all routes
-app.use(cors({ origin: 'http://localhost:5173' }));
+app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

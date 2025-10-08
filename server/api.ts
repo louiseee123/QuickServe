@@ -14,17 +14,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const router = Router();
 
-// Documents endpoint
-router.get('/documents', async (req: Request, res: Response) => {
-  try {
-    const querySnapshot = await db.collection('documents').get();
-    const documents = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    res.status(200).send(documents);
-  } catch (error: any) {
-    res.status(400).send({ error: error.message });
-  }
-});
-
 // Create a new document request
 router.post('/request', async (req: Request, res: Response) => {
     try {

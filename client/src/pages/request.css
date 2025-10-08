@@ -1,46 +1,50 @@
-
+/* --- Base Form Styles --- */
 .modern-form .form-label {
-  @apply block text-gray-700 text-sm font-semibold mb-2;
+  @apply block text-sm font-semibold mb-2 text-gray-800;
 }
 
 .modern-form .form-input,
 .modern-form .form-select,
 .modern-form .form-textarea {
-  @apply w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all duration-300;
+  @apply w-full px-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all duration-300 shadow-sm;
 }
 
 .modern-form .form-checkbox {
-  @apply w-5 h-5 bg-gray-100 border-2 border-gray-300 rounded text-blue-500 focus:ring-blue-500 transition-all duration-300;
+  @apply w-5 h-5 bg-gray-100 border-2 border-gray-300 rounded text-blue-600 focus:ring-blue-600 focus:ring-offset-2 transition-all duration-300;
 }
 
+/* --- Form Button --- */
 .modern-form .form-button {
-  @apply w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transform-gpu hover:-translate-y-1 transition-all duration-300;
+  @apply w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg transform-gpu hover:-translate-y-1 hover:shadow-2xl transition-all duration-300 ease-in-out;
 }
 
 .modern-form .form-button:disabled {
-  @apply bg-gray-400 cursor-not-allowed;
+  @apply bg-gray-400 cursor-not-allowed from-gray-400 to-gray-500;
 }
 
+
+/* --- Summary Card --- */
 .modern-form .summary-card {
-  @apply bg-white p-6 rounded-xl shadow-lg border border-gray-200;
+  @apply bg-white/60 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-gray-200/80;
 }
 
 .modern-form .summary-title {
-  @apply text-xl font-bold text-gray-800 mb-4;
+  @apply text-2xl font-bold text-blue-900 mb-6 text-center;
 }
 
 .modern-form .summary-item {
-  @apply flex justify-between items-start bg-gray-50 p-3 rounded-lg mb-3;
+  @apply flex justify-between items-start bg-white/80 p-4 rounded-lg mb-3 shadow-sm;
 }
 
 .modern-form .summary-total {
-  @apply flex justify-between text-xl font-bold text-gray-800 pt-4 border-t border-gray-200;
+  @apply flex justify-between text-xl font-bold text-gray-900 pt-5 pb-2 border-t-2 border-dashed border-gray-300;
 }
 
+/* --- Progress Bar --- */
 .modern-form .progress-bar-container {
-  @apply bg-gray-200 rounded-full h-3;
+  @apply bg-gray-200 rounded-full h-3.5 shadow-inner;
 }
 
 .modern-form .progress-bar {
-  @apply bg-blue-500 h-3 rounded-full;
+    @apply bg-gradient-to-r from-green-400 to-blue-500 h-3.5 rounded-full transition-all duration-500 ease-out;
 }
