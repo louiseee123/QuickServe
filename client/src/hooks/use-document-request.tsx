@@ -1,7 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { doc, getDoc, Timestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { getRequestById } from "@/lib/api";
 import type { DocumentRequest } from "@shared/schema";
 
 export const useDocumentRequest = (requestId?: string) => {
@@ -9,19 +8,7 @@ export const useDocumentRequest = (requestId?: string) => {
     queryKey: ["document_request", requestId],
     queryFn: async () => {
       if (!requestId) return null;
-
-      const docRef = doc(db, "document_requests", requestId);
-      const docSnap = await getDoc(docRef);
-
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        return {
-          id: docSnap.id,
-          ...data,
-          requestedAt: (data.requestedAt as Timestamp).toDate().toISOString(),
-        } as DocumentRequest;
-      }
-      return null;
+      return getRequestById(requestId);
     },
     enabled: !!requestId,
   });

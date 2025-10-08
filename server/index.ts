@@ -2,7 +2,6 @@ import express, { type Request, Response, NextFunction } from "express";
 import http from "http";
 import apiRoutes from "./api";
 import { setupVite, serveStatic, log } from "./vite";
-import { setupAuth } from "./auth";
 import cors from 'cors';
 import documentsRouter from './src/routes/documents';
 
@@ -13,8 +12,6 @@ app.use(cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-setupAuth(app);
 
 app.use((req, res, next) => {
   const start = Date.now();

@@ -1,25 +1,18 @@
 
-import { auth } from "./firebase";
-
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
-  const user = auth.currentUser;
-  if (!user) {
-    throw new Error("User not authenticated. Please log in.");
-  }
-
-  const token = await user.getIdToken();
-
   const headers = {
     ...options.headers,
     "Content-Type": "application/json",
-    Authorization: `Bearer ${token}`,
   };
 
   const fullUrl = `${API_URL}${url}`;
 
-  const response = await fetch(fullUrl, { ...options, headers });
+  // Include credentials to send cookies with the request
+  const fetchOptions = { ...options, headers, credentials: 'include' as const };
+
+  const response = await fetch(fullUrl, fetchOptions);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
@@ -31,4 +24,8 @@ export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   }
 
   return response.json();
+}
+
+export async function getRequestById(id: string) {
+  return fetchWithAuth(`/api/request/${id}`);
 }

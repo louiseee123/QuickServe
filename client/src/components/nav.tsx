@@ -1,7 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { FileText, ChevronDown, LogOut, Menu, X, DollarSign, LayoutDashboard } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
+import useAuth from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import logo from "./../Assets/QSLogo.png";
 import {
@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
 
 export default function Nav() {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
@@ -130,7 +130,10 @@ export default function Nav() {
                 <DropdownMenuSeparator className="bg-white/10" />
                 <DropdownMenuItem
                   className="text-red-300 focus:bg-red-500/50 focus:text-white p-3 cursor-pointer text-sm font-medium"
-                  onClick={() => logout()}
+                  onClick={() => {
+                    logout();
+                    setLocation('/auth');
+                  }}
                 >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Sign out</span>
@@ -192,6 +195,7 @@ export default function Nav() {
                         className="w-full mt-3 px-4 py-3 rounded-lg font-medium flex items-center justify-center gap-2 bg-red-400/80 text-white"
                         onClick={() => {
                           logout();
+                          setLocation('/auth');
                           setIsMobileOpen(false);
                         }}
                       >

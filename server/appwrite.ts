@@ -1,0 +1,12 @@
+import { Client, Account, Databases, Storage } from "node-appwrite";
+
+const client = new Client();
+
+client
+    .setEndpoint("https://fra.cloud.appwrite.io/v1") // Your Appwrite Endpoint
+    .setProject("quickserve") // Your project ID
+    .setKey("standard_743584a5d6590df84ab796b250c5867c5c46115e637689fa84dc2ef158eb10220f2a5e77ad93b546c1bdc84243596fdee7aeef1913efa7ab05545373374777a9c9aa9c8d479e4202e0d489cbc7da7e4f852a26aeeab66d6b2949e51e84a9d7c1eceaa88d1530a1f05cb6e341985f79ee03efcb452f9c16db0568f8595f4b413d"); // Your secret API key
+
+export const account = new Account(client);
+export const databases = new Databases(client);
+export const storage = new Storage(client);

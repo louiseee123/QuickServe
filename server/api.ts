@@ -1,6 +1,7 @@
 
 import { Router, Request, Response } from 'express';
-import { db } from './firebase';
+import { databases } from './appwrite';
+import { ID, Query } from 'node-appwrite';
 import Stripe from 'stripe';
 import dotenv from 'dotenv';
 import { insertRequestSchema } from '@shared/schema';
@@ -14,23 +15,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 const router = Router();
 
+const DATABASE_ID = '68e64920003173cabdb1';
+const REQUESTS_COLLECTION_ID = 'requests';
+
 // Create a new document request
 router.post('/request', async (req: Request, res: Response) => {
     try {
         const validatedRequest = insertRequestSchema.parse(req.body);
 
-        const newRequest = {
+        const newRequestData = {
             ...validatedRequest,
-            requestedAt: new Date(),
-            status: 'pending',
-            paymentStatus: 'unpaid',
-            queueNumber: Math.floor(Math.random() * 1000), 
+            requestedAt: new Date().toISOString(),
+            document_status: 'submitted', 
+            payment_status: 'unpaid', 
         };
         
-        const docRef = await db.collection('requests').add(newRequest);
+        const document = await databases.createDocument(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            ID.unique(),
+            newRequestData
+        );
         
-        const newRequestWithId = { id: docRef.id, ...newRequest };
-        res.status(201).send(newRequestWithId);
+        res.status(201).send(document);
 
     } catch (error: any) {
         if (error.errors) {
@@ -44,9 +51,12 @@ router.post('/request', async (req: Request, res: Response) => {
 // Get all document requests for admin
 router.get('/requests/all', async (req: Request, res: Response) => {
     try {
-        const querySnapshot = await db.collection("requests").orderBy("requestedAt", "desc").get();
-        const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).send(requests);
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            [Query.orderDesc('$createdAt')]
+        );
+        res.status(200).send(response.documents);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
@@ -59,11 +69,34 @@ router.get('/requests', async (req: Request, res: Response) => {
         return res.status(400).send({ error: 'userId is required' });
     }
     try {
-        const querySnapshot = await db.collection("requests").where("userId", "==", userId).orderBy("requestedAt", "desc").get();
-        const requests = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        res.status(200).send(requests);
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
+        );
+        res.status(200).send(response.documents);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
+    }
+});
+
+// Get a single document request by ID
+router.get('/request/:id', async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const document = await databases.getDocument(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            id
+        );
+        const { $id, ...rest } = document;
+        res.status(200).send({ id: $id, ...rest });
+    } catch (error: any) {
+        if (error.code === 404) {
+            res.status(404).send({ error: 'Request not found' });
+        } else {
+            res.status(500).send({ error: error.message });
+        }
     }
 });
 
@@ -75,8 +108,12 @@ router.patch('/request/:id', async (req: Request, res: Response) => {
         return res.status(400).send({ error: 'status is required' });
     }
     try {
-        const requestRef = db.collection('requests').doc(id);
-        await requestRef.update({ status });
+        await databases.updateDocument(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            id,
+            { document_status: status }
+        );
         res.status(200).send({ message: 'Request status updated successfully' });
     } catch (error: any) {
         res.status(400).send({ error: error.message });
@@ -89,18 +126,16 @@ router.post('/create-checkout-session', async (req, res) => {
   const { requestId } = req.body;
 
   try {
-    const requestDocRef = db.collection('requests').doc(requestId);
-    const requestDoc = await requestDocRef.get();
+    const request = await databases.getDocument(
+        DATABASE_ID,
+        REQUESTS_COLLECTION_ID,
+        requestId
+    );
     
-    if (!requestDoc.exists) {
+    if (!request) {
       return res.status(404).send({ error: 'Request not found' });
     }
 
-    const request = requestDoc.data();
-    if (!request || typeof request.totalAmount === 'undefined') {
-      return res.status(404).send({ error: 'Request data or totalAmount not found' });
-    }
-    
     if (request.totalAmount === 0) {
         return res.status(400).send({ error: "Cannot create a checkout session for a free request." });
     }
@@ -148,25 +183,20 @@ router.post('/stripe-webhook', express.raw({type: 'application/json'}), async (r
   }
 
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
+    const session = event.data.object as Stripe.Checkout.Session;
     const requestId = session.metadata?.requestId;
 
     if (requestId) {
       try {
-        const requestRef = db.collection('requests').doc(requestId);
-        await requestRef.update({
-          paymentStatus: 'paid',
-          status: 'processing',
-        });
-
-        await db.collection('payments').add({
-          requestId,
-          amount: session.amount_total! / 100,
-          currency: session.currency,
-          stripeChargeId: session.payment_intent,
-          status: session.payment_status,
-          createdAt: new Date(),
-        });
+        await databases.updateDocument(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID,
+            requestId,
+            {
+              payment_status: 'paid',
+              document_status: 'processing',
+            }
+        );
       } catch (error: any) {
         console.error(`Error updating request ${requestId}: ${error.message}`);
       }

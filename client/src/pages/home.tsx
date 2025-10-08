@@ -1,12 +1,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Link } from "wouter";
-import { FileText, Clock, CheckCircle, ArrowRight, ChevronRight, BookOpen, ShieldCheck, Users, Mail, MapPin, Phone, Star, User, Lock, HelpCircle } from "lucide-react";
+import { Link, Redirect } from "wouter";
+import { FileText, Clock, CheckCircle, ArrowRight, ChevronRight, BookOpen, ShieldCheck, Users, Mail, MapPin, Phone, Star, User, Lock, HelpCircle, Loader2 } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import campusBg from "./../Assets/bgcctc.jpg";
+import useAuth from "@/hooks/use-auth";
 
 const features = [
   {
@@ -85,6 +86,7 @@ const stats = [
 ];
 
 export default function Home() {
+  const { user, isLoading } = useAuth();
   const [currentFeature, setCurrentFeature] = useState(0);
   const [isVisible, setIsVisible] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -125,6 +127,18 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Redirect to="/auth" />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100">

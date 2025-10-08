@@ -1,6 +1,6 @@
+import useAuth from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,7 +76,7 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register, loginWithGoogle } = useAuth();
+  const { user, login, register, isLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -87,7 +87,7 @@ export default function AuthPage() {
   const bgControls = useAnimation();
 
   useEffect(() => {
-    if (user) {
+    if (!isLoading && user) {
       navigate("/");
     }
     
@@ -100,7 +100,7 @@ export default function AuthPage() {
         ease: "easeInOut"
       }
     });
-  }, [user, navigate, bgControls]);
+  }, [user, navigate, bgControls, isLoading]);
 
   useEffect(() => {
     if (authError) {
@@ -132,13 +132,13 @@ export default function AuthPage() {
       });
       
       if (action === "login") {
-        await login(data.email, data.password);
+        await login({email: data.email, password: data.password});
       } else {
         if (data.password !== data.confirmPassword) {
           form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
           throw new Error("Passwords do not match");
         }
-        await register(data.email, data.password);
+        await register({email: data.email, password: data.password, name: ''});
       }
       
       await controls.start({
@@ -154,13 +154,13 @@ export default function AuthPage() {
   };
   
   const handleGoogleSignIn = async () => {
-    try {
-      await loginWithGoogle();
-      navigate("/");
-    } catch (error) {
-      console.error("Google sign-in failed", error);
-      setAuthError((error as Error).message);
-    }
+    // try {
+    //   await loginWithGoogle();
+    //   navigate("/");
+    // } catch (error) {
+    //   console.error("Google sign-in failed", error);
+    //   setAuthError((error as Error).message);
+    // }
   };
 
   const handleTabChange = (value: "login" | "register") => {
@@ -179,6 +179,14 @@ export default function AuthPage() {
       });
     }, 100);
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a1a2f]">
+        <Loader2 className="h-12 w-12 text-white animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-[#0a1a2f] overflow-hidden relative">

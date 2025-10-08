@@ -28,10 +28,12 @@ export default function Layout({ children }: { children: ReactNode }) {
     duration: 0.4,
   };
 
+  const isAuthPage = location === "/auth";
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Nav />
-      <main className="flex-1 w-full pt-20 overflow-hidden">
+      {!isAuthPage && <Nav />}
+      <main className={`flex-1 w-full overflow-hidden ${!isAuthPage ? "pt-20" : ""}`}>
         <AnimatePresence mode="wait">
           <motion.div
             key={location}
