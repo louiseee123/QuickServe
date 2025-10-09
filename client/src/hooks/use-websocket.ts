@@ -8,7 +8,12 @@ type StatusUpdatePayload = {
   documentRequest: DocumentRequest;
 };
 
-type WSPayload = StatusUpdatePayload;
+type NewRequestPayload = {
+  type: "NEW_REQUEST";
+  documentRequest: DocumentRequest;
+};
+
+type WSPayload = StatusUpdatePayload | NewRequestPayload;
 
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
@@ -46,6 +51,18 @@ export function useWebSocket() {
         toast({
           title: "Request Status Updated",
           description: `Document request #${payload.documentRequest.queueNumber} status updated to ${payload.documentRequest.status}`
+        });
+      } else if (payload.type === "NEW_REQUEST") {
+        // Add to the requests cache
+        queryClient.setQueryData<DocumentRequest[]>(["/api/requests"], (old) => {
+          if (!old) return [payload.documentRequest];
+          return [payload.documentRequest, ...old];
+        });
+
+        // Show toast notification for new request
+        toast({
+          title: "New Document Request",
+          description: `A new document request #${payload.documentRequest.queueNumber} has been submitted.`
         });
       }
     };

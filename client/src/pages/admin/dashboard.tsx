@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/ui/data-table";
 import { format, subDays } from "date-fns";
-import { FileText, Calendar, Loader2 } from "lucide-react";
+import { FileText, Calendar, Loader2, CheckCircle, XCircle, Clock, File as FileIcon } from "lucide-react";
 import { useState, useMemo } from "react";
 import { RequestDetailsDialog } from "@/components/request-details-dialog";
 import { motion } from "framer-motion";
@@ -9,11 +9,15 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { generateExcelReport } from "@/lib/reportGenerator";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { FormLabel } from "@/components/ui/form";
 import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Bar, PieChart, Pie, Cell } from "recharts";
+import { useWebSocket } from "@/hooks/use-websocket";
+import { Toaster } from "@/components/ui/toaster";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function AdminDashboard() {
+    useWebSocket();
     const [selectedRequest, setSelectedRequest] = useState(null);
     const [dateRange, setDateRange] = useState({ from: subDays(new Date(), 20), to: new Date() });
 
@@ -37,18 +41,23 @@ export default function AdminDashboard() {
         });
     }, [requests, dateRange]);
 
-    const chartData = useMemo(() => {
+    const summaryStats = useMemo(() => {
         const stats = {
-            accepted: filteredRequests.filter(r => r.status === 'completed' || r.status === 'ready').length,
+            total: filteredRequests.length,
+            pending: filteredRequests.filter(r => r.status === 'pending').length,
+            completed: filteredRequests.filter(r => r.status === 'completed' || r.status === 'ready').length,
             denied: filteredRequests.filter(r => r.status === 'denied').length,
-            processing: filteredRequests.filter(r => r.status === 'processing').length,
         };
-        return [
-            { name: 'Completed', count: stats.accepted, fill: 'hsl(var(--chart-1))' },
-            { name: 'Processing', count: stats.processing, fill: 'hsl(var(--chart-2))' },
-            { name: 'Denied', count: stats.denied, fill: 'hsl(var(--chart-3))' },
-        ];
+        return stats;
     }, [filteredRequests]);
+
+    const chartData = useMemo(() => {
+        return [
+            { name: 'Completed', count: summaryStats.completed, fill: 'hsl(var(--chart-1))' },
+            { name: 'Pending', count: summaryStats.pending, fill: 'hsl(var(--chart-2))' },
+            { name: 'Denied', count: summaryStats.denied, fill: 'hsl(var(--chart-3))' },
+        ];
+    }, [summaryStats]);
 
     const pieChartData = useMemo(() => {
         const documentTypeCounts = filteredRequests.reduce((acc, req) => {
@@ -128,6 +137,7 @@ export default function AdminDashboard() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
+            <Toaster />
             <motion.main
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -141,12 +151,54 @@ export default function AdminDashboard() {
                             <p className="text-blue-800/90">An overview of the document requests.</p>
                         </div>
                         <div className="flex items-center gap-3">
-                            <DateRangePicker range={dateRange} onUpdate={setDateRange} />
-                            <Button variant="outline" className="gap-2" onClick={() => generateExcelReport(filteredRequests)}>
+                            <div className="grid gap-2">
+                                <FormLabel>Date range</FormLabel>
+                                <DateRangePicker range={dateRange} onUpdate={setDateRange} />
+                            </div>
+                            <Button variant="outline" className="gap-2 self-end" onClick={() => generateExcelReport(filteredRequests)}>
                                 <FileText className="h-4 w-4" />
                                 Generate Report
                             </Button>
                         </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <Card className="bg-white/90 backdrop-blur-sm">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-blue-900">Total Requests</CardTitle>
+                                <FileIcon className="h-4 w-4 text-blue-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-blue-900">{summaryStats.total}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/90 backdrop-blur-sm">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-yellow-600">Pending Requests</CardTitle>
+                                <Clock className="h-4 w-4 text-yellow-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-yellow-600">{summaryStats.pending}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/90 backdrop-blur-sm">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-green-600">Completed Requests</CardTitle>
+                                <CheckCircle className="h-4 w-4 text-green-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-green-600">{summaryStats.completed}</div>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-white/90 backdrop-blur-sm">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-sm font-medium text-red-600">Denied Requests</CardTitle>
+                                <XCircle className="h-4 w-4 text-red-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-red-600">{summaryStats.denied}</div>
+                            </CardContent>
+                        </Card>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
