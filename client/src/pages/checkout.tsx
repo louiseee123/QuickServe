@@ -4,7 +4,7 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, AlertCircle } from "lucide-react";
-import { getRequestById } from "./api/requests";
+import { getRequestById } from "@/api/requests";
 import { DocumentRequest } from "@shared/schema";
 import { toast } from "sonner";
 
