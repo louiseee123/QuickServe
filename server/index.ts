@@ -1,74 +1,29 @@
-import express, { type Request, Response, NextFunction } from "express";
-import http from "http";
-import apiRoutes from "./api";
-import { setupVite, serveStatic, log } from "./vite";
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import cors from 'cors';
-import documentsRouter from './src/routes/documents';
+import apiRoutes from './api.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// Enable CORS for all routes
 app.use(cors());
-
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+app.use('/api', apiRoutes);
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+// Serve static files from the 'client/dist' directory
+app.use(express.static(path.join(__dirname, '../client/dist')));
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
-
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-
-      log(logLine);
-    }
-  });
-
-  next();
+// For any other request, serve the index.html file
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
 });
 
-(async () => {
-  app.use('/api/documents', documentsRouter);
-  app.use("/api", apiRoutes);
+const port = process.env.PORT || 3000;
 
-  const server = http.createServer(app);
-
-  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-
-    res.status(status).json({ message });
-    throw err;
-  });
-
-  if (app.get("env") === "development") {
-    await setupVite(app, server);
-  } else {
-    serveStatic(app);
-  }
-
-  const port = process.env.PORT || 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
-})();
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});

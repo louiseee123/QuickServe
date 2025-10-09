@@ -7,6 +7,7 @@ export const DATABASE_ID = '68e64920003173cabdb1';
 export const DOCUMENTS_COLLECTION_ID = 'documents';
 export const DOCUMENT_REQUESTS_COLLECTION_ID = 'document_requests';
 export const COUNTERS_COLLECTION_ID = 'counters';
+export const USERS_COLLECTION_ID = 'users';
 
 // --- Document Request Operations ---
 

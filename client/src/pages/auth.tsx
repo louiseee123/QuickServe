@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import qslogo from "./../Assets/QSLogo.png";
 import schoolBg from "./../Assets/bgcctc.jpg";
-import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User } from "lucide-react";
 
 const tabVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -62,6 +62,7 @@ const featureList = [
 ];
 
 const authSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters" }).optional(),
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
   confirmPassword: z.string().optional(),
@@ -114,6 +115,7 @@ export default function AuthPage() {
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -138,7 +140,7 @@ export default function AuthPage() {
           form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
           throw new Error("Passwords do not match");
         }
-        await register({email: data.email, password: data.password, name: ''});
+        await register({email: data.email, password: data.password, name: data.name});
       }
       
       await controls.start({
@@ -212,7 +214,7 @@ export default function AuthPage() {
           >
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-cyan-400" />
-              Need Help?
+              Still Need Help?
             </h3>
             <p className="text-blue-200 text-sm mb-4">
               For login issues or account registration, please contact the CCTC administration office or email support.
@@ -362,7 +364,7 @@ export default function AuthPage() {
                   </TabsList>
                 </motion.div>
 
-                <div className="mt-8 relative h-96"> 
+                <div className="mt-8 relative"> 
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={activeTab}
@@ -370,15 +372,45 @@ export default function AuthPage() {
                       initial="hidden"
                       animate="visible"
                       exit="exit"
-                      className="absolute inset-0"
                     >
-                      <TabsContent value={activeTab} className="h-full">
+                      <TabsContent value={activeTab}>
                         <Form {...form}>
                           <form
                             onSubmit={form.handleSubmit(() => handleSubmit(activeTab))}
-                            className="space-y-6 h-full flex flex-col"
+                            className="space-y-6 flex flex-col"
                           >
                             <div className="space-y-5">
+                              {activeTab === "register" && (
+                                <FormField
+                                  control={form.control}
+                                  name="name"
+                                  render={({ field }) => (
+                                    <FormItem>
+                                      <FormLabel className="text-white/90 font-medium">
+                                        Full Name
+                                      </FormLabel>
+                                      <FormControl>
+                                        <motion.div
+                                          initial={{ opacity: 0, x: -10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: 0.1 }}
+                                        >
+                                          <div className="relative">
+                                            <Input 
+                                              placeholder="Enter your full name" 
+                                              {...field} 
+                                              className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
+                                              autoComplete="name"
+                                            />
+                                            <User className="absolute left-3 top-3 h-5 w-5 text-blue-200/60" />
+                                          </div>
+                                        </motion.div>
+                                      </FormControl>
+                                      <FormMessage className="text-red-400/90" />
+                                    </FormItem>
+                                  )}
+                                />
+                              )}
                               <FormField
                                 control={form.control}
                                 name="email"
@@ -391,7 +423,7 @@ export default function AuthPage() {
                                       <motion.div
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.1 }}
+                                        transition={{ delay: 0.2 }}
                                       >
                                         <div className="relative">
                                           <Input 
@@ -420,7 +452,7 @@ export default function AuthPage() {
                                       <motion.div
                                         initial={{ opacity: 0, x: -10 }}
                                         animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: 0.2 }}
+                                        transition={{ delay: 0.3 }}
                                       >
                                         <div className="relative">
                                           <Input
@@ -463,7 +495,7 @@ export default function AuthPage() {
                                         <motion.div
                                           initial={{ opacity: 0, x: -10 }}
                                           animate={{ opacity: 1, x: 0 }}
-                                          transition={{ delay: 0.3 }}
+                                          transition={{ delay: 0.4 }}
                                         >
                                           <div className="relative">
                                             <Input
@@ -499,7 +531,7 @@ export default function AuthPage() {
                             <motion.div
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              transition={{ delay: 0.4 }}
+                              transition={{ delay: 0.5 }}
                               className="mt-auto"
                             >
                               <motion.div

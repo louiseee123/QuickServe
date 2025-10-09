@@ -1,5 +1,5 @@
 import { databases } from '../appwrite';
-import { DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID, COUNTERS_COLLECTION_ID } from './db';
+import { DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID, COUNTERS_COLLECTION_ID, USERS_COLLECTION_ID } from './db';
 import { Permission, ID, IndexType } from 'node-appwrite';
 
 // --- Helper Functions ---
@@ -39,6 +39,8 @@ async function createCollection(collectionId: string, name: string, attributes: 
       await databases.createCollection(DATABASE_ID, collectionId, name, [
         Permission.read('users'),
         Permission.create('users'),
+        Permission.update('users'),
+        Permission.delete('users'),
       ]);
       await waitForResource(() => databases.getCollection(DATABASE_ID, collectionId), `Collection: ${name}`);
 
@@ -69,6 +71,19 @@ const setup = async () => {
   try {
     console.log('Starting database setup...');
     await waitForResource(() => databases.get(DATABASE_ID), `Database: ${DATABASE_ID}`);
+
+    // -- Users Collection --
+    await createCollection(
+      USERS_COLLECTION_ID,
+      'Users',
+      [
+        { create: () => databases.createStringAttribute(DATABASE_ID, USERS_COLLECTION_ID, 'name', 255, true), name: 'name' },
+        { create: () => databases.createStringAttribute(DATABASE_ID, USERS_COLLECTION_ID, 'email', 255, true), name: 'email' },
+      ],
+      [
+        { create: () => databases.createIndex(DATABASE_ID, USERS_COLLECTION_ID, 'email_unique', IndexType.Unique, ['email']), name: 'email_unique' }
+      ]
+    );
 
     // -- Documents Collection --
     await createCollection(
