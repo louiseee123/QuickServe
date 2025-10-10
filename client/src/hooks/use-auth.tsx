@@ -27,7 +27,7 @@ const useAuth = () => {
 
   const login = async ({ email, password }: any) => {
     await account.createEmailPasswordSession(email, password);
-    await queryClient.refetchQueries({ queryKey: ["user"] });
+    await queryClient.invalidateQueries({ queryKey: ["user"] });
   };
 
   const logout = async () => {
@@ -47,8 +47,9 @@ const useAuth = () => {
       const errorData = await response.json();
       throw new Error(errorData.message || "Registration failed");
     }
-    
-    await login({ email, password });
+
+    // No longer calls login automatically
+    return await response.json();
   };
 
   const loginWithGoogle = () => {
@@ -68,7 +69,7 @@ const useAuth = () => {
 
   const registerMutation = useMutation({ 
     mutationFn: register,
-    onSuccess: () => setLocation("/"),
+    // Remove the onSuccess side-effect from here
   });
 
   const authError = loginMutation.error || registerMutation.error;
