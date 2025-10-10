@@ -64,7 +64,7 @@ const featureList = [
 const authSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }).optional(),
   email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters" }),
   confirmPassword: z.string().optional(),
 }).refine(data => {
   if (data.confirmPassword && data.password !== data.confirmPassword) {
@@ -129,18 +129,10 @@ export default function AuthPage() {
   });
 
   const handleSubmit = async (values: AuthFormValues) => {
-    try {
-      if (activeTab === "login") {
-        await login({ email: values.email, password: values.password });
-      } else {
-        if (values.password !== values.confirmPassword) {
-          form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
-          return;
-        }
-        await register({ email: values.email, password: values.password, name: values.name });
-      }
-    } catch (error) {
-      // The authError from the hook is now the source of truth
+    if (activeTab === "login") {
+      await login({ email: values.email, password: values.password });
+    } else {
+      await register({ email: values.email, password: values.password, name: values.name });
     }
   };
   
