@@ -8,26 +8,24 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      // Better session checking
-      const sessions = await account.getSessions();
-      if (sessions.sessions.length === 0) {
-        return null;
-      }
-
+      // This will throw an error if no session exists, which is caught below.
       const session = await account.getSession('current');
+
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
       
       if (!response.ok) {
-        // If the session is invalid, clear it
+        // If the backend fails to validate the session, delete the client-side session.
         await account.deleteSession('current');
-        throw new Error("Failed to fetch user data");
+        throw new Error("Failed to fetch user data (invalid session)");
       }
       
       return await response.json();
     } catch (error) {
-      console.error("Error getting current user:", error);
+      // This block runs if account.getSession throws or if fetching user data fails.
+      // In either case, it means there is no valid authenticated user.
+      // console.error("No active user session:", error); // Optional: for debugging
       return null;
     }
   };
@@ -35,24 +33,20 @@ const useAuth = () => {
   const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
   });
 
   const login = async ({ email, password }: any) => {
     try {
-      console.log("Attempting login with:", email);
       const session = await account.createEmailPasswordSession(email, password);
-      console.log("Login successful, session:", session);
-      
-      // Invalidate and refetch user data
+      // Invalidate and refetch user data to update the UI.
       await queryClient.invalidateQueries({ queryKey: ["user"] });
       await queryClient.refetchQueries({ queryKey: ["user"] });
-      
       return session;
     } catch (error) {
       console.error("Login error:", error);
-      throw error; // Re-throw so mutation can catch it
+      throw error; // Re-throw so the mutation's onError is triggered
     }
   };
 
@@ -93,7 +87,6 @@ const useAuth = () => {
   const loginMutation = useMutation({ 
     mutationFn: login,
     onSuccess: () => {
-      console.log("Login mutation successful, redirecting...");
       setLocation("/");
     },
     onError: (error) => {
@@ -125,9 +118,9 @@ const useAuth = () => {
     isRegistering: registerMutation.isPending,
     authError,
     isAdmin,
-    login: loginMutation.mutateAsync, // This returns a promise
+    login: loginMutation.mutateAsync,
     logout: logoutMutation.mutate,
-    register: registerMutation.mutateAsync, // This returns a promise
+    register: registerMutation.mutateAsync,
     loginWithGoogle,
   };
 };
