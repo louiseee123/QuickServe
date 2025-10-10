@@ -1,7 +1,6 @@
 import { account } from "../lib/appwrite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ID } from "appwrite";
 
 const useAuth = () => {
   const queryClient = useQueryClient();
@@ -24,7 +23,7 @@ const useAuth = () => {
     queryFn: getCurrentUser,
   });
 
-  const login = async ({ email, password }) => {
+  const login = async ({ email, password }: any) => {
     await account.createEmailPasswordSession(email, password);
     queryClient.invalidateQueries({ queryKey: ["user"] });
   };
@@ -35,8 +34,20 @@ const useAuth = () => {
     setLocation("/auth");
   };
 
-  const register = async ({ email, password, name }) => {
-    await account.create(ID.unique(), email, password, name);
+  const register = async ({ email, password, name }: any) => {
+    const response = await fetch("/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, name }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.message || "Registration failed");
+    }
+
     await account.createEmailPasswordSession(email, password);
     await queryClient.invalidateQueries({ queryKey: ["user"] });
   };
