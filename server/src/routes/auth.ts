@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { account, databases } from '../../appwrite';
-import { Client, Account, ID } from 'node-appwrite';
+import { Client, Account, ID, Users } from 'node-appwrite';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -15,7 +15,19 @@ const USERS_COLLECTION_ID = "users";
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
-    const newUser = await account.create(ID.unique(), email, password, name);
+
+    if (!email || !password || !name) {
+      return res.status(400).json({ message: "Email, password, and name are required." });
+    }
+    
+    // Appwrite requires passwords to be at least 8 characters
+    if (password.length < 8) {
+      return res.status(400).json({ message: "Password must be at least 8 characters long." });
+    }
+
+    const users = new Users(account.client);
+
+    const newUser = await users.create(ID.unique(), email, password, name);
 
     await databases.createDocument(
         DATABASE_ID,
@@ -27,11 +39,13 @@ router.post('/register', async (req, res) => {
         }
     );
 
-    const session = await account.createEmailPasswordSession(email, password);
-
-    res.status(201).json({ newUser, session });
+    res.status(201).json({ message: "User created successfully." });
   } catch (error: any) {
-    res.status(400).json({ error: error.message });
+    // Provide a more specific error message if available
+    if (error.code === 409) { // 409 Conflict - User already exists
+        return res.status(409).json({ message: 'A user with this email already exists.' });
+    }
+    res.status(500).json({ message: error.message || "An error occurred during registration." });
   }
 });
 
