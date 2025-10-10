@@ -1,7 +1,7 @@
 
 import { Router } from 'express';
 import { account, databases } from '../../appwrite';
-import { Client, Account, ID, Users } from 'node-appwrite';
+import { Client, Account, ID, Users, Query } from 'node-appwrite';
 import dotenv from 'dotenv';
 import path from 'path';
 
@@ -20,7 +20,6 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: "Email, password, and name are required." });
     }
     
-    // Appwrite requires passwords to be at least 8 characters
     if (password.length < 8) {
       return res.status(400).json({ message: "Password must be at least 8 characters long." });
     }
@@ -29,6 +28,9 @@ router.post('/register', async (req, res) => {
 
     const newUser = await users.create(ID.unique(), email, password, name);
 
+    // Check if the user is the super admin
+    const userRole = email === process.env.SUPER_ADMIN_EMAIL ? 'admin' : 'user';
+
     await databases.createDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
@@ -36,13 +38,13 @@ router.post('/register', async (req, res) => {
         {
             name,
             email,
+            role: userRole, 
         }
     );
 
     res.status(201).json({ message: "User created successfully." });
   } catch (error: any) {
-    // Provide a more specific error message if available
-    if (error.code === 409) { // 409 Conflict - User already exists
+    if (error.code === 409) { 
         return res.status(409).json({ message: 'A user with this email already exists.' });
     }
     res.status(500).json({ message: error.message || "An error occurred during registration." });
@@ -89,7 +91,25 @@ router.get('/me', async (req, res) => {
 
     const userAccount = new Account(userClient);
     const user = await userAccount.get();
-    res.status(200).json(user);
+    
+    // Now, fetch the user's role from the database
+    const userDoc = await databases.listDocuments(
+      DATABASE_ID,
+      USERS_COLLECTION_ID,
+      [Query.equal('email', user.email)]
+    );
+
+    if (userDoc.documents.length === 0) {
+        return res.status(404).json({ error: "User document not found." });
+    }
+
+    const userWithRole = {
+        ...user,
+        role: userDoc.documents[0].role
+    };
+
+
+    res.status(200).json(userWithRole);
   } catch (error: any) {
     res.status(401).json({ error: 'Not authenticated: ' + error.message });
   }

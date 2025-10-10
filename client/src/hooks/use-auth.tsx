@@ -8,38 +8,38 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      return await account.get();
+      const session = await account.getSession('current');
+      const response = await fetch("/api/me", {
+        headers: { 'x-appwrite-session': session.secret },
+      });
+      if (!response.ok) throw new Error("Failed to fetch user data");
+      return await response.json();
     } catch (error) {
-      // @ts-expect-error Appwrite error structure
-      if (error.code === 401) {
-        return null;
-      }
-      throw error;
+      return null;
     }
   };
 
-  const { data: user, isLoading } = useQuery({
+  const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
+    staleTime: 5 * 60 * 1000,
   });
 
   const login = async ({ email, password }: any) => {
     await account.createEmailPasswordSession(email, password);
-    queryClient.invalidateQueries({ queryKey: ["user"] });
+    await queryClient.invalidateQueries({ queryKey: ["user"] });
   };
 
   const logout = async () => {
     await account.deleteSession("current");
-    queryClient.invalidateQueries({ queryKey: ["user"] });
+    queryClient.setQueryData(["user"], null);
     setLocation("/auth");
   };
 
   const register = async ({ email, password, name }: any) => {
     const response = await fetch("/api/register", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
     });
 
@@ -47,10 +47,8 @@ const useAuth = () => {
       const errorData = await response.json();
       throw new Error(errorData.message || "Registration failed");
     }
-
-    // The backend now handles session creation.
-    // All we need to do is invalidate the query to refetch the user.
-    await queryClient.invalidateQueries({ queryKey: ["user"] });
+    
+    await login({ email, password });
   };
 
   const loginWithGoogle = () => {
@@ -61,13 +59,28 @@ const useAuth = () => {
     );
   };
 
-  const loginMutation = useMutation({ mutationFn: login });
+  const loginMutation = useMutation({ 
+    mutationFn: login,
+    onSuccess: () => setLocation("/"),
+  });
+
   const logoutMutation = useMutation({ mutationFn: logout });
-  const registerMutation = useMutation({ mutationFn: register });
+
+  const registerMutation = useMutation({ 
+    mutationFn: register,
+    onSuccess: () => setLocation("/"),
+  });
+
+  const authError = loginMutation.error || registerMutation.error;
+  const isAdmin = user?.role === 'admin';
 
   return {
     user,
-    isLoading,
+    isLoading: isUserLoading,
+    isLoggingIn: loginMutation.isPending,
+    isRegistering: registerMutation.isPending,
+    authError,
+    isAdmin,
     login: loginMutation.mutateAsync,
     logout: logoutMutation.mutate,
     register: registerMutation.mutateAsync,

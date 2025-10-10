@@ -77,13 +77,19 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
   const [, navigate] = useLocation();
-  const { user, login, register, isLoading } = useAuth();
+  const { 
+    user, 
+    login, 
+    register, 
+    isLoading, 
+    isLoggingIn, 
+    isRegistering, 
+    authError 
+  } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
   const controls = useAnimation();
   const bgControls = useAnimation();
 
@@ -122,46 +128,27 @@ export default function AuthPage() {
     },
   });
 
-  const handleSubmit = async (action: "login" | "register") => {
-    setIsSubmitting(true);
-    setAuthError(null);
-    const data = form.getValues();
-    
+  const handleSubmit = async (values: AuthFormValues) => {
     try {
-      await controls.start({
-        scale: 0.95,
-        transition: { duration: 0.1 }
-      });
-      
-      if (action === "login") {
-        await login({email: data.email, password: data.password});
+      if (activeTab === "login") {
+        await login({ email: values.email, password: values.password });
       } else {
-        if (data.password !== data.confirmPassword) {
+        if (values.password !== values.confirmPassword) {
           form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
-          throw new Error("Passwords do not match");
+          return;
         }
-        await register({email: data.email, password: data.password, name: data.name});
+        await register({ email: values.email, password: values.password, name: values.name });
       }
-      
-      await controls.start({
-        scale: 1,
-        transition: { type: "spring", stiffness: 500, damping: 15 }
-      });
-      
-      navigate("/");
     } catch (error) {
-      setAuthError((error as Error).message);
-      setIsSubmitting(false);
+      // The authError from the hook is now the source of truth
     }
   };
   
   const handleGoogleSignIn = async () => {
     // try {
     //   await loginWithGoogle();
-    //   navigate("/");
     // } catch (error) {
     //   console.error("Google sign-in failed", error);
-    //   setAuthError((error as Error).message);
     // }
   };
 
@@ -169,7 +156,6 @@ export default function AuthPage() {
     setActiveTab(value);
     form.reset();
     form.clearErrors();
-    setAuthError(null);
     controls.start({
       scale: 0.98,
       transition: { duration: 0.1 }
@@ -189,6 +175,8 @@ export default function AuthPage() {
       </div>
     );
   }
+  
+  const isSubmitting = isLoggingIn || isRegistering;
 
   return (
     <div className="min-h-screen flex bg-[#0a1a2f] overflow-hidden relative">
@@ -376,7 +364,7 @@ export default function AuthPage() {
                       <TabsContent value={activeTab}>
                         <Form {...form}>
                           <form
-                            onSubmit={form.handleSubmit(() => handleSubmit(activeTab))}
+                            onSubmit={form.handleSubmit(handleSubmit)}
                             className="space-y-6 flex flex-col"
                           >
                             <div className="space-y-5">
@@ -528,6 +516,16 @@ export default function AuthPage() {
                               )}
                             </div>
                             
+                             {authError && (
+                              <motion.div 
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="text-red-400/90 bg-red-500/10 p-3 rounded-lg border border-red-500/20 text-center text-sm font-medium"
+                              >
+                                {(authError as Error).message}
+                              </motion.div>
+                            )}
+                            
                             <motion.div
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
@@ -580,6 +578,7 @@ export default function AuthPage() {
                                     "w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors flex items-center justify-center gap-2",
                                     activeTab === 'login' ? "mt-4" : ""
                                   )}
+                                  disabled={isSubmitting} // Also disable this when submitting
                                 >
                                   <img src="https://www.google.com/favicon.ico" alt="Google logo" className="h-5 w-5" />
                                   {activeTab === "login" ? "Sign in with Google" : "Google"}
@@ -649,7 +648,7 @@ export default function AuthPage() {
               Welcome to <br />CCTC's QuickServe
             </h2>
             <p className="text-lg text-blue-200 mb-10">
-              Experience seamless document processing with our next-generation request system.
+              Experience seamless document processing with our new request system.
             </p>
           </motion.div>
           

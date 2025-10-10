@@ -79,6 +79,7 @@ const setup = async () => {
       [
         { create: () => databases.createStringAttribute(DATABASE_ID, USERS_COLLECTION_ID, 'name', 255, true), name: 'name' },
         { create: () => databases.createStringAttribute(DATABASE_ID, USERS_COLLECTION_ID, 'email', 255, true), name: 'email' },
+        { create: () => databases.createStringAttribute(DATABASE_ID, USERS_COLLECTION_ID, 'role', 50, false, 'user'), name: 'role' },
       ],
       [
         { create: () => databases.createIndex(DATABASE_ID, USERS_COLLECTION_ID, 'email_unique', IndexType.Unique, ['email']), name: 'email_unique' }
