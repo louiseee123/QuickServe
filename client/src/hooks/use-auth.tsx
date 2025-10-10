@@ -8,24 +8,16 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      // This will throw an error if no session exists, which is caught below.
       const session = await account.getSession('current');
-
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
-      
       if (!response.ok) {
-        // If the backend fails to validate the session, delete the client-side session.
         await account.deleteSession('current');
         throw new Error("Failed to fetch user data (invalid session)");
       }
-      
       return await response.json();
     } catch (error) {
-      // This block runs if account.getSession throws or if fetching user data fails.
-      // In either case, it means there is no valid authenticated user.
-      // console.error("No active user session:", error); // Optional: for debugging
       return null;
     }
   };
@@ -33,20 +25,41 @@ const useAuth = () => {
   const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 
   const login = async ({ email, password }: any) => {
     try {
+      // Step 1: Create a session with Appwrite.
       const session = await account.createEmailPasswordSession(email, password);
-      // Invalidate and refetch user data to update the UI.
-      await queryClient.invalidateQueries({ queryKey: ["user"] });
-      await queryClient.refetchQueries({ queryKey: ["user"] });
-      return session;
+
+      // Step 2: Directly use the new session's secret to fetch our user profile.
+      // This avoids the race condition with the browser setting the cookie.
+      const response = await fetch("/api/me", {
+        headers: { 'x-appwrite-session': session.secret },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch user profile after login.");
+      }
+      
+      const user = await response.json();
+
+      // Step 3: Manually put the user data into the cache.
+      queryClient.setQueryData(["user"], user);
+      
+      return user;
     } catch (error) {
       console.error("Login error:", error);
-      throw error; // Re-throw so the mutation's onError is triggered
+      // Clean up on failure to prevent inconsistent states.
+      try {
+        await account.deleteSession("current");
+      } catch (deleteError) {
+        console.error("Failed to clear session after login error:", deleteError);
+      }
+      queryClient.setQueryData(["user"], null);
+      throw error; // Re-throw for the mutation's onError.
     }
   };
 
@@ -86,7 +99,8 @@ const useAuth = () => {
 
   const loginMutation = useMutation({ 
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: (user) => {
+      console.log("Login mutation successful, redirecting for user:", user);
       setLocation("/");
     },
     onError: (error) => {
