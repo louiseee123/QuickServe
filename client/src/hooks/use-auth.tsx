@@ -48,7 +48,8 @@ const useAuth = () => {
       throw new Error(errorData.message || "Registration failed");
     }
 
-    await account.createEmailPasswordSession(email, password);
+    // The backend now handles session creation.
+    // All we need to do is invalidate the query to refetch the user.
     await queryClient.invalidateQueries({ queryKey: ["user"] });
   };
 
