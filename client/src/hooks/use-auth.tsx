@@ -27,7 +27,7 @@ const useAuth = () => {
 
   const login = async ({ email, password }: any) => {
     await account.createEmailPasswordSession(email, password);
-    await queryClient.invalidateQueries({ queryKey: ["user"] });
+    await queryClient.refetchQueries({ queryKey: ["user"] });
   };
 
   const logout = async () => {
