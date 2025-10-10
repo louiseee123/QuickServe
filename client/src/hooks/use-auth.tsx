@@ -8,32 +8,63 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
+      // Better session checking
+      const sessions = await account.getSessions();
+      if (sessions.sessions.length === 0) {
+        return null;
+      }
+
       const session = await account.getSession('current');
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
-      if (!response.ok) throw new Error("Failed to fetch user data");
+      
+      if (!response.ok) {
+        // If the session is invalid, clear it
+        await account.deleteSession('current');
+        throw new Error("Failed to fetch user data");
+      }
+      
       return await response.json();
     } catch (error) {
+      console.error("Error getting current user:", error);
       return null;
     }
   };
 
-  const { data: user, isLoading: isUserLoading } = useQuery({
+  const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000,
+    retry: 1,
   });
 
   const login = async ({ email, password }: any) => {
-    await account.createEmailPasswordSession(email, password);
-    await queryClient.invalidateQueries({ queryKey: ["user"] });
+    try {
+      console.log("Attempting login with:", email);
+      const session = await account.createEmailPasswordSession(email, password);
+      console.log("Login successful, session:", session);
+      
+      // Invalidate and refetch user data
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+      await queryClient.refetchQueries({ queryKey: ["user"] });
+      
+      return session;
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error; // Re-throw so mutation can catch it
+    }
   };
 
   const logout = async () => {
-    await account.deleteSession("current");
-    queryClient.setQueryData(["user"], null);
-    setLocation("/auth");
+    try {
+      await account.deleteSession("current");
+      queryClient.setQueryData(["user"], null);
+      setLocation("/auth");
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
   };
 
   const register = async ({ email, password, name }: any) => {
@@ -48,7 +79,6 @@ const useAuth = () => {
       throw new Error(errorData.message || "Registration failed");
     }
 
-    // No longer calls login automatically
     return await response.json();
   };
 
@@ -62,17 +92,30 @@ const useAuth = () => {
 
   const loginMutation = useMutation({ 
     mutationFn: login,
-    onSuccess: () => setLocation("/"),
+    onSuccess: () => {
+      console.log("Login mutation successful, redirecting...");
+      setLocation("/");
+    },
+    onError: (error) => {
+      console.error("Login mutation error:", error);
+    }
   });
 
-  const logoutMutation = useMutation({ mutationFn: logout });
+  const logoutMutation = useMutation({ 
+    mutationFn: logout,
+    onError: (error) => {
+      console.error("Logout mutation error:", error);
+    }
+  });
 
   const registerMutation = useMutation({ 
     mutationFn: register,
-    // Remove the onSuccess side-effect from here
+    onError: (error) => {
+      console.error("Registration mutation error:", error);
+    }
   });
 
-  const authError = loginMutation.error || registerMutation.error;
+  const authError = loginMutation.error || registerMutation.error || userError;
   const isAdmin = user?.role === 'admin';
 
   return {
@@ -82,9 +125,9 @@ const useAuth = () => {
     isRegistering: registerMutation.isPending,
     authError,
     isAdmin,
-    login: loginMutation.mutateAsync,
+    login: loginMutation.mutateAsync, // This returns a promise
     logout: logoutMutation.mutate,
-    register: registerMutation.mutateAsync,
+    register: registerMutation.mutateAsync, // This returns a promise
     loginWithGoogle,
   };
 };
