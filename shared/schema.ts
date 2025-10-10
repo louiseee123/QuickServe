@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 export const requestStatus = ["pending_approval", "pending_payment", "denied", "processing", "ready_for_pickup", "completed", "cancelled"] as const;
-export const paymentStatus = ["unpaid", "paid"] as const;
+export const paymentStatus = ["unpaid", "paid", "pending_verification"] as const;
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -38,7 +38,8 @@ export const documentRequests = pgTable("document_requests", {
 
   status: text("status", { enum: requestStatus }).notNull().default("pending_payment"),
   paymentStatus: text("payment_status", { enum: paymentStatus }).notNull().default("unpaid"),
-  
+  receipt: text("receipt"),
+
   queueNumber: integer("queue_number"),
   rejectionReason: text("rejection_reason"),
   
@@ -75,7 +76,8 @@ export const insertRequestSchema = createInsertSchema(documentRequests, {
   requestedAt: true, 
   rejectionReason: true, 
   processingStartedAt: true, 
-  completedAt: true 
+  completedAt: true,
+  receipt: true 
 });
 
 // TypeScript types inferred from the database schema

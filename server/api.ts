@@ -1,22 +1,17 @@
 
 import { Router, Request, Response } from 'express';
-import { databases } from './appwrite';
-import { ID, Query } from 'node-appwrite';
-import Stripe from 'stripe';
-import dotenv from 'dotenv';
+import { databases, storage } from './appwrite';
+import { ID, Query, InputFile } from 'node-appwrite';
 import { insertRequestSchema } from '@shared/schema';
-import express from 'express';
+import multer from 'multer';
 
-dotenv.config();
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16',
-});
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
 const DATABASE_ID = '68e64920003173cabdb1';
 const REQUESTS_COLLECTION_ID = 'requests';
+const RECEIPTS_BUCKET_ID = 'receipts';
 
 // Create a new document request
 router.post('/request', async (req: Request, res: Response) => {
@@ -95,7 +90,7 @@ router.get('/request/:id', async (req: Request, res: Response) => {
         if (error.code === 404) {
             res.status(404).send({ error: 'Request not found' });
         } else {
-            res.status(500).send({ error: error.message });
+            res.status(500).send({ error: 'message' });
         }
     }
 });
@@ -120,90 +115,37 @@ router.patch('/request/:id', async (req: Request, res: Response) => {
     }
 });
 
+// Upload a payment receipt
+router.post('/request/:id/upload-receipt', upload.single('receipt'), async (req, res) => {
+    const { id } = req.params;
 
-// Create a checkout session with Stripe
-router.post('/create-checkout-session', async (req, res) => {
-  const { requestId } = req.body;
-
-  try {
-    const request = await databases.getDocument(
-        DATABASE_ID,
-        REQUESTS_COLLECTION_ID,
-        requestId
-    );
-    
-    if (!request) {
-      return res.status(404).send({ error: 'Request not found' });
+    if (!req.file) {
+        return res.status(400).send({ error: 'No receipt file uploaded.' });
     }
 
-    if (request.totalAmount === 0) {
-        return res.status(400).send({ error: "Cannot create a checkout session for a free request." });
-    }
-    
-    const documentNames = request.documents.map((d: any) => d.name).join(', ');
+    try {
+        const file = await storage.createFile(
+            RECEIPTS_BUCKET_ID,
+            ID.unique(),
+            InputFile.fromBuffer(req.file.buffer, req.file.originalname)
+        );
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'php',
-            product_data: {
-              name: `Document Request: ${documentNames}`,
-              description: `Request ID: ${requestId}`,
-            },
-            unit_amount: request.totalAmount * 100,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/my-requests?payment_success=true&requestId=${requestId}`,
-      cancel_url: `${process.env.CLIENT_URL || 'http://localhost:5173'}/checkout/${requestId}?payment_cancelled=true`,
-      metadata: {
-        requestId,
-      },
-    });
-
-    res.json({ url: session.url });
-  } catch (error: any) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Stripe webhook to handle payment success
-router.post('/stripe-webhook', express.raw({type: 'application/json'}), async (req: Request, res: Response) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
-  } catch (err: any) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const requestId = session.metadata?.requestId;
-
-    if (requestId) {
-      try {
         await databases.updateDocument(
             DATABASE_ID,
             REQUESTS_COLLECTION_ID,
-            requestId,
-            {
-              payment_status: 'paid',
-              document_status: 'processing',
+            id,
+            { 
+                payment_status: 'pending_verification',
+                receiptId: file.$id 
             }
         );
-      } catch (error: any) {
-        console.error(`Error updating request ${requestId}: ${error.message}`);
-      }
-    }
-  }
 
-  res.json({ received: true });
+        res.status(200).send({ message: 'Receipt uploaded successfully. Awaiting verification.' });
+
+    } catch (error: any) {
+        console.error("Error uploading receipt:", error);
+        res.status(500).send({ error: 'Failed to upload receipt.' });
+    }
 });
 
 export default router;

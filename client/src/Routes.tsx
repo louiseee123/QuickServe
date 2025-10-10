@@ -1,3 +1,4 @@
+
 import { Route, Switch } from "wouter";
 import Home from "./pages/home";
 import Auth from "./pages/auth";
@@ -12,15 +13,17 @@ import AdminPendingApprovals from "./pages/admin/pending-approvals";
 import AdminRequests from "./pages/admin/requests";
 import NotFound from "./pages/not-found";
 import { ProtectedRoute } from "./components/protected-route";
+import UploadReceiptPage from "./pages/upload-receipt";
 
 const Routes = () => (
   <Switch>
     <Route path="/auth" component={Auth} />
     <Route path="/" component={Home} />
-    <ProtectedRoute path="/checkout" component={Checkout} />
+    <ProtectedRoute path="/checkout/:requestId" component={Checkout} />
     <ProtectedRoute path="/my-requests" component={MyRequests} />
     <ProtectedRoute path="/request-success" component={RequestSuccess} />
     <ProtectedRoute path="/request" component={Request} />
+    <ProtectedRoute path="/upload-receipt/:requestId" component={UploadReceiptPage} />
     <ProtectedRoute path="/admin" component={AdminDashboard} />
     <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
