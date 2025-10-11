@@ -1,3 +1,5 @@
+
+import './load-env.ts'; // Load environment variables first
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
