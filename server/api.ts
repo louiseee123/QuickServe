@@ -12,8 +12,22 @@ const router = Router();
 const DATABASE_ID = '68e64920003173cabdb1';
 const REQUESTS_COLLECTION_ID = 'requests';
 const RECEIPTS_BUCKET_ID = 'receipts';
+const DOCUMENTS_COLLECTION_ID = 'documents';
 
 router.use('/request', requestsRouter);
+
+// Get all available documents
+router.get('/documents', async (req: Request, res: Response) => {
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            DOCUMENTS_COLLECTION_ID
+        );
+        res.status(200).send(response.documents);
+    } catch (error: any) {
+        res.status(400).send({ error: error.message });
+    }
+});
 
 // Get all document requests for admin
 router.get('/requests/all', async (req: Request, res: Response) => {
