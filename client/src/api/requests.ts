@@ -11,6 +11,14 @@ export const getRequestById = async (id: string): Promise<DocumentRequest> => {
     return response.json();
 };
 
+export const getDocuments = async (): Promise<any[]> => {
+    const response = await fetch(`${API_URL}/documents`);
+    if (!response.ok) {
+        throw new Error("Failed to fetch documents");
+    }
+    return response.json();
+};
+
 export const uploadReceipt = async (requestId: string, file: File) => {
     const formData = new FormData();
     formData.append('receipt', file);
