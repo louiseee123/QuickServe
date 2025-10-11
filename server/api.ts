@@ -4,10 +4,14 @@ import { databases, storage } from './appwrite';
 import { ID, Query, InputFile } from 'node-appwrite';
 import { insertRequestSchema } from '@shared/schema';
 import multer from 'multer';
+import authRoutes from './src/routes/auth';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
+
+// Mount the authentication routes
+router.use(authRoutes);
 
 const DATABASE_ID = '68e64920003173cabdb1';
 const REQUESTS_COLLECTION_ID = 'requests';
