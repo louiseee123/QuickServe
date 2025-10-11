@@ -3,7 +3,7 @@ import { Router, Request, Response } from 'express';
 import { databases, storage } from './appwrite';
 import { ID, Query, InputFile } from 'node-appwrite';
 import multer from 'multer';
-import requestsRouter from './routes/requests';
+import requestsRouter from './src/routes/requests';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
