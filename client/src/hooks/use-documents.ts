@@ -1,6 +1,5 @@
 
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 
 export interface Document {
   $id: string;
@@ -12,8 +11,11 @@ export interface Document {
 }
 
 const fetchDocuments = async (): Promise<Document[]> => {
-  const { data } = await axios.get('/api/documents');
-  return data;
+  const response = await fetch('/api/documents');
+  if (!response.ok) {
+    throw new Error('Failed to fetch documents');
+  }
+  return response.json();
 };
 
 export const useDocuments = () => {
