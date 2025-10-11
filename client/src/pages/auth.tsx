@@ -1,3 +1,4 @@
+
 import useAuth from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
@@ -21,7 +22,9 @@ import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import qslogo from "./../Assets/QSLogo.png";
 import schoolBg from "./../Assets/bgcctc.jpg";
-import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User, LogOut } from "lucide-react";
+import { account } from "@/lib/appwrite";
+import { useToast } from "@/hooks/use-toast";
 
 const tabVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -61,14 +64,12 @@ const featureList = [
   }
 ];
 
-// Adjusted schema for simplicity: validation is still there, but refinement logic is handled differently.
 const authSchema = z.object({
   name: z.string().optional(),
   email: z.string().email({ message: "Please enter a valid email address." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string().optional(),
 }).refine(data => {
-  // This refinement is now only checked on the client before submission.
   if (data.confirmPassword && data.password !== data.confirmPassword) {
     return false;
   }
@@ -95,6 +96,7 @@ export default function AuthPage() {
   const [showHelp, setShowHelp] = useState(false);
   const controls = useAnimation();
   const bgControls = useAnimation();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -118,7 +120,6 @@ export default function AuthPage() {
         x: [0, -10, 10, -10, 10, 0],
         transition: { duration: 0.6, type: "spring", stiffness: 500 }
       });
-      // Clear password fields on auth error for security and usability
       form.setValue("password", "");
       form.setValue("confirmPassword", "");
     }
@@ -134,13 +135,10 @@ export default function AuthPage() {
     },
   });
 
-  // THE DEFINITIVE FIX: This handler is now synchronous.
-  // It passes form data to the mutation functions and lets TanStack Query manage the async state.
   const handleSubmit = (values: AuthFormValues) => {
     if (activeTab === "login") {
       login({ email: values.email, password: values.password });
     } else {
-      // The manual password match check before submitting
       if (values.password !== values.confirmPassword) {
         form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
         return;
@@ -156,8 +154,18 @@ export default function AuthPage() {
   const handleTabChange = (value: string | null) => {
     if (value === "login" || value === "register") {
       setActiveTab(value);
-      form.reset(); // Reset form state
-      form.clearErrors(); // Clear all validation errors
+      form.reset();
+      form.clearErrors();
+    }
+  };
+
+  // Force Logout Function
+  const forceLogout = async () => {
+    try {
+      await account.deleteSession('current');
+      toast({ title: "Success", description: "Any stuck session has been cleared. Please try logging in again." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "No active session found", description: "There was no session to clear." });
     }
   };
 
@@ -169,7 +177,6 @@ export default function AuthPage() {
     );
   }
   
-  // Combined loading state for the submit button
   const isSubmitting = isLoggingIn || isRegistering;
 
   return (
@@ -186,7 +193,7 @@ export default function AuthPage() {
         <HelpCircle className="h-6 w-6" />
       </motion.button>
 
-      <AnimatePresence>
+       <AnimatePresence>
         {showHelp && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -196,15 +203,15 @@ export default function AuthPage() {
           >
             <h3 className="text-white font-semibold mb-3 flex items-center gap-2">
               <HelpCircle className="h-5 w-5 text-cyan-400" />
-              Still Need Help?
+              Login Issues?
             </h3>
             <p className="text-blue-200 text-sm mb-4">
-              For login issues or account registration, please contact the CCTC administration office or email support.
+              If you're stuck in a login loop, click the button below to force a logout and clear any stuck sessions.
             </p>
-            <div className="flex items-center gap-2 text-blue-200 text-sm">
-              <Mail className="h-4 w-4 text-cyan-400" />
-              support@cctc.edu.ph
-            </div>
+            <Button onClick={forceLogout} className="w-full bg-red-600 hover:bg-red-700 text-white">
+              <LogOut className="h-4 w-4 mr-2" />
+              Force Logout
+            </Button>
             <button
               onClick={() => setShowHelp(false)}
               className="absolute top-2 right-2 text-blue-200 hover:text-white transition-colors"
