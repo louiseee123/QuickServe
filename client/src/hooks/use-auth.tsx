@@ -8,16 +8,20 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
+      // This will throw an error if no session exists
       const session = await account.getSession('current');
+      // Use the session to fetch our own backend's user data
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
       if (!response.ok) {
+        // If our backend says the session is invalid, delete it client-side
         await account.deleteSession('current');
-        throw new Error("Failed to fetch user data (invalid session)");
+        throw new Error("Failed to fetch user data (session is invalid or expired)");
       }
       return await response.json();
     } catch (error) {
+      // This is an expected error when the user is not logged in
       return null;
     }
   };
@@ -25,69 +29,63 @@ const useAuth = () => {
   const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
-    staleTime: 5 * 60 * 1000,
-    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // Only retry once on initial load
   });
 
-  const login = async ({ email, password }: any) => {
-    try {
-      // Step 1: Create a session with Appwrite.
-      const session = await account.createEmailPasswordSession(email, password);
-
-      // Step 2: Directly use the new session's secret to fetch our user profile.
-      // This avoids the race condition with the browser setting the cookie.
-      const response = await fetch("/api/me", {
-        headers: { 'x-appwrite-session': session.secret },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch user profile after login.");
-      }
-      
-      const user = await response.json();
-
-      // Step 3: Manually put the user data into the cache.
-      queryClient.setQueryData(["user"], user);
-      
-      return user;
-    } catch (error) {
-      console.error("Login error:", error);
-      // Clean up on failure to prevent inconsistent states.
+  const loginMutation = useMutation({
+    mutationFn: async ({ email, password }: any) => {
       try {
-        await account.deleteSession("current");
-      } catch (deleteError) {
-        console.error("Failed to clear session after login error:", deleteError);
+        const session = await account.createEmailPasswordSession(email, password);
+        const response = await fetch("/api/me", {
+          headers: { 'x-appwrite-session': session.secret },
+        });
+        if (!response.ok) {
+          throw new Error("Failed to fetch user profile after login.");
+        }
+        return await response.json();
+      } catch (error: any) {
+        // Consolidate error messages for the UI
+        const errorMessage = error?.response?.message || error?.message || "Invalid email or password.";
+        throw new Error(errorMessage);
       }
-      queryClient.setQueryData(["user"], null);
-      throw error; // Re-throw for the mutation's onError.
-    }
-  };
+    },
+    onSuccess: (user) => {
+      queryClient.setQueryData(["user"], user);
+      setLocation("/");
+    },
+    // Let the component handle onError display
+  });
 
-  const logout = async () => {
-    try {
+  const registerMutation = useMutation({
+    mutationFn: async ({ email, password, name }: any) => {
+      const response = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, name }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Registration failed");
+      }
+      return { email, password }; // Pass credentials for auto-login
+    },
+    onSuccess: (data) => {
+      // Automatically log the user in after successful registration
+      loginMutation.mutate(data);
+    },
+    // Let the component handle onError display
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
       await account.deleteSession("current");
+    },
+    onSuccess: () => {
       queryClient.setQueryData(["user"], null);
       setLocation("/auth");
-    } catch (error) {
-      console.error("Logout error:", error);
-      throw error;
-    }
-  };
-
-  const register = async ({ email, password, name }: any) => {
-    const response = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, name }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Registration failed");
-    }
-
-    return await response.json();
-  };
+    },
+  });
 
   const loginWithGoogle = () => {
     account.createOAuth2Session(
@@ -97,33 +95,8 @@ const useAuth = () => {
     );
   };
 
-  const loginMutation = useMutation({ 
-    mutationFn: login,
-    onSuccess: (user) => {
-      console.log("Login mutation successful, redirecting for user:", user);
-      setLocation("/");
-    },
-    onError: (error) => {
-      console.error("Login mutation error:", error);
-    }
-  });
-
-  const logoutMutation = useMutation({ 
-    mutationFn: logout,
-    onError: (error) => {
-      console.error("Logout mutation error:", error);
-    }
-  });
-
-  const registerMutation = useMutation({ 
-    mutationFn: register,
-    onError: (error) => {
-      console.error("Registration mutation error:", error);
-    }
-  });
-
-  const authError = loginMutation.error || registerMutation.error || userError;
-  const isAdmin = user?.role === 'admin';
+  // This single error state will now correctly capture failures from any mutation
+  const authError = loginMutation.error || registerMutation.error;
 
   return {
     user,
@@ -131,10 +104,13 @@ const useAuth = () => {
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     authError,
-    isAdmin,
-    login: loginMutation.mutateAsync,
+    isAdmin: user?.role === 'admin',
+
+    // Expose the synchronous `mutate` functions
+    login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    register: registerMutation.mutateAsync,
+    register: registerMutation.mutate,
+
     loginWithGoogle,
   };
 };

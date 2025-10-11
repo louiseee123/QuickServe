@@ -61,12 +61,14 @@ const featureList = [
   }
 ];
 
+// Adjusted schema for simplicity: validation is still there, but refinement logic is handled differently.
 const authSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }).optional(),
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+  name: z.string().optional(),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string().optional(),
 }).refine(data => {
+  // This refinement is now only checked on the client before submission.
   if (data.confirmPassword && data.password !== data.confirmPassword) {
     return false;
   }
@@ -79,12 +81,13 @@ export default function AuthPage() {
   const [, navigate] = useLocation();
   const { 
     user, 
-    login, 
+    login,
     register, 
     isLoading, 
     isLoggingIn, 
     isRegistering, 
-    authError 
+    authError,
+    loginWithGoogle
   } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -113,8 +116,11 @@ export default function AuthPage() {
     if (authError) {
       controls.start({
         x: [0, -10, 10, -10, 10, 0],
-        transition: { duration: 0.6 }
+        transition: { duration: 0.6, type: "spring", stiffness: 500 }
       });
+      // Clear password fields on auth error for security and usability
+      form.setValue("password", "");
+      form.setValue("confirmPassword", "");
     }
   }, [authError, controls]);
 
@@ -128,43 +134,31 @@ export default function AuthPage() {
     },
   });
 
-  const handleSubmit = async (values: AuthFormValues) => {
+  // THE DEFINITIVE FIX: This handler is now synchronous.
+  // It passes form data to the mutation functions and lets TanStack Query manage the async state.
+  const handleSubmit = (values: AuthFormValues) => {
     if (activeTab === "login") {
-      await login({ email: values.email, password: values.password });
+      login({ email: values.email, password: values.password });
     } else {
+      // The manual password match check before submitting
       if (values.password !== values.confirmPassword) {
         form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
         return;
       }
-      // First, register the user
-      await register({ email: values.email, password: values.password, name: values.name });
-      // Then, log them in
-      await login({ email: values.email, password: values.password });
+      register({ email: values.email, password: values.password, name: values.name });
     }
   };
   
-  const handleGoogleSignIn = async () => {
-    // try {
-    //   await loginWithGoogle();
-    // } catch (error) {
-    //   console.error("Google sign-in failed", error);
-    // }
+  const handleGoogleSignIn = () => {
+    loginWithGoogle();
   };
 
-  const handleTabChange = (value: "login" | "register") => {
-    setActiveTab(value);
-    form.reset();
-    form.clearErrors();
-    controls.start({
-      scale: 0.98,
-      transition: { duration: 0.1 }
-    });
-    setTimeout(() => {
-      controls.start({
-        scale: 1,
-        transition: { type: "spring", stiffness: 400 }
-      });
-    }, 100);
+  const handleTabChange = (value: string | null) => {
+    if (value === "login" || value === "register") {
+      setActiveTab(value);
+      form.reset(); // Reset form state
+      form.clearErrors(); // Clear all validation errors
+    }
   };
 
   if (isLoading) {
@@ -175,6 +169,7 @@ export default function AuthPage() {
     );
   }
   
+  // Combined loading state for the submit button
   const isSubmitting = isLoggingIn || isRegistering;
 
   return (
@@ -303,7 +298,7 @@ export default function AuthPage() {
             <CardContent className="pb-8">
               <Tabs 
                 value={activeTab} 
-                onValueChange={(value) => handleTabChange(value as "login" | "register")}
+                onValueChange={handleTabChange}
                 className="relative"
               >
                 <motion.div
@@ -320,6 +315,7 @@ export default function AuthPage() {
                       initial={false}
                       animate={{
                         width: "50%",
+                        left: activeTab === "login" ? "0%" : "50%",
                         transition: { type: "spring", stiffness: 400, damping: 25 }
                       }}
                     />
@@ -360,7 +356,7 @@ export default function AuthPage() {
                       animate="visible"
                       exit="exit"
                     >
-                      <TabsContent value={activeTab}>
+                      <TabsContent value={activeTab} forceMount>
                         <Form {...form}>
                           <form
                             onSubmit={form.handleSubmit(handleSubmit)}
@@ -577,7 +573,7 @@ export default function AuthPage() {
                                     "w-full h-12 bg-white/5 border-white/10 text-white hover:bg-white/10 transition-colors flex items-center justify-center gap-2",
                                     activeTab === 'login' ? "mt-4" : ""
                                   )}
-                                  disabled={isSubmitting} // Also disable this when submitting
+                                  disabled={isSubmitting}
                                 >
                                   <img src="https://www.google.com/favicon.ico" alt="Google logo" className="h-5 w-5" />
                                   {activeTab === "login" ? "Sign in with Google" : "Google"}
