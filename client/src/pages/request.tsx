@@ -117,10 +117,12 @@ export default function Request() {
                     <Select value={course} onValueChange={setCourse}>
                       <SelectTrigger className="form-select"><SelectValue placeholder="Select your course..." /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Computer Science">Computer Science</SelectItem>
-                        <SelectItem value="Information Technology">Information Technology</SelectItem>
-                        <SelectItem value="Business Administration">Business Administration</SelectItem>
-                        <SelectItem value="Psychology">Psychology</SelectItem>
+                        <SelectItem value="BSIT">BSIT</SelectItem>
+                        <SelectItem value="BSHM">BSHM</SelectItem>
+                        <SelectItem value="BSED">BSED</SelectItem>
+                        <SelectItem value="BEED">BEED</SelectItem>
+                        <SelectItem value="BPED">BPED</SelectItem>
+                        <SelectItem value="BSEntrep">BSEntrep</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
