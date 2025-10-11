@@ -24,7 +24,7 @@ const Routes = () => (
     <ProtectedRoute path="/request-success" component={RequestSuccess} />
     <ProtectedRoute path="/request" component={Request} />
     <ProtectedRoute path="/upload-receipt/:requestId" component={UploadReceiptPage} />
-    <ProtectedRoute path="/admin" component={AdminDashboard} />
+    <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
     <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
     <ProtectedRoute path="/admin/pending-approvals" component={AdminPendingApprovals} />
