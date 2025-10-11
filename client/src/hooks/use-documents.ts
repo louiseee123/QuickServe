@@ -1,5 +1,6 @@
 
 import { useQuery } from '@tanstack/react-query';
+import { getDocuments } from '../api/documents';
 
 export interface Document {
   $id: string;
@@ -10,17 +11,9 @@ export interface Document {
   $updatedAt: string;
 }
 
-const fetchDocuments = async (): Promise<Document[]> => {
-  const response = await fetch('/api/documents');
-  if (!response.ok) {
-    throw new Error('Failed to fetch documents');
-  }
-  return response.json();
-};
-
 export const useDocuments = () => {
-  return useQuery({
+  return useQuery<Document[]>({
     queryKey: ['documents'],
-    queryFn: fetchDocuments,
+    queryFn: getDocuments,
   });
 };
