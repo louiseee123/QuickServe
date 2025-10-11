@@ -11,7 +11,7 @@ const router = Router();
 const DATABASE_ID = "68e64920003173cabdb1";
 const USERS_COLLECTION_ID = "users";
 
-// Register a new user
+// Register a new user and create a session
 router.post('/register', async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -26,11 +26,11 @@ router.post('/register', async (req, res) => {
 
     const users = new Users(account.client);
 
+    // Create the user in Appwrite Auth
     const newUser = await users.create(ID.unique(), email, password, name);
 
-    // Check if the user is the super admin
+    // Create the corresponding user document in the database
     const userRole = email === process.env.SUPER_ADMIN_EMAIL ? 'admin' : 'user';
-
     await databases.createDocument(
         DATABASE_ID,
         USERS_COLLECTION_ID,
@@ -42,11 +42,17 @@ router.post('/register', async (req, res) => {
         }
     );
 
-    res.status(201).json({ message: "User created successfully." });
+    // Immediately create a session for the new user
+    const session = await account.createEmailPasswordSession(email, password);
+
+    // Return the session to the client
+    res.status(201).json(session);
+
   } catch (error: any) {
     if (error.code === 409) { 
         return res.status(409).json({ message: 'A user with this email already exists.' });
     }
+    console.error("Registration Error:", error);
     res.status(500).json({ message: error.message || "An error occurred during registration." });
   }
 });
