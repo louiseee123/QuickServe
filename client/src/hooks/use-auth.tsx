@@ -1,45 +1,31 @@
 
 import { account } from "../lib/appwrite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "wouter";
 
-// More robust and standard way to check user authentication status.
 const useAuth = () => {
   const queryClient = useQueryClient();
-  const [, setLocation] = useLocation();
 
-  // This function now robustly handles all authentication states.
   const getCurrentUser = async () => {
     try {
-      // This will throw an error if no session exists, which is expected.
       const session = await account.getSession('current');
-
-      // If a session exists, fetch the user profile from our backend.
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
-
       if (!response.ok) {
-        // If the backend says the session is bad, delete it on the client.
         await account.deleteSession('current');
-        return null; // The user is not authenticated.
+        return null;
       }
-
-      return await response.json(); // Return the authenticated user data.
-
+      return await response.json();
     } catch (error) {
-      // This catch block handles the expected error when no session is found.
-      // In this case, the user is simply not logged in.
-      return null; // The user is not authenticated.
+      return null;
     }
   };
 
-  // The useQuery hook now fetches the user status. It will always resolve.
   const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // No need to retry; the function is self-contained.
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const loginMutation = useMutation({
@@ -47,9 +33,7 @@ const useAuth = () => {
       await account.createEmailPasswordSession(email, password);
     },
     onSuccess: () => {
-      // After login, refetch the user query to update the app state.
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      setLocation("/");
     },
   });
 
@@ -66,9 +50,7 @@ const useAuth = () => {
         }
     },
     onSuccess: () => {
-      // After registration, refetch the user query to log them in.
       queryClient.invalidateQueries({ queryKey: ['user'] });
-      setLocation("/");
     },
   });
 
@@ -77,9 +59,7 @@ const useAuth = () => {
       await account.deleteSession("current");
     },
     onSuccess: () => {
-      // After logout, clear the user data and redirect.
       queryClient.setQueryData(["user"], null);
-      setLocation("/login");
     },
   });
 
@@ -91,7 +71,6 @@ const useAuth = () => {
     );
   };
 
-  // Consolidate errors from the login/register mutations.
   const authError = loginMutation.error || registerMutation.error;
 
   return {

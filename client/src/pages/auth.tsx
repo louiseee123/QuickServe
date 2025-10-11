@@ -1,7 +1,6 @@
 
 import useAuth from "@/hooks/use-auth";
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -79,12 +78,9 @@ const authSchema = z.object({
 type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
-  const [, navigate] = useLocation();
   const { 
-    user, 
     login,
     register, 
-    isLoading, 
     isLoggingIn, 
     isRegistering, 
     authError,
@@ -99,10 +95,6 @@ export default function AuthPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!isLoading && user) {
-      navigate("/");
-    }
-    
     bgControls.start({
       scale: [1, 1.05, 1],
       transition: {
@@ -112,7 +104,7 @@ export default function AuthPage() {
         ease: "easeInOut"
       }
     });
-  }, [user, navigate, bgControls, isLoading]);
+  }, [bgControls]);
 
   useEffect(() => {
     if (authError) {
@@ -159,7 +151,6 @@ export default function AuthPage() {
     }
   };
 
-  // Force Logout Function
   const forceLogout = async () => {
     try {
       await account.deleteSession('current');
@@ -168,14 +159,6 @@ export default function AuthPage() {
       toast({ variant: "destructive", title: "No active session found", description: "There was no session to clear." });
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a1a2f]">
-        <Loader2 className="h-12 w-12 text-white animate-spin" />
-      </div>
-    );
-  }
   
   const isSubmitting = isLoggingIn || isRegistering;
 
