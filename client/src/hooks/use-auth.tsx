@@ -3,43 +3,43 @@ import { account } from "../lib/appwrite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 
+// More robust and standard way to check user authentication status.
 const useAuth = () => {
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
 
+  // This function now robustly handles all authentication states.
   const getCurrentUser = async () => {
-    // Let this throw if no session exists. The query will handle the error.
-    const session = await account.getSession('current');
+    try {
+      // This will throw an error if no session exists, which is expected.
+      const session = await account.getSession('current');
 
-    // Use the session to fetch our own backend's user data
-    const response = await fetch("/api/me", {
-      headers: { 'x-appwrite-session': session.secret },
-    });
+      // If a session exists, fetch the user profile from our backend.
+      const response = await fetch("/api/me", {
+        headers: { 'x-appwrite-session': session.secret },
+      });
 
-    if (!response.ok) {
-      // Don't delete the session here. Just signal that the fetch failed.
-      // The onError handler of the query will handle the session cleanup.
-      throw new Error("Failed to fetch user data (session may be invalid or expired)");
+      if (!response.ok) {
+        // If the backend says the session is bad, delete it on the client.
+        await account.deleteSession('current');
+        return null; // The user is not authenticated.
+      }
+
+      return await response.json(); // Return the authenticated user data.
+
+    } catch (error) {
+      // This catch block handles the expected error when no session is found.
+      // In this case, the user is simply not logged in.
+      return null; // The user is not authenticated.
     }
-    return await response.json();
   };
 
-  const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
+  // The useQuery hook now fetches the user status. It will always resolve.
+  const { data: user, isLoading: isUserLoading } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false, // Don't retry on failure, to prevent loops.
-    refetchOnWindowFocus: false, // Disable refetch on focus to prevent loops.
-    onError: async () => {
-      // This is the correct place for side-effects in response to a query failure.
-      // If fetching the user fails, it means our session is bad. Clean it up.
-      try {
-        await account.deleteSession('current');
-      } finally {
-        // Ensure the user data is cleared from the cache.
-        queryClient.setQueryData(['user'], null);
-      }
-    },
+    retry: false, // No need to retry; the function is self-contained.
   });
 
   const loginMutation = useMutation({
@@ -47,13 +47,9 @@ const useAuth = () => {
       await account.createEmailPasswordSession(email, password);
     },
     onSuccess: () => {
-      // Don't set data manually. Invalidate the query to force a clean refetch.
+      // After login, refetch the user query to update the app state.
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setLocation("/");
-    },
-    onError: (error: any) => {
-      // The component will display this error. No need to re-throw.
-      console.error("Login failed:", error);
     },
   });
 
@@ -68,9 +64,9 @@ const useAuth = () => {
             const errorData = await response.json();
             throw new Error(errorData.message || "Registration failed");
         }
-        // The server now returns a session, so we can invalidate to refetch.
     },
     onSuccess: () => {
+      // After registration, refetch the user query to log them in.
       queryClient.invalidateQueries({ queryKey: ['user'] });
       setLocation("/");
     },
@@ -81,8 +77,9 @@ const useAuth = () => {
       await account.deleteSession("current");
     },
     onSuccess: () => {
+      // After logout, clear the user data and redirect.
       queryClient.setQueryData(["user"], null);
-      setLocation("/auth");
+      setLocation("/login");
     },
   });
 
@@ -94,7 +91,8 @@ const useAuth = () => {
     );
   };
 
-  const authError = loginMutation.error || registerMutation.error || userError;
+  // Consolidate errors from the login/register mutations.
+  const authError = loginMutation.error || registerMutation.error;
 
   return {
     user,
