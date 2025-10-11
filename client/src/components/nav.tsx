@@ -18,7 +18,7 @@ import { useState } from "react";
 
 export default function Nav() {
   const [location, setLocation] = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const userLinks = [
@@ -33,18 +33,7 @@ export default function Nav() {
     { href: "/admin/pending-approvals", label: "Pending Approvals", icon: <FileCheck className="h-4 w-4" /> },
   ];
 
-  const superAdminLinks = [
-    { href: "/admin", label: "Admin", icon: <LayoutDashboard className="h-4 w-4" /> },
-  ];
-
-  let links = [];
-  if (user?.role === 'user') {
-    links = [...userLinks];
-  } else if (user?.role === 'admin') {
-    links = [...adminLinks];
-  } else if (user?.role === 'superadmin') {
-    links = [...adminLinks, ...superAdminLinks];
-  }
+  const links = isAdmin ? adminLinks : userLinks;
 
   if (!user) return null;
 
