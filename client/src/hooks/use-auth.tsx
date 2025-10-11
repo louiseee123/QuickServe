@@ -1,3 +1,4 @@
+
 import { account } from "../lib/appwrite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
@@ -7,80 +8,72 @@ const useAuth = () => {
   const [, setLocation] = useLocation();
 
   const getCurrentUser = async () => {
-    try {
-      // This will throw an error if no session exists
-      const session = await account.getSession('current');
-      // Use the session to fetch our own backend's user data
-      const response = await fetch("/api/me", {
-        headers: { 'x-appwrite-session': session.secret },
-      });
-      if (!response.ok) {
-        // If our backend says the session is invalid, delete it client-side
-        await account.deleteSession('current');
-        throw new Error("Failed to fetch user data (session is invalid or expired)");
-      }
-      return await response.json();
-    } catch (error) {
-      // This is an expected error when the user is not logged in
-      return null;
+    // Let this throw if no session exists. The query will handle the error.
+    const session = await account.getSession('current');
+
+    // Use the session to fetch our own backend's user data
+    const response = await fetch("/api/me", {
+      headers: { 'x-appwrite-session': session.secret },
+    });
+
+    if (!response.ok) {
+      // Don't delete the session here. Just signal that the fetch failed.
+      // The onError handler of the query will handle the session cleanup.
+      throw new Error("Failed to fetch user data (session may be invalid or expired)");
     }
+    return await response.json();
   };
 
   const { data: user, isLoading: isUserLoading, error: userError } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: 1, // Only retry once on initial load
+    retry: false, // Don't retry on failure, to prevent loops.
+    refetchOnWindowFocus: false, // Disable refetch on focus to prevent loops.
+    onError: async () => {
+      // This is the correct place for side-effects in response to a query failure.
+      // If fetching the user fails, it means our session is bad. Clean it up.
+      try {
+        await account.deleteSession('current');
+      } finally {
+        // Ensure the user data is cleared from the cache.
+        queryClient.setQueryData(['user'], null);
+      }
+    },
   });
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: any) => {
-      // Forcefully delete any existing session to prevent "session active" errors.
-      try {
-        await account.deleteSession('current');
-      } catch (error) {
-        // Ignore errors if no session exists, we only care about cleaning up a stuck one.
-      }
-      try {
-        const session = await account.createEmailPasswordSession(email, password);
-        const response = await fetch("/api/me", {
-          headers: { 'x-appwrite-session': session.secret },
-        });
-        if (!response.ok) {
-          throw new Error("Failed to fetch user profile after login.");
-        }
-        return await response.json();
-      } catch (error: any) {
-        // Consolidate error messages for the UI
-        const errorMessage = error?.response?.message || error?.message || "Invalid email or password.";
-        throw new Error(errorMessage);
-      }
+      await account.createEmailPasswordSession(email, password);
     },
-    onSuccess: (user) => {
-      queryClient.setQueryData(["user"], user);
+    onSuccess: () => {
+      // Don't set data manually. Invalidate the query to force a clean refetch.
+      queryClient.invalidateQueries({ queryKey: ['user'] });
       setLocation("/");
     },
-    // Let the component handle onError display
+    onError: (error: any) => {
+      // The component will display this error. No need to re-throw.
+      console.error("Login failed:", error);
+    },
   });
 
   const registerMutation = useMutation({
     mutationFn: async ({ email, password, name }: any) => {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, name }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Registration failed");
-      }
-      return { email, password }; // Pass credentials for auto-login
+        const response = await fetch("/api/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, name }),
+        });
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Registration failed");
+        }
+        // The server now returns a session, so we can invalidate to refetch.
     },
-    onSuccess: (data) => {
-      // Automatically log the user in after successful registration
-      loginMutation.mutate(data);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      setLocation("/");
     },
-    // Let the component handle onError display
   });
 
   const logoutMutation = useMutation({
@@ -101,8 +94,7 @@ const useAuth = () => {
     );
   };
 
-  // This single error state will now correctly capture failures from any mutation
-  const authError = loginMutation.error || registerMutation.error;
+  const authError = loginMutation.error || registerMutation.error || userError;
 
   return {
     user,
@@ -111,12 +103,9 @@ const useAuth = () => {
     isRegistering: registerMutation.isPending,
     authError,
     isAdmin: user?.role === 'admin',
-
-    // Expose the synchronous `mutate` functions
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-register: registerMutation.mutate,
-
+    register: registerMutation.mutate,
     loginWithGoogle,
   };
 };
