@@ -10,15 +10,31 @@ import { FilePlus, User, CheckSquare, Loader2 } from 'lucide-react';
 import useAuth from "../hooks/use-auth";
 import { useDocuments } from "../hooks/use-documents";
 import "./request.css";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Request() {
   const { user, isLoading: isUserLoading } = useAuth();
   const { data: documents, isLoading: isDocsLoading } = useDocuments();
 
+  const [studentName, setStudentName] = useState('');
+  const [studentId, setStudentId] = useState('');
+  const [email, setEmail] = useState('');
+  const [course, setCourse] = useState('');
+  const [yearLevel, setYearLevel] = useState('');
+
   const [selectedDocs, setSelectedDocs] = useState<string[]>([]);
   const [purpose, setPurpose] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setStudentName(user.name || '');
+      setStudentId(user.studentId || '');
+      setEmail(user.email || '');
+      setCourse(user.course || '');
+      setYearLevel(user.yearLevel || '');
+    }
+  }, [user]);
 
   const handleDocSelection = (docId: string) => {
     setSelectedDocs(prev => 
@@ -32,6 +48,11 @@ export default function Request() {
     e.preventDefault();
     // Handle form submission logic
     console.log({
+      studentName,
+      studentId,
+      email,
+      course,
+      yearLevel,
       selectedDocs,
       purpose,
     });
@@ -80,23 +101,26 @@ export default function Request() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="student-name" className="form-label">Full Name</Label>
-                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-name" required className="form-input" value={user?.name || ''} disabled/>}
+                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-name" required className="form-input" value={studentName} onChange={(e) => setStudentName(e.target.value)} />}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="student-id" className="form-label">Student ID</Label>
-                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-id" required className="form-input" value={user?.studentId || ''} disabled/>}
+                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-id" required className="form-input" value={studentId} onChange={(e) => setStudentId(e.target.value)} />}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="form-label">Email</Label>
-                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="email" type="email" required className="form-input" value={user?.email || ''} disabled/>}
+                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="email" type="email" required className="form-input" value={email} onChange={(e) => setEmail(e.target.value)} />}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="course" className="form-label">Course</Label>
                   {isLoading ? <Skeleton className="h-10 w-full" /> : (
-                    <Select value={user?.course || ''} disabled>
+                    <Select value={course} onValueChange={setCourse}>
                       <SelectTrigger className="form-select"><SelectValue placeholder="Select your course..." /></SelectTrigger>
                       <SelectContent>
-                        {user?.course && <SelectItem value={user.course}>{user.course}</SelectItem>}
+                        <SelectItem value="Computer Science">Computer Science</SelectItem>
+                        <SelectItem value="Information Technology">Information Technology</SelectItem>
+                        <SelectItem value="Business Administration">Business Administration</SelectItem>
+                        <SelectItem value="Psychology">Psychology</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -104,10 +128,13 @@ export default function Request() {
                 <div className="space-y-2">
                   <Label htmlFor="year-level" className="form-label">Year Level</Label>
                    {isLoading ? <Skeleton className="h-10 w-full" /> : (
-                    <Select value={user?.yearLevel || ''} disabled>
+                    <Select value={yearLevel} onValueChange={setYearLevel}>
                       <SelectTrigger className="form-select"><SelectValue placeholder="Select your year level..." /></SelectTrigger>
                       <SelectContent>
-                        {user?.yearLevel && <SelectItem value={user.yearLevel}>{user.yearLevel}</SelectItem>}
+                        <SelectItem value="1st Year">1st Year</SelectItem>
+                        <SelectItem value="2nd Year">2nd Year</SelectItem>
+                        <SelectItem value="3rd Year">3rd Year</SelectItem>
+                        <SelectItem value="4th Year">4th Year</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -141,7 +168,7 @@ export default function Request() {
                           <span className="font-bold text-gray-700">PHP {doc.price.toFixed(2)}</span>
                         </div>
                       </div>
-                    ))}
+                    )) sprinting_code_assistant
                   </div>
                 )}
               </div>
