@@ -1,37 +1,11 @@
-
 {
-    "functions": [
-        {
-            "$id": "server",
-            "name": "server",
-            "runtime": "node-18.0",
-            "provider": "local",
-            "entrypoint": "server/index.ts",
-            "ignore": [
-                "node_modules",
-                ".npm"
-            ],
-            "execute": [],
-            "events": [],
-            "schedule": "",
-            "timeout": 15,
-            "enabled": true,
-            "hosting": {
-                "path": "/"
-            }
-        }
-    ],
-    "hosting": {
-        "public": "client/dist",
-        "rewrites": [
-            {
-                "source": "/api/(.*)",
-                "destination": "/server/"
-            },
-            {
-                "source": "**",
-                "destination": "/index.html"
-            }
-        ]
-    }
+  "hosting": {
+    "public": "client/dist",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }
