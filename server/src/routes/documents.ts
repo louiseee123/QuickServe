@@ -4,7 +4,7 @@ import { databases } from '../../appwrite';
 const router = Router();
 
 const DATABASE_ID = '68e64920003173cabdb1';
-const DOCUMENTS_COLLECTION_ID = 'documents';
+const DOCUMENTS_COLLECTION_ID = '68ea9a2d00166412166a'; // Corrected Collection ID
 
 router.get('/', async (_req, res) => {
   try {

@@ -153,9 +153,9 @@ export default function Request() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                   </div>
-                ) : (
+                ) : documents && documents.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {documents?.map(doc => (
+                    {documents.map(doc => (
                       <div key={doc.$id} className="bg-white p-4 border border-gray-200 rounded-lg flex flex-col gap-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor={`doc-${doc.$id}`} className="flex items-center gap-3 font-semibold text-md cursor-pointer text-gray-800">
@@ -171,6 +171,11 @@ export default function Request() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 bg-gray-50 rounded-lg">
+                    <p className="text-gray-600 font-semibold">No documents are available for selection.</p>
+                    <p className="text-sm text-gray-500 mt-1">Please ask an administrator to add documents to the system.</p>
                   </div>
                 )}
               </div>
