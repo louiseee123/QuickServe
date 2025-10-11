@@ -24,6 +24,7 @@ import schoolBg from "./../Assets/bgcctc.jpg";
 import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User, LogOut } from "lucide-react";
 import { account } from "@/lib/appwrite";
 import { useToast } from "@/hooks/use-toast";
+import packageJson from "./../../../package.json";
 
 const tabVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -93,6 +94,7 @@ export default function AuthPage() {
   const controls = useAnimation();
   const bgControls = useAnimation();
   const { toast } = useToast();
+  const version = packageJson.version; // Add this line
 
   useEffect(() => {
     bgControls.start({
@@ -195,6 +197,7 @@ export default function AuthPage() {
               <LogOut className="h-4 w-4 mr-2" />
               Force Logout
             </Button>
+            <p className="text-xs text-blue-300/50 mt-4 text-center">Version {version}</p> {/* Add this line */}
             <button
               onClick={() => setShowHelp(false)}
               className="absolute top-2 right-2 text-blue-200 hover:text-white transition-colors"
