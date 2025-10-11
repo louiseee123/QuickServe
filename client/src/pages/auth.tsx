@@ -22,7 +22,6 @@ import logo from "./../Assets/logocctc.png";
 import qslogo from "./../Assets/QSLogo.png";
 import schoolBg from "./../Assets/bgcctc.jpg";
 import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User, LogOut } from "lucide-react";
-import { account } from "@/lib/appwrite";
 import { useToast } from "@/hooks/use-toast";
 import packageJson from "./../../../package.json";
 
@@ -85,7 +84,8 @@ export default function AuthPage() {
     isLoggingIn, 
     isRegistering, 
     authError,
-    loginWithGoogle
+    loginWithGoogle,
+    forceLogout
   } = useAuth();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
@@ -94,7 +94,7 @@ export default function AuthPage() {
   const controls = useAnimation();
   const bgControls = useAnimation();
   const { toast } = useToast();
-  const version = packageJson.version; // Add this line
+  const version = packageJson.version;
 
   useEffect(() => {
     bgControls.start({
@@ -133,11 +133,7 @@ export default function AuthPage() {
     if (activeTab === "login") {
       login({ email: values.email, password: values.password });
     } else {
-      if (values.password !== values.confirmPassword) {
-        form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
-        return;
-      }
-      register({ email: values.email, password: values.password, name: values.name });
+      register({ name: values.name, email: values.email, password: values.password });
     }
   };
   
@@ -153,13 +149,10 @@ export default function AuthPage() {
     }
   };
 
-  const forceLogout = async () => {
-    try {
-      await account.deleteSession('current');
-      toast({ title: "Success", description: "Any stuck session has been cleared. Please try logging in again." });
-    } catch (error) {
-      toast({ variant: "destructive", title: "No active session found", description: "There was no session to clear." });
-    }
+  const handleForceLogout = async () => {
+    await forceLogout();
+    toast({ title: "Success", description: "Any stuck session has been cleared. Please try logging in again." });
+    setShowHelp(false);
   };
   
   const isSubmitting = isLoggingIn || isRegistering;
@@ -191,13 +184,13 @@ export default function AuthPage() {
               Login Issues?
             </h3>
             <p className="text-blue-200 text-sm mb-4">
-              If you're stuck in a login loop, click the button below to force a logout and clear any stuck sessions.
+              If you\'re stuck in a login loop, click the button below to force a logout and clear any stuck sessions.
             </p>
-            <Button onClick={forceLogout} className="w-full bg-red-600 hover:bg-red-700 text-white">
+            <Button onClick={handleForceLogout} className="w-full bg-red-600 hover:bg-red-700 text-white">
               <LogOut className="h-4 w-4 mr-2" />
               Force Logout
             </Button>
-            <p className="text-xs text-blue-300/50 mt-4 text-center">Version {version}</p> {/* Add this line */}
+            <p className="text-xs text-blue-300/50 mt-4 text-center">Version {version}</p>
             <button
               onClick={() => setShowHelp(false)}
               className="absolute top-2 right-2 text-blue-200 hover:text-white transition-colors"
@@ -635,7 +628,7 @@ export default function AuthPage() {
               />
             </motion.div>
             <h2 className="text-5xl font-bold mb-6 leading-tight bg-gradient-to-r from-cyan-400 to-white bg-clip-text text-transparent">
-              Welcome to <br />CCTC's QuickServe
+              Welcome to <br />CCTC\'s QuickServe
             </h2>
             <p className="text-lg text-blue-200 mb-10">
               Experience seamless document processing with our new request system.

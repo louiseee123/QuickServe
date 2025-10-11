@@ -15,7 +15,7 @@ const useAuth = () => {
     }
   };
 
-  const { data: user, isLoading: isUserLoading } = useQuery({
+  const { data: user, isLoading: isUserLoading, isFetching: isUserFetching } = useQuery({
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000,
@@ -33,10 +33,12 @@ const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: async ({ email, password, name }: any) => {
       await account.create(ID.unique(), email, password, name);
-      await account.createEmailPasswordSession(email, password);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+    onSuccess: (data, variables, context) => {
+      const onSuccess = (context as any)?.onSuccess;
+      if (onSuccess) {
+        onSuccess(data);
+      }
     },
   });
 
@@ -48,6 +50,16 @@ const useAuth = () => {
       queryClient.setQueryData(["user"], null);
     },
   });
+
+  const forceLogout = async () => {
+    try {
+      await account.deleteSession('current');
+    } catch (error) {
+      // Ignore errors if no session is found
+    } finally {
+      queryClient.setQueryData(['user'], null);
+    }
+  };
 
   const loginWithGoogle = () => {
     account.createOAuth2Session(
@@ -61,15 +73,16 @@ const useAuth = () => {
 
   return {
     user,
-    isLoading: isUserLoading,
+    isLoading: isUserLoading || isUserFetching,
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     authError,
     isAdmin: user?.prefs?.role === 'admin',
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    register: registerMutation.mutate,
+    register: (vars: any, options: any) => registerMutation.mutate(vars, options),
     loginWithGoogle,
+    forceLogout,
   };
 };
 
