@@ -1,31 +1,17 @@
-# Dependencies
-/node_modules
-
-# Build-related
-/dist
-/functions/lib
-
-# Firebase
-.firebase
-firebase-debug.log
-
-# Environment variables
+# Environments
 .env
 .env.*
 !/.env.example
 
-# Service account keys
-service-account-key.json
+# IDEs and editors
+.vscode/
+.idea/
 
-# Other
-.DS_Store
+# Node
+node_modules/
 npm-debug.log
+yarn-error.log
 
-# Drizzle
-drizzle/
-
-# Stripe
-stripe.tar.gz
-
-# Logs
-ui-debug.log
+# Build output
+dist/
+build/
