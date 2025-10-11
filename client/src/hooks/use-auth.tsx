@@ -8,8 +8,8 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      const user = await account.get();
-      return { ...user, role: user.prefs.role };
+      const [user, prefs] = await Promise.all([account.get(), account.getPrefs()]);
+      return { ...user, ...prefs };
     } catch (error) {
       console.error("Failed to fetch user:", error);
       return null;
