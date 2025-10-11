@@ -1,10 +1,9 @@
 
-import './load-env.ts'; // Load environment variables first
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import cors from 'cors';
-import apiRoutes from './api.js';
+import apiRoutes from './api'; // Corrected import
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,3 +32,4 @@ const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+
