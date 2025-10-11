@@ -1,11 +1,9 @@
 
 import { Client, Account, Databases, Storage, Users } from 'node-appwrite';
-import dotenv from 'dotenv';
-
-dotenv.config({ path: '../.env' });
 
 const client = new Client();
 
+// In a deployed Appwrite environment, these variables are provided by the function's settings.
 client
     .setEndpoint(process.env.APPWRITE_ENDPOINT as string)
     .setProject(process.env.APPWRITE_PROJECT_ID as string)
