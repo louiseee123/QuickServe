@@ -21,7 +21,7 @@ router.post('/request', async (req: Request, res: Response) => {
         const newRequestData = {
             ...validatedRequest,
             requestedAt: new Date().toISOString(),
-            document_status: 'submitted', 
+            document_status: 'pending_approval', 
             payment_status: 'unpaid', 
         };
         
