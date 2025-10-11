@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig({
   root: __dirname,
+  envDir: '..',
   plugins: [
     react(),
     runtimeErrorOverlay(),
