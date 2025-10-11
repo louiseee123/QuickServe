@@ -5,19 +5,23 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 const useAuth = () => {
   const queryClient = useQueryClient();
 
+  // The query function now throws an error on failure, which is necessary for retries.
   const getCurrentUser = async () => {
     try {
       const session = await account.getSession('current');
       const response = await fetch("/api/me", {
         headers: { 'x-appwrite-session': session.secret },
       });
+
       if (!response.ok) {
-        await account.deleteSession('current');
-        return null;
+        // Throwing an error will trigger react-query's retry mechanism.
+        // This is the key change to fix the race condition.
+        throw new Error('Failed to fetch user data from server.');
       }
       return await response.json();
     } catch (error) {
-      return null;
+      // Re-throw the error so react-query knows the query failed.
+      throw error;
     }
   };
 
@@ -25,7 +29,10 @@ const useAuth = () => {
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000,
-    retry: false,
+    // Retry the query 3 times with an exponential backoff delay if it fails.
+    // This gives the server-side session time to become available.
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000), // 1s, 2s, 4s
   });
 
   const loginMutation = useMutation({
@@ -33,6 +40,8 @@ const useAuth = () => {
       await account.createEmailPasswordSession(email, password);
     },
     onSuccess: () => {
+      // After a successful login, invalidate the user query to refetch it.
+      // The refetch will now benefit from the retry logic.
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
@@ -59,6 +68,7 @@ const useAuth = () => {
       await account.deleteSession("current");
     },
     onSuccess: () => {
+      // When logging out, we don't need to refetch, just clear the user data.
       queryClient.setQueryData(["user"], null);
     },
   });
