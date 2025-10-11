@@ -35,6 +35,12 @@ const useAuth = () => {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: any) => {
+      // Forcefully delete any existing session to prevent "session active" errors.
+      try {
+        await account.deleteSession('current');
+      } catch (error) {
+        // Ignore errors if no session exists, we only care about cleaning up a stuck one.
+      }
       try {
         const session = await account.createEmailPasswordSession(email, password);
         const response = await fetch("/api/me", {
@@ -109,7 +115,7 @@ const useAuth = () => {
     // Expose the synchronous `mutate` functions
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    register: registerMutation.mutate,
+register: registerMutation.mutate,
 
     loginWithGoogle,
   };
