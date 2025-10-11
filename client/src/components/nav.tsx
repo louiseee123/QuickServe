@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { FileText, ChevronDown, LogOut, Menu, X, DollarSign, LayoutDashboard } from "lucide-react";
+import { FileText, ChevronDown, LogOut, Menu, X, LayoutDashboard, FileCheck } from "lucide-react";
 import useAuth from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import logo from "./../Assets/QSLogo.png";
@@ -14,45 +14,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function Nav() {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const commonLinks = [
-    { href: "/", label: "Home", icon: <FileText className="h-4 w-4" /> },
-  ];
-
   const userLinks = [
-    { href: "/request", label: "Request Documents", icon: <FileText className="h-4 w-4" /> },
+    { href: "/", label: "Home", icon: <FileText className="h-4 w-4" /> },
     { href: "/my-requests", label: "My Requests", icon: <FileText className="h-4 w-4" /> },
+    { href: "/request", label: "Request Document", icon: <FileText className="h-4 w-4" /> },
   ];
 
   const adminLinks = [
-    {
-      href: "/admin/dashboard",
-      label: "Dashboard",
-      icon: <LayoutDashboard className="h-4 w-4" />,
-    },
-    {
-      href: "/admin/pending-approvals",
-      label: "Pending Approvals",
-      icon: <LayoutDashboard className="h-4 w-4" />,
-    },
-    {
-        href: "/admin/payment-logs",
-        label: "Payment Logs",
-        icon: <DollarSign className="h-4 w-4" />,
-    }
+    { href: "/", label: "Home", icon: <FileText className="h-4 w-4" /> },
+    { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
+    { href: "/admin/pending-approvals", label: "Pending Approvals", icon: <FileCheck className="h-4 w-4" /> },
   ];
 
-  const links = [
-      ...commonLinks,
-      ...(user?.role === 'user' ? userLinks : []),
-      ...(user?.role === 'admin' ? adminLinks : []),
+  const superAdminLinks = [
+    { href: "/admin", label: "Admin", icon: <LayoutDashboard className="h-4 w-4" /> },
   ];
+
+  let links = [];
+  if (user?.role === 'user') {
+    links = [...userLinks];
+  } else if (user?.role === 'admin') {
+    links = [...adminLinks];
+  } else if (user?.role === 'superadmin') {
+    links = [...adminLinks, ...superAdminLinks];
+  }
 
   if (!user) return null;
 
