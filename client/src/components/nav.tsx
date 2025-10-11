@@ -26,7 +26,7 @@ export default function Nav() {
   ];
 
   const userLinks = [
-    { href: "/request", label: "Request Document", icon: <FileText className="h-4 w-4" /> },
+    { href: "/request", label: "Request Documents", icon: <FileText className="h-4 w-4" /> },
     { href: "/my-requests", label: "My Requests", icon: <FileText className="h-4 w-4" /> },
   ];
 

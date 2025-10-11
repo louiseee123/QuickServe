@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import logo from "./../Assets/logocctc.png";
 import campusBg from "./../Assets/bgcctc.jpg";
 import useAuth from "@/hooks/use-auth";
+import { Faq } from "@/components/faq";
 
 const features = [
   {
@@ -453,6 +454,11 @@ export default function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-blue-900/5">
+        <Faq />
       </section>
 
       {/* How It Works */}
