@@ -1,10 +1,8 @@
 import { Router } from 'express';
 import { databases } from '../../appwrite';
+import { DATABASE_ID, DOCUMENTS_COLLECTION_ID } from '../db';
 
 const router = Router();
-
-const DATABASE_ID = '68e64920003173cabdb1';
-const DOCUMENTS_COLLECTION_ID = '68ea9a2d00166412166a';
 
 router.get('/', async (_req, res) => {
   try {
