@@ -16,16 +16,21 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api', apiRoutes);
 
-// The root of the project is one level up from the server directory
-const projectRoot = path.join(__dirname, '..');
+if (process.env.NODE_ENV === 'production') {
+  const clientDistPath = path.join(__dirname, '..', 'dist', 'client');
+  app.use(express.static(clientDistPath));
 
-// Serve static files from the 'client/dist' directory
-app.use(express.static(path.join(projectRoot, 'client', 'dist')));
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+} else {
+  const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
+  app.use(express.static(clientDistPath));
 
-// For any other request, serve the index.html file from the 'client/dist' directory
-app.get('*', (req, res) => {
-  res.sendFile(path.join(projectRoot, 'client', 'dist', 'index.html'));
-});
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientDistPath, 'index.html'));
+  });
+}
 
 const port = process.env.PORT || 3000;
 
