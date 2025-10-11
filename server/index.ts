@@ -19,12 +19,12 @@ app.use('/api', apiRoutes);
 // The root of the project is one level up from the server directory
 const projectRoot = path.join(__dirname, '..');
 
-// Serve static files from the 'dist' directory
-app.use(express.static(path.join(projectRoot, 'dist')));
+// Serve static files from the 'client/dist' directory
+app.use(express.static(path.join(projectRoot, 'client', 'dist')) notepad);
 
-// For any other request, serve the index.html file from the 'dist' directory
+// For any other request, serve the index.html file from the 'client/dist' directory
 app.get('*', (req, res) => {
-  res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
+  res.sendFile(path.join(projectRoot, 'client', 'dist', 'index.html'));
 });
 
 const port = process.env.PORT || 3000;
