@@ -24,6 +24,7 @@ import schoolBg from "./../Assets/bgcctc.jpg";
 import { Loader2, Eye, EyeOff, ShieldCheck, UserPlus, LockKeyhole, Mail, HelpCircle, User, LogOut } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import packageJson from "./../../../package.json";
+import { useLocation } from "wouter";
 
 const tabVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -79,6 +80,8 @@ type AuthFormValues = z.infer<typeof authSchema>;
 
 export default function AuthPage() {
   const { 
+    user,
+    isLoading,
     login,
     register, 
     isLoggingIn, 
@@ -87,6 +90,7 @@ export default function AuthPage() {
     loginWithGoogle,
     forceLogout
   } = useAuth();
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -95,6 +99,12 @@ export default function AuthPage() {
   const bgControls = useAnimation();
   const { toast } = useToast();
   const version = packageJson.version;
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      setLocation("/");
+    }
+  }, [user, isLoading, setLocation]);
 
   useEffect(() => {
     bgControls.start({
@@ -184,7 +194,7 @@ export default function AuthPage() {
               Login Issues?
             </h3>
             <p className="text-blue-200 text-sm mb-4">
-              If you\'re stuck in a login loop, click the button below to force a logout and clear any stuck sessions.
+              If you're stuck in a login loop, click the button below to force a logout and clear any stuck sessions.
             </p>
             <Button onClick={handleForceLogout} className="w-full bg-red-600 hover:bg-red-700 text-white">
               <LogOut className="h-4 w-4 mr-2" />
@@ -628,7 +638,7 @@ export default function AuthPage() {
               />
             </motion.div>
             <h2 className="text-5xl font-bold mb-6 leading-tight bg-gradient-to-r from-cyan-400 to-white bg-clip-text text-transparent">
-              Welcome to <br />CCTC\'s QuickServe
+              Welcome to <br />CCTC's QuickServe
             </h2>
             <p className="text-lg text-blue-200 mb-10">
               Experience seamless document processing with our new request system.
