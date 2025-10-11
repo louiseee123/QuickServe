@@ -2,26 +2,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 
-interface Document {
+interface DocumentRequest {
+  $id: string;
   name: string;
   price: number;
+  userId: string;
+  status: string;
+  requestedAt: string;
 }
 
 export default function AdminDashboardPage() {
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [requests, setRequests] = useState<DocumentRequest[]>([]);
 
   useEffect(() => {
-    const fetchDocuments = async () => {
+    const fetchRequests = async () => {
       try {
-        const response = await fetch("/api/documents");
+        const response = await fetch("/api/requests/all");
         const data = await response.json();
-        setDocuments(data);
+        setRequests(data);
       } catch (error) {
-        console.error("Error fetching documents:", error);
+        console.error("Error fetching document requests:", error);
       }
     };
 
-    fetchDocuments();
+    fetchRequests();
   }, []);
 
   return (
@@ -34,10 +38,14 @@ export default function AdminDashboardPage() {
                 <CardContent>
                     <p className="text-gray-600 mb-4">Welcome to the admin dashboard. Here you can manage document requests.</p>
                     <div className="grid grid-cols-1 gap-4">
-                        {documents.map((doc, index) => (
-                            <Card key={index}>
-                                <CardContent>
-                                    <p>{doc.name}</p>
+                        {requests.map((req) => (
+                            <Card key={req.$id}>
+                                <CardContent className="flex justify-between items-center p-4">
+                                    <div>
+                                        <p className="font-semibold">{req.name}</p>
+                                        <p className="text-sm text-gray-500">User: {req.userId}</p>
+                                        <p className="text-sm text-gray-500">Status: {req.status}</p>
+                                    </div>
                                 </CardContent>
                             </Card>
                         ))}
