@@ -369,7 +369,7 @@ export default function AuthPage() {
                                   name="name"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel className="text-white/90 font-medium">
+                                      <FormLabel htmlFor="name" className="text-white/90 font-medium">
                                         Full Name
                                       </FormLabel>
                                       <FormControl>
@@ -379,7 +379,8 @@ export default function AuthPage() {
                                           transition={{ delay: 0.1 }}
                                         >
                                           <div className="relative">
-                                            <Input 
+                                            <Input
+                                              id="name"
                                               placeholder="Enter your full name" 
                                               {...field} 
                                               className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
@@ -399,7 +400,7 @@ export default function AuthPage() {
                                 name="email"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="text-white/90 font-medium">
+                                    <FormLabel htmlFor="email" className="text-white/90 font-medium">
                                       Email Address
                                     </FormLabel>
                                     <FormControl>
@@ -409,7 +410,8 @@ export default function AuthPage() {
                                         transition={{ delay: 0.2 }}
                                       >
                                         <div className="relative">
-                                          <Input 
+                                          <Input
+                                            id="email"
                                             placeholder="Enter your email" 
                                             {...field} 
                                             className="focus-visible:ring-cyan-400 h-12 bg-white/5 border-white/10 text-white pl-10 hover:border-white/20 transition-colors"
@@ -421,14 +423,13 @@ export default function AuthPage() {
                                     </FormControl>
                                     <FormMessage className="text-red-400/90" />
                                   </FormItem>
-                                )}
-                              />
+                                )}/>
                               <FormField
                                 control={form.control}
                                 name="password"
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel className="text-white/90 font-medium">
+                                    <FormLabel htmlFor="password" className="text-white/90 font-medium">
                                       {activeTab === "login" ? "Password" : "Choose a password"}
                                     </FormLabel>
                                     <FormControl>
@@ -439,6 +440,7 @@ export default function AuthPage() {
                                       >
                                         <div className="relative">
                                           <Input
+                                            id="password"
                                             type={showPassword ? "text" : "password"}
                                             placeholder={activeTab === "login" ? "Enter your password" : "Choose a password"}
                                             {...field}
@@ -463,15 +465,14 @@ export default function AuthPage() {
                                     </FormControl>
                                     <FormMessage className="text-red-400/90" />
                                   </FormItem>
-                                )}
-                              />
+                                )}/>
                               {activeTab === "register" && (
                                 <FormField
                                   control={form.control}
                                   name="confirmPassword"
                                   render={({ field }) => (
                                     <FormItem>
-                                      <FormLabel className="text-white/90 font-medium">
+                                      <FormLabel htmlFor="confirmPassword" className="text-white/90 font-medium">
                                         Confirm Password
                                       </FormLabel>
                                       <FormControl>
@@ -482,6 +483,7 @@ export default function AuthPage() {
                                         >
                                           <div className="relative">
                                             <Input
+                                              id="confirmPassword"
                                               type={showConfirmPassword ? "text" : "password"}
                                               placeholder="Confirm your password"
                                               {...field}
