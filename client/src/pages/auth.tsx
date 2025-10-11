@@ -129,22 +129,17 @@ export default function AuthPage() {
   });
 
   const handleSubmit = async (values: AuthFormValues) => {
-    try {
-      if (activeTab === "login") {
-        await login({ email: values.email, password: values.password });
-      } else {
-        if (values.password !== values.confirmPassword) {
-          form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
-          return;
-        }
-        // First, register the user
-        await register({ email: values.email, password: values.password, name: values.name });
-        // Then, log them in
-        await login({ email: values.email, password: values.password });
+    if (activeTab === "login") {
+      await login({ email: values.email, password: values.password });
+    } else {
+      if (values.password !== values.confirmPassword) {
+        form.setError("confirmPassword", { type: "manual", message: "Passwords do not match" });
+        return;
       }
-    } catch (error) {
-      // Errors are handled by the authError state from the useAuth hook
-      console.error("Auth failed", error);
+      // First, register the user
+      await register({ email: values.email, password: values.password, name: values.name });
+      // Then, log them in
+      await login({ email: values.email, password: values.password });
     }
   };
   
