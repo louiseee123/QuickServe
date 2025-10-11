@@ -1,14 +1,18 @@
-
 import { Router } from 'express';
-import { db } from '../db';
-import { documents } from '../../../shared/schema';
+import { databases } from '../../appwrite';
 
 const router = Router();
 
+const DATABASE_ID = '68e64920003173cabdb1';
+const DOCUMENTS_COLLECTION_ID = '68ea9a2d00166412166a';
+
 router.get('/', async (_req, res) => {
   try {
-    const allDocuments = await db.select().from(documents);
-    res.json(allDocuments);
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      DOCUMENTS_COLLECTION_ID
+    );
+    res.json(response.documents);
   } catch (error) {
     console.error('Error fetching documents:', error);
     res.status(500).send('Internal Server Error');
