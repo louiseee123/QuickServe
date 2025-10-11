@@ -1,27 +1,17 @@
 
 import { account } from "../lib/appwrite";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ID } from "appwrite";
 
 const useAuth = () => {
   const queryClient = useQueryClient();
 
-  // The query function now throws an error on failure, which is necessary for retries.
   const getCurrentUser = async () => {
     try {
-      const session = await account.getSession('current');
-      const response = await fetch("/api/me", {
-        headers: { 'x-appwrite-session': session.secret },
-      });
-
-      if (!response.ok) {
-        // Throwing an error will trigger react-query's retry mechanism.
-        // This is the key change to fix the race condition.
-        throw new Error('Failed to fetch user data from server.');
-      }
-      return await response.json();
+      return await account.get();
     } catch (error) {
-      // Re-throw the error so react-query knows the query failed.
-      throw error;
+      console.error("Failed to fetch user:", error);
+      return null;
     }
   };
 
@@ -29,10 +19,6 @@ const useAuth = () => {
     queryKey: ["user"],
     queryFn: getCurrentUser,
     staleTime: 5 * 60 * 1000,
-    // Retry the query 3 times with an exponential backoff delay if it fails.
-    // This gives the server-side session time to become available.
-    retry: 3,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 8000), // 1s, 2s, 4s
   });
 
   const loginMutation = useMutation({
@@ -40,23 +26,14 @@ const useAuth = () => {
       await account.createEmailPasswordSession(email, password);
     },
     onSuccess: () => {
-      // After a successful login, invalidate the user query to refetch it.
-      // The refetch will now benefit from the retry logic.
       queryClient.invalidateQueries({ queryKey: ['user'] });
     },
   });
 
   const registerMutation = useMutation({
     mutationFn: async ({ email, password, name }: any) => {
-        const response = await fetch("/api/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, name }),
-        });
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Registration failed");
-        }
+      await account.create(ID.unique(), email, password, name);
+      await account.createEmailPasswordSession(email, password);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -68,7 +45,6 @@ const useAuth = () => {
       await account.deleteSession("current");
     },
     onSuccess: () => {
-      // When logging out, we don't need to refetch, just clear the user data.
       queryClient.setQueryData(["user"], null);
     },
   });
@@ -89,7 +65,7 @@ const useAuth = () => {
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     authError,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.prefs?.role === 'admin',
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
     register: registerMutation.mutate,
