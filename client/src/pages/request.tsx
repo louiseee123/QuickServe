@@ -168,7 +168,7 @@ export default function Request() {
                           <span className="font-bold text-gray-700">PHP {doc.price.toFixed(2)}</span>
                         </div>
                       </div>
-                    )) sprinting_code_assistant
+                    ))}
                   </div>
                 )}
               </div>
