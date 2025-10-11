@@ -8,7 +8,8 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      return await account.get();
+      const user = await account.get();
+      return { ...user, role: user.prefs.role };
     } catch (error) {
       console.error("Failed to fetch user:", error);
       return null;
@@ -33,6 +34,8 @@ const useAuth = () => {
   const registerMutation = useMutation({
     mutationFn: async ({ email, password, name }: any) => {
       await account.create(ID.unique(), email, password, name);
+      await account.createEmailPasswordSession(email, password);
+      await account.updatePrefs({ role: 'user' });
     },
     onSuccess: (data, variables, context) => {
       const onSuccess = (context as any)?.onSuccess;
@@ -77,7 +80,7 @@ const useAuth = () => {
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     authError,
-    isAdmin: user?.prefs?.role === 'admin',
+    isAdmin: user?.role === 'admin',
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
     register: (vars: any, options: any) => registerMutation.mutate(vars, options),
