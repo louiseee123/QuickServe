@@ -20,7 +20,7 @@ app.use('/api', apiRoutes);
 const projectRoot = path.join(__dirname, '..');
 
 // Serve static files from the 'client/dist' directory
-app.use(express.static(path.join(projectRoot, 'client', 'dist')) notepad);
+app.use(express.static(path.join(projectRoot, 'client', 'dist')));
 
 // For any other request, serve the index.html file from the 'client/dist' directory
 app.get('*', (req, res) => {
