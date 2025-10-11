@@ -15,12 +15,15 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api', apiRoutes);
 
-// Serve static files from the 'client/dist/client' directory
-app.use(express.static(path.join(__dirname, '../client/dist/client')));
+// The root of the project is one level up from the server directory
+const projectRoot = path.join(__dirname, '..');
 
-// For any other request, serve the index.html file
+// Serve static files from the 'dist' directory
+app.use(express.static(path.join(projectRoot, 'dist')));
+
+// For any other request, serve the index.html file from the 'dist' directory
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../client/dist/client', 'index.html'));
+  res.sendFile(path.join(projectRoot, 'dist', 'index.html'));
 });
 
 const port = process.env.PORT || 3000;
