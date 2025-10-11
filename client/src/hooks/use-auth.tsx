@@ -8,10 +8,23 @@ const useAuth = () => {
 
   const getCurrentUser = async () => {
     try {
-      const [user, prefs] = await Promise.all([account.get(), account.getPrefs()]);
+      const user = await account.get();
+      let prefs = await account.getPrefs();
+
+      // If the user is logged in but has no role in their preferences,
+      // assign them the 'user' role by default.
+      if (!prefs.role) {
+        prefs = await account.updatePrefs({ ...prefs, role: 'user' });
+      }
+
       return { ...user, ...prefs };
-    } catch (error) {
-      console.error("Failed to fetch user:", error);
+
+    } catch (error: any) {
+      // This error is expected for guest users who are not logged in.
+      // We'll ignore the 401 "missing scopes" error to avoid confusion in the console.
+      if (error.code !== 401) {
+          console.error("Failed to fetch user:", error);
+      }
       return null;
     }
   };
@@ -35,6 +48,7 @@ const useAuth = () => {
     mutationFn: async ({ email, password, name }: any) => {
       await account.create(ID.unique(), email, password, name);
       await account.createEmailPasswordSession(email, password);
+      // New users are explicitly given the 'user' role.
       await account.updatePrefs({ role: 'user' });
     },
     onSuccess: (data, variables, context) => {
