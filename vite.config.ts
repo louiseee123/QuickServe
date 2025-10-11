@@ -10,6 +10,7 @@ const __dirname = dirname(__filename);
 
 export default defineConfig({
   root: path.resolve(__dirname, 'client'),
+  envDir: path.resolve(__dirname),
   plugins: [
     react(),
     runtimeErrorOverlay(),
