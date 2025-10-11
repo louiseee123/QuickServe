@@ -94,7 +94,7 @@ const useAuth = () => {
     isLoggingIn: loginMutation.isPending,
     isRegistering: registerMutation.isPending,
     authError,
-    isAdmin: user?.role === 'admin',
+    isAdmin: user?.role === 'admin' || user?.role === 'super-admin',
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
     register: (vars: any, options: any) => registerMutation.mutate(vars, options),
