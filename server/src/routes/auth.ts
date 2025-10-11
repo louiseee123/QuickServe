@@ -86,36 +86,40 @@ router.post('/logout', async (req, res) => {
 router.get('/me', async (req, res) => {
   try {
     const sessionSecret = req.headers['x-appwrite-session'] as string;
+
     if (!sessionSecret) {
       return res.status(401).json({ error: 'Not authenticated: session secret is missing' });
     }
 
+    // Create a new Appwrite client and set the session to verify the user
     const userClient = new Client()
       .setEndpoint(process.env.APPWRITE_ENDPOINT!)
       .setProject(process.env.APPWRITE_PROJECT_ID!)
       .setSession(sessionSecret);
 
     const userAccount = new Account(userClient);
+    
+    // Get the user details from Appwrite
     const user = await userAccount.get();
     
-    // Now, fetch the user's role from the database
-    const userDoc = await databases.listDocuments(
+    // Now, fetch the user's role from our database
+    const userDocs = await databases.listDocuments(
       DATABASE_ID,
       USERS_COLLECTION_ID,
       [Query.equal('email', user.email)]
     );
 
-    if (userDoc.documents.length === 0) {
+    if (userDocs.documents.length === 0) {
         return res.status(404).json({ error: "User document not found." });
     }
 
     const userWithRole = {
         ...user,
-        role: userDoc.documents[0].role
+        role: userDocs.documents[0].role
     };
 
-
     res.status(200).json(userWithRole);
+
   } catch (error: any) {
     res.status(401).json({ error: 'Not authenticated: ' + error.message });
   }
