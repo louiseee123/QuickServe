@@ -2,10 +2,6 @@
 import { Router } from 'express';
 import { account, databases } from '../../appwrite';
 import { Client, Account, ID, Users, Query } from 'node-appwrite';
-import dotenv from 'dotenv';
-import path from 'path';
-
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const router = Router();
 const DATABASE_ID = "68e64920003173cabdb1";
