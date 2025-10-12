@@ -9,14 +9,13 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-// Applying user's explicit instruction: Remove unnecessary `cell` definitions
-// to let the table library handle basic rendering automatically.
+// Correcting the column definitions to match the custom DataTable component's
+// requirement that every column must have a `cell` function.
 const columns = [
   {
     header: "Document Name",
-    accessorKey: "documents",
-    cell: ({ row }: any) => {
-      const docs = row?.original?.documents;
+    cell: (row: any) => {
+      const docs = row?.documents;
       if (!Array.isArray(docs)) {
         return <span className="text-red-500">Invalid Data</span>;
       }
@@ -31,25 +30,23 @@ const columns = [
   },
   {
     header: "Purpose of Request",
-    accessorKey: "purpose", // `cell` property removed as per user instruction
+    cell: (row: any) => row.purpose,
   },
   {
     header: "Name of the Requestor",
-    accessorKey: "studentName", // `cell` property removed as per user instruction
+    cell: (row: any) => row.studentName,
   },
   {
     header: "Price",
-    accessorKey: "totalAmount",
-    cell: ({ row }: any) => {
-      const amount = row?.original?.totalAmount;
+    cell: (row: any) => {
+      const amount = row?.totalAmount;
       return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
     },
   },
   {
     header: "Status",
-    accessorKey: "status",
-    cell: ({ row }: any) => {
-      const status = row?.original?.status || "unknown";
+    cell: (row: any) => {
+      const status = row?.status || "unknown";
       return (
         <Badge
           className={`capitalize text-white bg-gray-400 ${
@@ -69,7 +66,6 @@ const columns = [
   },
   {
     header: "Action",
-    id: "action",
     cell: () => <Button variant="outline" size="sm">Action</Button>,
   },
 ];
