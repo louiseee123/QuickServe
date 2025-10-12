@@ -68,7 +68,7 @@ export default function Request() {
   const createRequestMutation = useMutation({
       mutationFn: createDocumentRequest,
       onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
+          queryClient.refetchQueries({ queryKey: ['requests'] });
           toast({
               title: "Request Submitted!",
               description: "Your document request has been sent successfully.",
