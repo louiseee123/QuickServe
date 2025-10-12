@@ -55,7 +55,7 @@ export default function Footer() {
             QuickServe Document Management System
           </p>
           <p className="text-center text-blue-400/60 text-xs mt-1">
-            QuickServe Version: 1.11
+            QuickServe Version: 1.12
           </p>
           
           {/* Static star particles */}

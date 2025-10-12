@@ -4,7 +4,8 @@ import { databases, storage } from './appwrite';
 import { ID, Query, InputFile } from 'node-appwrite';
 import multer from 'multer';
 import requestsRouter from './src/routes/requests';
-import { DATABASE_ID, DOCUMENTS_COLLECTION_ID as DOCS_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_ID } from './src/db';
+import { DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_ID } from './src/db';
+import { getAvailableDocuments, getAllRequests } from './src/db'; // Correctly import the functions
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -17,11 +18,8 @@ router.use('/request', requestsRouter);
 // Get all available documents
 router.get('/documents', async (req: Request, res: Response) => {
     try {
-        const response = await databases.listDocuments(
-            DATABASE_ID,
-            DOCS_ID
-        );
-        res.status(200).send(response.documents);
+        const documents = await getAvailableDocuments();
+        res.status(200).send(documents);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
@@ -30,12 +28,8 @@ router.get('/documents', async (req: Request, res: Response) => {
 // Get all document requests for admin
 router.get('/requests/all', async (req: Request, res: Response) => {
     try {
-        const response = await databases.listDocuments(
-            DATABASE_ID,
-            REQUESTS_ID,
-            [Query.orderDesc('$createdAt')]
-        );
-        res.status(200).send(response.documents);
+        const requests = await getAllRequests();
+        res.status(200).send(requests);
     } catch (error: any) {
         res.status(400).send({ error: error.message });
     }
