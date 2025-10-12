@@ -9,8 +9,8 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-// Following user guidance to fix "i.cell is not a function" error.
-// Every column now has an explicit `cell` function defined.
+// Applying user's explicit instruction: Remove unnecessary `cell` definitions
+// to let the table library handle basic rendering automatically.
 const columns = [
   {
     header: "Document Name",
@@ -31,13 +31,11 @@ const columns = [
   },
   {
     header: "Purpose of Request",
-    accessorKey: "purpose",
-    cell: (info: any) => info.getValue(), // Explicitly define cell renderer
+    accessorKey: "purpose", // `cell` property removed as per user instruction
   },
   {
     header: "Name of the Requestor",
-    accessorKey: "studentName",
-    cell: (info: any) => info.getValue(), // Explicitly define cell renderer
+    accessorKey: "studentName", // `cell` property removed as per user instruction
   },
   {
     header: "Price",
@@ -71,7 +69,7 @@ const columns = [
   },
   {
     header: "Action",
-    id: "action", // Added a unique ID for the action column
+    id: "action",
     cell: () => <Button variant="outline" size="sm">Action</Button>,
   },
 ];
@@ -89,16 +87,13 @@ export default function MyRequests() {
           .map(doc => {
             let parsedDocuments = [];
             try {
-              // Ensure doc.documents is a string before parsing
               if (typeof doc.documents === 'string') {
                 parsedDocuments = JSON.parse(doc.documents);
               } else if (Array.isArray(doc.documents)) {
-                // If it's already an array, use it directly
                 parsedDocuments = doc.documents;
               }
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
-               // Leave parsedDocuments as an empty array on failure
             }
             return {
                 ...doc,
@@ -108,7 +103,6 @@ export default function MyRequests() {
       },
   });
 
-  // Filter out any malformed request objects before passing to the table
   const safeRequests = requests.filter(Boolean);
 
   return (
@@ -119,7 +113,6 @@ export default function MyRequests() {
         transition={{ duration: 0.5 }}
         className="container mx-auto pt-24 px-4 pb-8 flex flex-col items-center"
       >
-        {/* 3-Step Guide */}
         <div className="w-full max-w-5xl mb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="flex flex-col items-center">
