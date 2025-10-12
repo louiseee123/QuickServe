@@ -1,99 +1,125 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-import { Eye, Check, X, User, Hash, Mail, GraduationCap, School, Calendar, FileText, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { useState } from 'react';
-
-const statusColors = {
-  pending_payment: 'bg-yellow-400',
-  pending_approval: 'bg-orange-400',
-  approved: 'bg-green-500',
-  denied: 'bg-red-500',
-  in_progress: 'bg-blue-500',
-  completed: 'bg-indigo-500',
-};
+import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
 export default function PendingApprovals() {
   const queryClient = useQueryClient();
-  const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['/api/requests/pending-approvals'],
+  const { data: requests = [], isLoading } = useQuery<any[]>({
+      queryKey: ['requests', 'pending-approvals'],
+      queryFn: async () => {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            DOCUMENT_REQUESTS_COLLECTION_ID
+        );
+        return response.documents.filter(doc => doc.status === 'pending_approval');
+      },
   });
 
-  const [selectedRequest, setSelectedRequest] = useState(null);
-  const [isReviewOpen, setReviewOpen] = useState(false);
-
   const mutation = useMutation({
-    mutationFn: async ({ id, status }) => {
-      const response = await fetch(`/api/requests/${id}/status`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to ${status} request`);
-      }
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+        const response = await databases.updateDocument(
+            DATABASE_ID,
+            DOCUMENT_REQUESTS_COLLECTION_ID,
+            id,
+            { status }
+        );
+        return response;
     },
-    onSuccess: (_, { status }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/requests/pending-approvals'] });
-      toast.success(`Request has been ${status}.`);
-      setReviewOpen(false);
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requests', 'pending-approvals'] });
+      queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
+      toast.success(`Request status has been updated.`);
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
 
-  const handleAction = (id, status) => {
+  const handleAction = (id: string, status: string) => {
     mutation.mutate({ id, status });
   };
 
   const columns = [
-    { header: 'Request ID', accessorKey: 'id' },
-    { header: 'Student Name', accessorKey: 'studentName' },
     {
-      header: 'Documents',
-      cell: ({ row }) => (
-        <div className="flex flex-col">
-          {row.original.documentRequests.map((dr) => (
-            <span key={dr.id}>{dr.documentType}</span>
-          ))}
-        </div>
-      ),
+      header: "Document Name",
+      cell: (row: any) => {
+        const docs = row?.documents;
+        if (!Array.isArray(docs)) {
+          return <span className="text-red-500">Invalid Data</span>;
+        }
+        return (
+          <ul className="list-disc pl-4">
+            {docs.map((doc: any, index: number) => (
+              <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
+            ))}
+          </ul>
+        );
+      },
     },
     {
-      header: 'Date Requested',
-      accessorKey: 'createdAt',
-      cell: ({ row }) => format(new Date(row.original.createdAt), 'PPp'),
+      header: "Purpose of Request",
+      cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
     },
     {
-      header: 'Status',
-      accessorKey: 'status',
-      cell: ({ row }) => (
-        <Badge className={`${statusColors[row.original.status] || 'bg-gray-400'} text-white`}>
-          {row.original.status.replace('_', ' ').toUpperCase()}
-        </Badge>
-      ),
+      header: "Name of the Requestor",
+      cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
     },
+    {
+      header: "Price",
+      cell: (row: any) => {
+        const amount = row?.totalAmount;
+        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+      },
+    },
+    {
+        header: "Status",
+        cell: (row: any) => {
+          const status = row?.status || "unknown";
+          const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
+          return (
+            <Badge
+              className={`text-white bg-gray-400 ${
+                {
+                  pending_approval: "bg-orange-400",
+                  pending_payment: "bg-yellow-500",
+                  processing: "bg-blue-500",
+                  completed: "bg-green-500",
+                  denied: "bg-red-500",
+                }[status]
+              }`}
+            >
+              {formattedStatus}
+            </Badge>
+          );
+        },
+      },
     {
       header: 'Actions',
-      cell: ({ row }) => (
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={() => { setSelectedRequest(row.original); setReviewOpen(true); }}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-green-600 hover:bg-green-100" onClick={() => handleAction(row.original.id, 'pending_payment')} disabled={mutation.isLoading}>
-            <Check className="h-5 w-5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="text-red-600 hover:bg-red-100" onClick={() => handleAction(row.original.id, 'denied')} disabled={mutation.isLoading}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      ),
+      cell: ({ row }: any) => {
+        const { $id } = row;
+        return (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">Action</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => handleAction($id, "pending_payment")}>
+                    Accept
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleAction($id, "denied")}>
+                    Deny
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        );
+      },
     },
   ];
 
@@ -120,68 +146,6 @@ export default function PendingApprovals() {
           </CardContent>
         </Card>
       </main>
-
-      {/* Review Dialog */}
-      <Dialog open={isReviewOpen} onOpenChange={setReviewOpen}>
-        <DialogContent className="sm:max-w-[625px]">
-            {selectedRequest && (
-                <>
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold">Review Request #{selectedRequest.id}</DialogTitle>
-                        <DialogDescription>Review the student's information and requested documents before taking action.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                        {/* Student Info Section */}
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-4 p-4 border rounded-lg">
-                            <InfoItem icon={User} label="Student Name" value={selectedRequest.studentName} />
-                            <InfoItem icon={Hash} label="Student ID" value={selectedRequest.studentId} />
-                            <InfoItem icon={Mail} label="Email" value={selectedRequest.email} />
-                            <InfoItem icon={GraduationCap} label="Course" value={selectedRequest.course} />
-                            <InfoItem icon={School} label="Year Level" value={selectedRequest.yearLevel} />
-                            <InfoItem icon={Calendar} label="Date Requested" value={format(new Date(selectedRequest.createdAt), 'PPP')} />
-                        </div>
-                        
-                        {/* Purpose Section */}
-                         <div className="p-4 border rounded-lg">
-                             <h4 className="font-semibold mb-2 flex items-center gap-2"><FileText className="h-4 w-4" /> Purpose</h4>
-                            <p className="text-gray-700 bg-gray-50 p-3 rounded-md">{selectedRequest.purpose}</p>
-                        </div>
-                        
-                        {/* Documents Section */}
-                        <div className="p-4 border rounded-lg">
-                            <h4 className="font-semibold mb-3">Requested Documents</h4>
-                            <div className="space-y-3">
-                                {selectedRequest.documentRequests.map((doc, index) => (
-                                    <div key={index} className="flex justify-between items-start bg-gray-50 p-3 rounded-md">
-                                        <div>
-                                            <p className="font-medium">{doc.documentType}</p>
-                                            {doc.details && <p className="text-sm text-gray-600 pl-2">&ndash; {doc.details}</p>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                    <DialogFooter className="mt-4">
-                        <Button variant="outline" onClick={() => setReviewOpen(false)}>Cancel</Button>
-                        <Button className="bg-red-600 hover:bg-red-700 text-white" onClick={() => handleAction(selectedRequest.id, 'denied')} disabled={mutation.isLoading}>Deny</Button>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleAction(selectedRequest.id, 'pending_payment')} disabled={mutation.isLoading}>Approve</Button>
-                    </DialogFooter>
-                </>
-            )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
-
-// Helper component for displaying info items
-const InfoItem = ({ icon: Icon, label, value }) => (
-    <div className="flex items-start gap-3">
-        <Icon className="h-5 w-5 text-gray-500 mt-1" />
-        <div>
-            <p className="text-sm font-medium text-gray-500">{label}</p>
-            <p className="font-semibold text-gray-800">{value}</p>
-        </div>
-    </div>
-);

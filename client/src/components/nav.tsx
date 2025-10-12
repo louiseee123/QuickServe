@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
-import { FileText, ChevronDown, LogOut, Menu, X, LayoutDashboard, FileCheck } from "lucide-react";
+import { FileText, ChevronDown, LogOut, Menu, X, LayoutDashboard, FileCheck, CreditCard } from "lucide-react";
 import useAuth from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import logo from "./../Assets/QSLogo.png";
@@ -31,6 +31,7 @@ export default function Nav() {
     { href: "/", label: "Home", icon: <FileText className="h-4 w-4" /> },
     { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
     { href: "/admin/pending-approvals", label: "Pending Approvals", icon: <FileCheck className="h-4 w-4" /> },
+    { href: "/admin/pending-payment", label: "Pending Payments", icon: <CreditCard className="h-4 w-4" /> },
   ];
 
   const links = isAdmin ? adminLinks : userLinks;
