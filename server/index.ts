@@ -9,26 +9,26 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// --- CORS Configuration ---
-const corsOptions = {
+// --- Middleware ---
+
+// Unified CORS setup
+app.use(cors({
   origin: 'https://quickserve.appwrite.network',
   credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-};
+}));
 
-// --- Middleware ---
-// First, handle preflight requests for all routes
-app.options('*', cors(corsOptions));
-
-// Then, use CORS for all other requests
-app.use(cors(corsOptions));
-
+// Body parser
 app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// --- API Routes ---
+// --- Routes ---
+
+// API routes
 app.use('/api', apiRoutes);
+
+// Static file serving for uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // --- Client Serving ---
 const clientDistPath = path.join(__dirname, '../client');
