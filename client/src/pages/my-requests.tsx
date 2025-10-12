@@ -1,16 +1,13 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
-import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
-import { useLocation, Link } from "wouter";
+import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
-import SuccessModal from "@/components/SuccessModal";
 
 const columns = [
   {
@@ -65,16 +62,6 @@ const columns = [
 ];
 
 export default function MyRequests() {
-  const [location, navigate] = useLocation();
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("success") === "true") {
-      setIsSuccessModalOpen(true);
-    }
-  }, [location]);
-
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'all'],
       queryFn: async () => {
@@ -88,11 +75,6 @@ export default function MyRequests() {
         })) as any[];
       },
   });
-
-  const handleCloseModal = () => {
-    setIsSuccessModalOpen(false);
-    navigate("/my-requests"); // Navigate back to the main page
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
@@ -162,7 +144,6 @@ export default function MyRequests() {
           </CardContent>
         </Card>
       </motion.main>
-      <SuccessModal isOpen={isSuccessModalOpen} onClose={handleCloseModal} />
     </div>
   );
 }
