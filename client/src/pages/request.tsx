@@ -27,7 +27,7 @@ export default function Request() {
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm({
       defaultValues: {
           studentName: '',
-          studentNumber: '',
+          studentId: '',
           email: '',
           course: '',
           yearLevel: '',
@@ -40,9 +40,7 @@ export default function Request() {
   useEffect(() => {
     if (user) {
       setValue('studentName', user.name || '');
-      // Assuming user object has studentId, course, yearLevel
-      // If the property names are different, you need to adjust them here
-      setValue('studentNumber', user.studentId || '');
+      setValue('studentId', user.studentId || '');
       setValue('email', user.email || '');
       setValue('course', user.course || '');
       setValue('yearLevel', user.yearLevel || '');
@@ -73,8 +71,6 @@ export default function Request() {
               title: "Request Submitted!",
               description: "Your document request has been sent successfully.",
           });
-          // Optionally reset the form
-          // reset();
       },
       onError: (error) => {
           toast({
@@ -105,7 +101,6 @@ export default function Request() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 modern-form">
       <main className="container mx-auto pt-24 px-4 pb-16 flex flex-col items-center">
-        {/* 3-Step Guide */}
         <div className="w-full max-w-5xl mb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="flex flex-col items-center">
@@ -139,7 +134,6 @@ export default function Request() {
                <CardDescription className="text-gray-600 pt-2 text-base">Complete the form below to submit your document request.</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
-              {/* Student Details Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="student-name" className="form-label">Full Name</Label>
@@ -148,8 +142,8 @@ export default function Request() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="student-id" className="form-label">Student ID</Label>
-                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-id" {...register('studentNumber', { required: 'Student ID is required' })} className="form-input" />}
-                   {errors.studentNumber && <p className="text-red-500 text-xs mt-1">{errors.studentNumber.message}</p>}
+                  {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-id" {...register('studentId', { required: 'Student ID is required' })} className="form-input" />}
+                   {errors.studentId && <p className="text-red-500 text-xs mt-1">{errors.studentId.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="form-label">Email</Label>
@@ -200,7 +194,6 @@ export default function Request() {
                 </div>
               </div>
 
-              {/* Document Selection */}
                 <div className="space-y-4 mb-8 pb-8 border-b border-gray-200">
                     <Label className="text-lg font-bold text-blue-600">Select Documents</Label>
                     <Controller
@@ -251,7 +244,6 @@ export default function Request() {
                 </div>
 
               
-              {/* Detailed Purpose */}
               <div className="space-y-2 mb-8">
                 <Label htmlFor="purpose" className="form-label">Detailed Purpose for Request</Label>
                 <Textarea 
