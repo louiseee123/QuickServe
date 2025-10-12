@@ -35,7 +35,8 @@ export default function Request() {
           yearLevel: '',
           documents: [],
           purpose: '',
-          totalAmount: 0
+          totalAmount: 0,
+          status: 'pending_approval'
       }
   });
 
