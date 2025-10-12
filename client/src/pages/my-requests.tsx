@@ -6,21 +6,39 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-// Applying user's explicit instruction: Change text color, update status display, and disable action button.
+const ActionButton = ({ row }) => {
+  const [, navigate] = useLocation();
+  const { status, $id, totalAmount } = row.original;
+
+  const handleProceed = () => {
+    navigate(`/checkout?requestId=${$id}&totalAmount=${totalAmount}`);
+  };
+
+  if (status === 'pending_payment') {
+    return (
+      <Button variant="outline" size="sm" onClick={handleProceed}>
+        Proceed
+      </Button>
+    );
+  }
+
+  return <Button variant="outline" size="sm" disabled>Action</Button>;
+};
+
 const columns = [
   {
     header: "Document Name",
-    cell: (row: any) => {
-      const docs = row?.documents;
+    cell: ({ row }) => {
+      const docs = row.original?.documents;
       if (!Array.isArray(docs)) {
         return <span className="text-red-500">Invalid Data</span>;
       }
       return (
         <ul className="list-disc pl-4">
-          {docs.map((doc: any, index: number) => (
+          {docs.map((doc, index) => (
             <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
           ))}
         </ul>
@@ -29,24 +47,24 @@ const columns = [
   },
   {
     header: "Purpose of Request",
-    cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
+    accessorKey: "purpose",
   },
   {
     header: "Name of the Requestor",
-    cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
+    accessorKey: "studentName",
   },
   {
     header: "Price",
-    cell: (row: any) => {
-      const amount = row?.totalAmount;
+    cell: ({ row }) => {
+      const amount = row.original?.totalAmount;
       return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
     },
   },
   {
     header: "Status",
-    cell: (row: any) => {
-      const status = row?.status || "unknown";
-      const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
+    cell: ({ row }) => {
+      const status = row.original?.status || "unknown";
+      const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
       return (
         <Badge
           className={`text-white bg-gray-400 ${
@@ -66,40 +84,38 @@ const columns = [
   },
   {
     header: "Action",
-    cell: () => <Button variant="outline" size="sm" disabled>Action</Button>,
+    cell: ActionButton,
   },
 ];
 
 export default function MyRequests() {
-  const { data: requests = [], isLoading } = useQuery<any[]>({
+  const { data: requests = [], isLoading } = useQuery<any[]>(
+    {
       queryKey: ['requests', 'all'],
       queryFn: async () => {
         const response = await databases.listDocuments(
-            DATABASE_ID,
-            DOCUMENT_REQUESTS_COLLECTION_ID
+          DATABASE_ID,
+          DOCUMENT_REQUESTS_COLLECTION_ID
         );
-        return response.documents
-          .filter(doc => doc) // Filter out null/undefined documents
-          .map(doc => {
-            let parsedDocuments = [];
-            try {
-              if (typeof doc.documents === 'string') {
-                parsedDocuments = JSON.parse(doc.documents);
-              } else if (Array.isArray(doc.documents)) {
-                parsedDocuments = doc.documents;
-              }
-            } catch (e) {
-              console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+        return response.documents.map(doc => {
+          let parsedDocuments = [];
+          try {
+            if (typeof doc.documents === 'string') {
+              parsedDocuments = JSON.parse(doc.documents);
+            } else if (Array.isArray(doc.documents)) {
+              parsedDocuments = doc.documents;
             }
-            return {
-                ...doc,
-                documents: parsedDocuments
-            };
+          } catch (e) {
+            console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+          }
+          return {
+            ...doc,
+            documents: parsedDocuments
+          };
         });
       },
-  });
-
-  const safeRequests = requests.filter(Boolean);
+    }
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
@@ -149,13 +165,13 @@ export default function MyRequests() {
               </div>
             )}
 
-            {!isLoading && safeRequests.length > 0 && (
+            {!isLoading && requests.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
-                <DataTable columns={columns} data={safeRequests} />
+                <DataTable columns={columns} data={requests} />
               </motion.div>
             )}
 
-            {!isLoading && safeRequests.length === 0 && (
+            {!isLoading && requests.length === 0 && (
                 <div className="text-center py-10">
                     <p className="text-lg text-gray-600 font-semibold">There are no requests yet.</p>
                     <p className="text-muted-foreground">When new requests are made, they will appear here.</p>

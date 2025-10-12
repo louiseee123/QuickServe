@@ -20,11 +20,11 @@ const Routes = () => (
   <Switch>
     <Route path="/auth" component={Auth} />
     <Route path="/" component={Home} />
-    <ProtectedRoute path="/checkout/:requestId" component={Checkout} />
+    <ProtectedRoute path="/checkout" component={Checkout} />
     <ProtectedRoute path="/my-requests" component={MyRequests} />
     <ProtectedRoute path="/request-success" component={RequestSuccess} />
     <ProtectedRoute path="/request" component={Request} />
-    <ProtectedRoute path="/upload-receipt/:requestId" component={UploadReceiptPage} />
+    <ProtectedRoute path="/upload-receipt" component={UploadReceiptPage} />
     <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
     <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
