@@ -9,17 +9,24 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
+// Add defensive checks with optional chaining (?.) and validation
 const columns = [
   {
     header: "Document Name",
     accessorKey: "documents",
-    cell: ({ row }: any) => (
-      <ul className="list-disc pl-4">
-        {row.original.documents.map((doc: any) => (
-          <li key={doc.id}>{doc.name}</li>
-        ))}
-      </ul>
-    ),
+    cell: ({ row }: any) => {
+      const docs = row?.original?.documents;
+      if (!Array.isArray(docs)) {
+        return <span className="text-red-500">Invalid Data</span>;
+      }
+      return (
+        <ul className="list-disc pl-4">
+          {docs.map((doc: any, index: number) => (
+            <li key={doc.id || index}>{doc.name || "Unnamed Document"}</li>
+          ))}
+        </ul>
+      );
+    },
   },
   {
     header: "Purpose of Request",
@@ -32,28 +39,32 @@ const columns = [
   {
     header: "Price",
     accessorKey: "totalAmount",
-    cell: ({ row }: any) => (
-      <span>₱{row.original.totalAmount.toFixed(2)}</span>
-    ),
+    cell: ({ row }: any) => {
+      const amount = row?.original?.totalAmount;
+      return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+    },
   },
   {
     header: "Status",
     accessorKey: "status",
-    cell: ({ row }: any) => (
-      <Badge
-        className={`capitalize text-white bg-gray-400 ${
-          {
-            pending_approval: "bg-orange-400",
-            pending_payment: "bg-yellow-500",
-            processing: "bg-blue-500",
-            completed: "bg-green-500",
-            denied: "bg-red-500",
-          }[row.original.status]
-        }`}
-      >
-        {row.original.status.replace(/_/g, ' ')}
-      </Badge>
-    ),
+    cell: ({ row }: any) => {
+      const status = row?.original?.status || "unknown";
+      return (
+        <Badge
+          className={`capitalize text-white bg-gray-400 ${
+            {
+              pending_approval: "bg-orange-400",
+              pending_payment: "bg-yellow-500",
+              processing: "bg-blue-500",
+              completed: "bg-green-500",
+              denied: "bg-red-500",
+            }[status]
+          }`}
+        >
+          {status.replace(/_/g, ' ')}
+        </Badge>
+      );
+    },
   },
   {
     header: "Action",
@@ -64,17 +75,35 @@ const columns = [
 export default function MyRequests() {
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'all'],
+      // Make the data fetching resilient
       queryFn: async () => {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID
         );
-        return response.documents.map(doc => ({
-            ...doc,
-            documents: JSON.parse(doc.documents)
-        })) as any[];
+        return response.documents
+          .filter(doc => doc) // Filter out null/undefined documents
+          .map(doc => {
+            let parsedDocuments = [];
+            try {
+              if (typeof doc.documents === 'string') {
+                parsedDocuments = JSON.parse(doc.documents);
+              } else if (Array.isArray(doc.documents)) {
+                parsedDocuments = doc.documents;
+              }
+            } catch (e) {
+              console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+            }
+            return {
+                ...doc,
+                documents: parsedDocuments
+            };
+        });
       },
   });
+
+  // Filter out any malformed request objects before passing to the table
+  const safeRequests = requests.filter(Boolean);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
@@ -125,13 +154,13 @@ export default function MyRequests() {
               </div>
             )}
 
-            {!isLoading && requests.length > 0 && (
+            {!isLoading && safeRequests.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
-                <DataTable columns={columns} data={requests} />
+                <DataTable columns={columns} data={safeRequests} />
               </motion.div>
             )}
 
-            {!isLoading && requests.length === 0 && (
+            {!isLoading && safeRequests.length === 0 && (
                 <div className="text-center py-10">
                     <p className="text-lg text-gray-600 font-semibold">There are no requests yet.</p>
                     <p className="text-muted-foreground">When new requests are made, they will appear here.</p>
