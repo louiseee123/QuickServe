@@ -1,9 +1,9 @@
 
 import { Router, Request, Response } from 'express';
-import { databases } from '../../appwrite';
+import { databases } from '../../appwrite.js';
 import { ID, Query, Permission, Role } from 'node-appwrite';
 import { insertRequestSchema } from '@shared/schema';
-import { DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_COLLECTION_ID } from '../db';
+import { DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_COLLECTION_ID } from '../db.js';
 
 const router = Router();
 
@@ -40,19 +40,38 @@ router.get('/pending-approvals', async (req: Request, res: Response) => {
 router.get('/', async (req: Request, res: Response) => {
     try {
         const { userId } = req.query;
+        console.log(`[DEBUG] GET /requests: Received request for userId: ${userId}`);
+
         const queries = [Query.orderDesc('$createdAt')];
         if (userId) {
             queries.push(Query.equal('userId', userId as string));
+        } else {
+            console.log('[DEBUG] GET /requests: No userId provided.');
         }
+
+        console.log(`[DEBUG] GET /requests: Executing query with filters: ${JSON.stringify(queries)}`);
 
         const response = await databases.listDocuments(
             DATABASE_ID,
             REQUESTS_COLLECTION_ID,
             queries
         );
+
+        console.log(`[DEBUG] GET /requests: Appwrite response received. Total documents: ${response.total}`);
+        
+        if (response.documents.length > 0) {
+            console.log(`[DEBUG] GET /requests: First document found: ${JSON.stringify(response.documents[0])}`);
+        } else {
+            console.log('[DEBUG] GET /requests: No documents found for the given query.');
+        }
+
         res.send(response.documents);
     } catch (error: any) {
-        console.error("Error fetching requests:", error);
+        console.error("[DEBUG] GET /requests: An error occurred.", {
+            message: error.message,
+            code: error.code,
+            response: error.response?.data,
+        });
         res.status(500).send({ error: 'Failed to fetch requests' });
     }
 });
