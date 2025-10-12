@@ -4,15 +4,13 @@ import { databases, storage } from './appwrite';
 import { ID, Query, InputFile } from 'node-appwrite';
 import multer from 'multer';
 import requestsRouter from './src/routes/requests';
+import { DATABASE_ID, DOCUMENTS_COLLECTION_ID as DOCS_ID, REQUESTS_COLLECTION_ID } from './src/db'; // Corrected Import
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 const router = Router();
 
-const DATABASE_ID = '68e64920003173cabdb1';
-const REQUESTS_COLLECTION_ID = 'requests';
 const RECEIPTS_BUCKET_ID = 'receipts';
-const DOCUMENTS_COLLECTION_ID = 'documents';
 
 router.use('/request', requestsRouter);
 
@@ -21,7 +19,7 @@ router.get('/documents', async (req: Request, res: Response) => {
     try {
         const response = await databases.listDocuments(
             DATABASE_ID,
-            DOCUMENTS_COLLECTION_ID
+            DOCS_ID // Corrected variable
         );
         res.status(200).send(response.documents);
     } catch (error: any) {
