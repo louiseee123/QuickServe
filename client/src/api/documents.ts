@@ -1,6 +1,6 @@
 
 import { databases, DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID, account } from '../lib/appwrite';
-import { ID, Query } from 'appwrite';
+import { ID, Query, Permission, Role } from 'appwrite';
 
 export async function getDocuments() {
   const response = await databases.listDocuments(
@@ -37,7 +37,7 @@ export async function createDocumentRequest(requestData: {
     purpose: string,
     documents: any[],
     totalAmount: number,
-    estimatedCompletion: string,
+    estimatedCompletionDays: number,
 }) {
     const user = await account.get();
     const userId = user.$id;
@@ -55,7 +55,11 @@ export async function createDocumentRequest(requestData: {
             requestedAt: new Date().toISOString(),
             userId: userId,
             queueNumber: queueNumber,
-        }
+        },
+        [
+            Permission.read(Role.user(userId)),
+            Permission.update(Role.user(userId)),
+        ]
     );
     return response;
 }
