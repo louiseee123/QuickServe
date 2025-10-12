@@ -16,6 +16,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createDocumentRequest } from '../api/documents';
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 
 export default function Request() {
@@ -23,6 +24,7 @@ export default function Request() {
   const { data: documents, isLoading: isDocsLoading } = useDocuments();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
 
   const { register, handleSubmit, control, watch, setValue, formState: { errors } } = useForm({
       defaultValues: {
@@ -66,11 +68,12 @@ export default function Request() {
   const createRequestMutation = useMutation({
       mutationFn: createDocumentRequest,
       onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['document_requests'] });
+          queryClient.invalidateQueries({ queryKey: ['/api/requests'] });
           toast({
               title: "Request Submitted!",
               description: "Your document request has been sent successfully.",
           });
+          navigate("/my-requests");
       },
       onError: (error) => {
           toast({
