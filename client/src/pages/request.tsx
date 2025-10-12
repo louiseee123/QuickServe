@@ -99,6 +99,7 @@ export default function Request() {
 
       const requestData = {
           ...data,
+          userId: user?.$id,
           documents: selectedDocDetails,
           estimatedCompletionDays: totalProcessingTime,
       };
