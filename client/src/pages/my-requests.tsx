@@ -9,7 +9,8 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-// Add defensive checks with optional chaining (?.) and validation
+// Following user guidance to fix "i.cell is not a function" error.
+// Every column now has an explicit `cell` function defined.
 const columns = [
   {
     header: "Document Name",
@@ -31,10 +32,12 @@ const columns = [
   {
     header: "Purpose of Request",
     accessorKey: "purpose",
+    cell: (info: any) => info.getValue(), // Explicitly define cell renderer
   },
   {
     header: "Name of the Requestor",
     accessorKey: "studentName",
+    cell: (info: any) => info.getValue(), // Explicitly define cell renderer
   },
   {
     header: "Price",
@@ -68,6 +71,7 @@ const columns = [
   },
   {
     header: "Action",
+    id: "action", // Added a unique ID for the action column
     cell: () => <Button variant="outline" size="sm">Action</Button>,
   },
 ];
@@ -75,7 +79,6 @@ const columns = [
 export default function MyRequests() {
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'all'],
-      // Make the data fetching resilient
       queryFn: async () => {
         const response = await databases.listDocuments(
             DATABASE_ID,
@@ -86,13 +89,16 @@ export default function MyRequests() {
           .map(doc => {
             let parsedDocuments = [];
             try {
+              // Ensure doc.documents is a string before parsing
               if (typeof doc.documents === 'string') {
                 parsedDocuments = JSON.parse(doc.documents);
               } else if (Array.isArray(doc.documents)) {
+                // If it's already an array, use it directly
                 parsedDocuments = doc.documents;
               }
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+               // Leave parsedDocuments as an empty array on failure
             }
             return {
                 ...doc,
