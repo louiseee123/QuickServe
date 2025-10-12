@@ -4,7 +4,7 @@ import { databases, storage } from './appwrite';
 import { ID, Query, InputFile } from 'node-appwrite';
 import multer from 'multer';
 import requestsRouter from './src/routes/requests';
-import { DATABASE_ID, DOCUMENTS_COLLECTION_ID as DOCS_ID, REQUESTS_COLLECTION_ID } from './src/db'; // Corrected Import
+import { DATABASE_ID, DOCUMENTS_COLLECTION_ID as DOCS_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_ID } from './src/db';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -19,7 +19,7 @@ router.get('/documents', async (req: Request, res: Response) => {
     try {
         const response = await databases.listDocuments(
             DATABASE_ID,
-            DOCS_ID // Corrected variable
+            DOCS_ID
         );
         res.status(200).send(response.documents);
     } catch (error: any) {
@@ -32,7 +32,7 @@ router.get('/requests/all', async (req: Request, res: Response) => {
     try {
         const response = await databases.listDocuments(
             DATABASE_ID,
-            REQUESTS_COLLECTION_ID,
+            REQUESTS_ID,
             [Query.orderDesc('$createdAt')]
         );
         res.status(200).send(response.documents);
@@ -50,7 +50,7 @@ router.get('/requests', async (req: Request, res: Response) => {
     try {
         const response = await databases.listDocuments(
             DATABASE_ID,
-            REQUESTS_COLLECTION_ID,
+            REQUESTS_ID,
             [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
         );
         res.status(200).send(response.documents);
@@ -65,7 +65,7 @@ router.get('/request/:id', async (req: Request, res: Response) => {
     try {
         const document = await databases.getDocument(
             DATABASE_ID,
-            REQUESTS_COLLECTION_ID,
+            REQUESTS_ID,
             id
         );
         const { $id, ...rest } = document;
@@ -89,7 +89,7 @@ router.patch('/request/:id', async (req: Request, res: Response) => {
     try {
         await databases.updateDocument(
             DATABASE_ID,
-            REQUESTS_COLLECTION_ID,
+            REQUESTS_ID,
             id,
             { document_status: status }
         );
@@ -116,7 +116,7 @@ router.post('/request/:id/upload-receipt', upload.single('receipt'), async (req,
 
         await databases.updateDocument(
             DATABASE_ID,
-            REQUESTS_COLLECTION_ID,
+            REQUESTS_ID,
             id,
             { 
                 payment_status: 'pending_verification',
