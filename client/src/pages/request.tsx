@@ -84,13 +84,20 @@ export default function Request() {
   const onSubmit = (data) => {
       const selectedDocDetails = data.documents.map(docId => {
           const fullDoc = documents?.find(d => d.$id === docId);
-          return { id: fullDoc?.$id, name: fullDoc?.name, price: fullDoc?.price };
+          return { 
+              id: fullDoc?.$id, 
+              name: fullDoc?.name, 
+              price: fullDoc?.price,
+              processingTimeDays: fullDoc?.processingTimeDays 
+            };
       });
+
+      const totalProcessingTime = selectedDocDetails.reduce((acc, doc) => acc + (doc.processingTimeDays || 0), 0);
 
       const requestData = {
           ...data,
           documents: selectedDocDetails,
-          estimatedCompletion: '3-5 business days',
+          estimatedCompletionDays: totalProcessingTime,
       };
       createRequestMutation.mutate(requestData);
   };
@@ -101,6 +108,7 @@ export default function Request() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 modern-form">
       <main className="container mx-auto pt-24 px-4 pb-16 flex flex-col items-center">
+        {/* 3-Step Guide */}
         <div className="w-full max-w-5xl mb-12">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
                 <div className="flex flex-col items-center">
@@ -134,6 +142,7 @@ export default function Request() {
                <CardDescription className="text-gray-600 pt-2 text-base">Complete the form below to submit your document request.</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
+              {/* Student Details Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="student-name" className="form-label">Full Name</Label>
@@ -194,6 +203,7 @@ export default function Request() {
                 </div>
               </div>
 
+              {/* Document Selection */}
                 <div className="space-y-4 mb-8 pb-8 border-b border-gray-200">
                     <Label className="text-lg font-bold text-blue-600">Select Documents</Label>
                     <Controller
@@ -244,6 +254,7 @@ export default function Request() {
                 </div>
 
               
+              {/* Detailed Purpose */}
               <div className="space-y-2 mb-8">
                 <Label htmlFor="purpose" className="form-label">Detailed Purpose for Request</Label>
                 <Textarea 
