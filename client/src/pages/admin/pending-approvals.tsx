@@ -11,14 +11,32 @@ import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/a
 
 export default function PendingApprovals() {
   const queryClient = useQueryClient();
-  const { data: requests = [], isLoading } = useQuery<any[]>({
+  const { data: requests = [], isLoading, isError, error } = useQuery<any[]>({
       queryKey: ['requests', 'pending-approvals'],
       queryFn: async () => {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID
         );
-        return response.documents.filter(doc => doc.status === 'pending_approval');
+        return response.documents
+          .filter(doc => doc) // Filter out null/undefined documents
+          .map(doc => {
+            let parsedDocuments = [];
+            try {
+              if (typeof doc.documents === 'string') {
+                parsedDocuments = JSON.parse(doc.documents);
+              } else if (Array.isArray(doc.documents)) {
+                parsedDocuments = doc.documents;
+              }
+            } catch (e) {
+              console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+            }
+            return {
+                ...doc,
+                documents: parsedDocuments
+            };
+        })
+        .filter(doc => doc.status === 'pending_approval');
       },
   });
 
@@ -49,8 +67,9 @@ export default function PendingApprovals() {
   const columns = [
     {
       header: "Document Name",
-      cell: (row: any) => {
-        const docs = row?.documents;
+      accessorKey: "documents",
+      cell: ({ row }: any) => {
+        const docs = row.original.documents;
         if (!Array.isArray(docs)) {
           return <span className="text-red-500">Invalid Data</span>;
         }
@@ -64,24 +83,26 @@ export default function PendingApprovals() {
       },
     },
     {
-      header: "Purpose of Request",
-      cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
+        header: "Purpose of Request",
+        accessorKey: "purpose",
     },
     {
-      header: "Name of the Requestor",
-      cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
+        header: "Name of the Requestor",
+        accessorKey: "studentName",
     },
     {
-      header: "Price",
-      cell: (row: any) => {
-        const amount = row?.totalAmount;
-        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
-      },
+        header: "Price",
+        accessorKey: "totalAmount",
+        cell: ({ row }: any) => {
+            const amount = row.original.totalAmount;
+            return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+        },
     },
     {
         header: "Status",
-        cell: (row: any) => {
-          const status = row?.status || "unknown";
+        accessorKey: "status",
+        cell: ({ row }: any) => {
+          const status = row.original.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
           return (
             <Badge
@@ -102,8 +123,11 @@ export default function PendingApprovals() {
       },
     {
       header: 'Actions',
+      id: 'actions',
       cell: ({ row }: any) => {
-        const { $id } = row;
+        const { $id } = row.original;
+        if (!$id) return null;
+
         return (
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -131,6 +155,19 @@ export default function PendingApprovals() {
         </main>
       </div>
     );
+  }
+
+  if (isError) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+            <main className="container mx-auto py-8 pt-24 flex justify-center items-center h-screen">
+                <div className="text-red-500 text-center">
+                    <h2 className="text-2xl font-bold mb-2">Error</h2>
+                    <p>{error?.message || "An unexpected error occurred."}</p>
+                </div>
+            </main>
+        </div>
+      )
   }
 
   return (
