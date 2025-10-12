@@ -67,9 +67,8 @@ export default function PendingApprovals() {
   const columns = [
     {
       header: "Document Name",
-      accessorKey: "documents",
-      cell: ({ row }: any) => {
-        const docs = row.original.documents;
+      cell: (row: any) => {
+        const docs = row.documents;
         if (!Array.isArray(docs)) {
           return <span className="text-red-500">Invalid Data</span>;
         }
@@ -84,25 +83,23 @@ export default function PendingApprovals() {
     },
     {
         header: "Purpose of Request",
-        accessorKey: "purpose",
+        cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
     },
     {
         header: "Name of the Requestor",
-        accessorKey: "studentName",
+        cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
     },
     {
         header: "Price",
-        accessorKey: "totalAmount",
-        cell: ({ row }: any) => {
-            const amount = row.original.totalAmount;
+        cell: (row: any) => {
+            const amount = row.totalAmount;
             return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
         },
     },
     {
         header: "Status",
-        accessorKey: "status",
-        cell: ({ row }: any) => {
-          const status = row.original.status || "unknown";
+        cell: (row: any) => {
+          const status = row.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
           return (
             <Badge
@@ -123,9 +120,8 @@ export default function PendingApprovals() {
       },
     {
       header: 'Actions',
-      id: 'actions',
-      cell: ({ row }: any) => {
-        const { $id } = row.original;
+      cell: (row: any) => {
+        const { $id } = row;
         if (!$id) return null;
 
         return (
