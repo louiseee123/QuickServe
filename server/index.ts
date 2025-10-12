@@ -10,7 +10,12 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-app.use(cors());
+// Configure CORS to allow requests from your frontend
+app.use(cors({
+  origin: 'https://quickserve.appwrite.network',
+  credentials: true,
+}));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
