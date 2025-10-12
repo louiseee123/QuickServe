@@ -9,8 +9,7 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-// Correcting the column definitions to match the custom DataTable component's
-// requirement that every column must have a `cell` function.
+// Applying user's explicit instruction: Change text color, update status display, and disable action button.
 const columns = [
   {
     header: "Document Name",
@@ -22,7 +21,7 @@ const columns = [
       return (
         <ul className="list-disc pl-4">
           {docs.map((doc: any, index: number) => (
-            <li key={doc.id || index}>{doc.name || "Unnamed Document"}</li>
+            <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
           ))}
         </ul>
       );
@@ -30,26 +29,27 @@ const columns = [
   },
   {
     header: "Purpose of Request",
-    cell: (row: any) => row.purpose,
+    cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
   },
   {
     header: "Name of the Requestor",
-    cell: (row: any) => row.studentName,
+    cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
   },
   {
     header: "Price",
     cell: (row: any) => {
       const amount = row?.totalAmount;
-      return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+      return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
     },
   },
   {
     header: "Status",
     cell: (row: any) => {
       const status = row?.status || "unknown";
+      const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
       return (
         <Badge
-          className={`capitalize text-white bg-gray-400 ${
+          className={`text-white bg-gray-400 ${
             {
               pending_approval: "bg-orange-400",
               pending_payment: "bg-yellow-500",
@@ -59,14 +59,14 @@ const columns = [
             }[status]
           }`}
         >
-          {status.replace(/_/g, ' ')}
+          {formattedStatus}
         </Badge>
       );
     },
   },
   {
     header: "Action",
-    cell: () => <Button variant="outline" size="sm">Action</Button>,
+    cell: () => <Button variant="outline" size="sm" disabled>Action</Button>,
   },
 ];
 
