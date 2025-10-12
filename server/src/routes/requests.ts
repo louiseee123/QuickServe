@@ -68,6 +68,7 @@ router.post('/', async (req: Request, res: Response) => {
 
         const newRequestData = {
             ...validatedRequest,
+            userId: req.body.userId, // Make sure userId is passed from the frontend
             status: 'pending_approval',
             createdAt: new Date().toISOString(),
         };
