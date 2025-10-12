@@ -90,10 +90,12 @@ const setup = async () => {
         { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'status', 50, false, 'pending_payment'), name: 'status' },
         { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'paymentStatus', 50, false, 'unpaid'), name: 'paymentStatus' },
         { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'queueNumber', true), name: 'queueNumber' },
-        { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId', 50, true), name: 'userId' },
+        { create: ()_=> databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId', 50, true), name: 'userId' },
         { create: () => databases.createDatetimeAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'requestedAt', false), name: 'requestedAt' }
       ],
-      []
+      [
+        { create: () => databases.createIndex(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId_index', IndexType.Key, ['userId']), name: 'userId_index' }
+      ]
     );
 
     console.log('✅ Database setup completed successfully!');
