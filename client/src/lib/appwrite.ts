@@ -1,12 +1,14 @@
 
-import { Client, Account, Databases, Storage } from 'appwrite';
+import { Client, Databases, Account } from 'appwrite';
 
-const client = new Client();
+const VITE_APPWRITE_ENDPOINT = 'https://68eb38f20005d80dc92c.fra.appwrite.run/v1';
+const VITE_APPWRITE_PROJECT_ID = '68e63c75003508ddae75';
+export const DATABASE_ID = '68e64920003173cabdb1';
+export const DOCUMENTS_COLLECTION_ID = 'documents';
 
-client
-    .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
-    .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
+const client = new Client()
+    .setEndpoint(VITE_APPWRITE_ENDPOINT)
+    .setProject(VITE_APPWRITE_PROJECT_ID);
 
-export const account = new Account(client);
 export const databases = new Databases(client);
-export const storage = new Storage(client);
+export const account = new Account(client);
