@@ -1,7 +1,7 @@
 
 import { Router, Request, Response } from 'express';
 import { databases } from '../../appwrite';
-import { ID, Query } from 'node-appwrite';
+import { ID, Query, Permission, Role } from 'node-appwrite';
 import { insertRequestSchema } from '@shared/schema';
 
 const router = Router();
@@ -65,10 +65,15 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
     try {
         const validatedRequest = insertRequestSchema.parse(req.body);
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({ error: 'User ID is missing from request body' });
+        }
 
         const newRequestData = {
             ...validatedRequest,
-            userId: req.body.userId, // Make sure userId is passed from the frontend
+            userId: userId,
             status: 'pending_approval',
             createdAt: new Date().toISOString(),
         };
@@ -77,7 +82,11 @@ router.post('/', async (req: Request, res: Response) => {
             DATABASE_ID,
             REQUESTS_COLLECTION_ID,
             ID.unique(),
-            newRequestData
+            newRequestData,
+            [
+                Permission.read(Role.user(userId)),
+                Permission.update(Role.user(userId)),
+            ]
         );
         
         res.status(201).send(document);
