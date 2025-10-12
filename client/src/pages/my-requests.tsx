@@ -13,8 +13,10 @@ import { Search, Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { useLocation, Link } from "wouter";
 import useAuth from "@/hooks/use-auth";
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const fetchUserRequests = async (userId: string): Promise<DocumentRequest[]> => {
-    const response = await fetch(`/api/requests?userId=${userId}`);
+    const response = await fetch(`${API_URL}/requests?userId=${userId}`);
     if (!response.ok) {
         throw new Error('Failed to fetch requests');
     }
