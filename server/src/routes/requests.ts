@@ -3,11 +3,23 @@ import { Router, Request, Response } from 'express';
 import { databases } from '../../appwrite';
 import { ID, Query, Permission, Role } from 'node-appwrite';
 import { insertRequestSchema } from '@shared/schema';
+import { DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_COLLECTION_ID } from '../db';
 
 const router = Router();
 
-const DATABASE_ID = '68e64920003173cabdb1';
-const REQUESTS_COLLECTION_ID = 'requests';
+// GET /all (for admin)
+router.get('/all', async (req: Request, res: Response) => {
+    try {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            REQUESTS_COLLECTION_ID
+        );
+        res.send(response.documents);
+    } catch (error: any) {
+        console.error("Error fetching all requests:", error);
+        res.status(500).send({ error: 'Failed to fetch all requests' });
+    }
+});
 
 // GET /pending-approvals
 router.get('/pending-approvals', async (req: Request, res: Response) => {
@@ -24,11 +36,11 @@ router.get('/pending-approvals', async (req: Request, res: Response) => {
     }
 });
 
-// GET /
+// GET / (for user)
 router.get('/', async (req: Request, res: Response) => {
     try {
         const { userId } = req.query;
-        const queries = [];
+        const queries = [Query.orderDesc('$createdAt')];
         if (userId) {
             queries.push(Query.equal('userId', userId as string));
         }

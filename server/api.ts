@@ -1,11 +1,11 @@
 
 import { Router, Request, Response } from 'express';
-import { databases, storage } from './appwrite';
-import { ID, Query, InputFile } from 'node-appwrite';
+import { storage } from './appwrite';
+import { ID, InputFile } from 'node-appwrite';
 import multer from 'multer';
 import requestsRouter from './src/routes/requests';
 import { DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID as REQUESTS_ID } from './src/db';
-import { getAvailableDocuments, getAllRequests } from './src/db'; // Correctly import the functions
+import { getAvailableDocuments } from './src/db';
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -13,7 +13,8 @@ const router = Router();
 
 const RECEIPTS_BUCKET_ID = 'receipts';
 
-router.use('/request', requestsRouter);
+// Delegate all /requests routes to the dedicated router
+router.use('/requests', requestsRouter);
 
 // Get all available documents
 router.get('/documents', async (req: Request, res: Response) => {
@@ -25,76 +26,8 @@ router.get('/documents', async (req: Request, res: Response) => {
     }
 });
 
-// Get all document requests for admin
-router.get('/requests/all', async (req: Request, res: Response) => {
-    try {
-        const requests = await getAllRequests();
-        res.status(200).send(requests);
-    } catch (error: any) {
-        res.status(400).send({ error: error.message });
-    }
-});
-
-// Get document requests for a user
-router.get('/requests', async (req: Request, res: Response) => {
-    const userId = req.query.userId as string;
-    if (!userId) {
-        return res.status(400).send({ error: 'userId is required' });
-    }
-    try {
-        const response = await databases.listDocuments(
-            DATABASE_ID,
-            REQUESTS_ID,
-            [Query.equal('userId', userId), Query.orderDesc('$createdAt')]
-        );
-        res.status(200).send(response.documents);
-    } catch (error: any) {
-        res.status(400).send({ error: error.message });
-    }
-});
-
-// Get a single document request by ID
-router.get('/request/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-    try {
-        const document = await databases.getDocument(
-            DATABASE_ID,
-            REQUESTS_ID,
-            id
-        );
-        const { $id, ...rest } = document;
-        res.status(200).send({ id: $id, ...rest });
-    } catch (error: any) {
-        if (error.code === 404) {
-            res.status(404).send({ error: 'Request not found' });
-        } else {
-            res.status(500).send({ error: 'message' });
-        }
-    }
-});
-
-// Update request status
-router.patch('/request/:id', async (req: Request, res: Response) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    if (!status) {
-        return res.status(400).send({ error: 'status is required' });
-    }
-    try {
-        await databases.updateDocument(
-            DATABASE_ID,
-            REQUESTS_ID,
-            id,
-            { document_status: status }
-        );
-        res.status(200).send({ message: 'Request status updated successfully' });
-    } catch (error: any) {
-        res.status(400).send({ error: error.message });
-    }
-});
-
 // Upload a payment receipt
-router.post('/request/:id/upload-receipt', upload.single('receipt'), async (req, res) => {
+router.post('/requests/:id/upload-receipt', upload.single('receipt'), async (req, res) => {
     const { id } = req.params;
 
     if (!req.file) {
