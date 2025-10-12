@@ -1,8 +1,13 @@
 
 import { Client, Databases, Account } from 'appwrite';
 
-const VITE_APPWRITE_ENDPOINT = 'https://68eb38f20005d80dc92c.fra.appwrite.run/v1';
-const VITE_APPWRITE_PROJECT_ID = '68e63c75003508ddae75';
+const VITE_APPWRITE_ENDPOINT = import.meta.env.VITE_APPWRITE_ENDPOINT;
+const VITE_APPWRITE_PROJECT_ID = import.meta.env.VITE_APPWRITE_PROJECT_ID;
+
+if (!VITE_APPWRITE_ENDPOINT || !VITE_APPWRITE_PROJECT_ID) {
+  throw new Error('Missing Appwrite environment variables. Please check your .env file.');
+}
+
 export const DATABASE_ID = '68e64920003173cabdb1';
 export const DOCUMENTS_COLLECTION_ID = 'documents';
 
