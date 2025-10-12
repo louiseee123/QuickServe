@@ -35,8 +35,7 @@ export default function Request() {
           yearLevel: '',
           documents: [],
           purpose: '',
-          totalAmount: 0,
-          status: 'pending_approval'
+          totalAmount: 0
       }
   });
 
@@ -103,6 +102,7 @@ export default function Request() {
           userId: user?.$id,
           documents: selectedDocDetails,
           estimatedCompletionDays: totalProcessingTime,
+          status: 'pending_approval',
       };
       createRequestMutation.mutate(requestData);
   };

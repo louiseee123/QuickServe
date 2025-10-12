@@ -14,7 +14,25 @@ export default function PendingPayments() {
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID
         );
-        return response.documents.filter(doc => doc.status === 'pending_payment');
+        return response.documents
+          .filter(doc => doc) // Filter out null/undefined documents
+          .map(doc => {
+            let parsedDocuments = [];
+            try {
+              if (typeof doc.documents === 'string') {
+                parsedDocuments = JSON.parse(doc.documents);
+              } else if (Array.isArray(doc.documents)) {
+                parsedDocuments = doc.documents;
+              }
+            } catch (e) {
+              console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+            }
+            return {
+                ...doc,
+                documents: parsedDocuments
+            };
+        })
+        .filter(doc => doc.status === 'pending_payment');
       },
   });
 
