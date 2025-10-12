@@ -4,8 +4,8 @@ import type { InsertRequest, RequestStatus } from '@shared/schema';
 
 // Constants for Appwrite database and collections
 export const DATABASE_ID = '68e64920003173cabdb1';
-export const DOCUMENTS_COLLECTION_ID = '68e649d500299f24ba50';
-export const DOCUMENT_REQUESTS_COLLECTION_ID = '68e64a02002f2388c34f';
+export const DOCUMENTS_COLLECTION_ID = 'documents';
+export const DOCUMENT_REQUESTS_COLLECTION_ID = 'requests';
 export const COUNTERS_COLLECTION_ID = 'counters';
 export const USERS_COLLECTION_ID = 'users';
 
