@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import type { DocumentRequest } from "@shared/schema";
@@ -10,22 +11,31 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { motion } from "framer-motion";
 import { Search, Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { useLocation, Link } from "wouter";
+import useAuth from "@/hooks/use-auth";
+
+const fetchUserRequests = async (userId: string): Promise<DocumentRequest[]> => {
+    const response = await fetch(`/api/requests?userId=${userId}`);
+    if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+    }
+    return response.json();
+};
 
 const columns = (
   onPay: (id: string) => void,
 ) => [
   {
     header: "Tracking ID",
-    accessorKey: "id",
-    cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.id}</span>,
+    accessorKey: "$id",
+    cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.$id}</span>,
   },
   {
     header: "Documents",
     accessorKey: "documents",
     cell: ({ row }: any) => (
-        <ul>
+        <ul className="list-disc pl-4">
             {row.original.documents.map((doc: any) => (
-                <li key={doc.name}>{doc.name}</li>
+                <li key={doc.id}>{doc.name}</li>
             ))}
         </ul>
     ),
@@ -40,15 +50,15 @@ const columns = (
     accessorKey: "status",
     cell: ({ row }: any) => (
       <Badge
-        variant={
-          row.original.status === "pending_approval"
-            ? "secondary"
-            : row.original.status === "pending_payment"
-            ? "warning"
-            : row.original.status === "processing"
-            ? "success"
-            : "destructive"
-        }
+        className={`capitalize text-white bg-gray-400 ${
+          {
+            pending_approval: "bg-orange-400",
+            pending_payment: "bg-yellow-500",
+            processing: "bg-blue-500",
+            completed: "bg-green-500",
+            denied: "bg-red-500",
+          }[row.original.status]
+        }`}
       >
         {row.original.status.replace(/_/g, ' ')}
       </Badge>
@@ -56,10 +66,9 @@ const columns = (
   },
   {
     header: "Action",
-    accessorKey: "action",
     cell: ({ row }: any) => (
       row.original.status === 'pending_payment' && (
-        <Button onClick={() => onPay(row.original.id)} size="sm">Pay Now</Button>
+        <Button onClick={() => onPay(row.original.$id)} size="sm">Pay Now</Button>
       )
     ),
   },
@@ -67,13 +76,19 @@ const columns = (
 
 export default function MyRequests() {
   const [, navigate] = useLocation();
-  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({ 
-    queryKey: ["/api/requests"], 
+  const { user, isLoading: isUserLoading } = useAuth();
+  
+  const { data: requests = [], isLoading: isRequestsLoading } = useQuery({
+      queryKey: ['requests', user?.$id],
+      queryFn: () => fetchUserRequests(user!.$id),
+      enabled: !!user?.$id, // only fetch if user is loaded and has an id
   });
 
   const handlePay = (id: string) => {
     navigate(`/checkout/${id}`);
   };
+
+  const isLoading = isUserLoading || isRequestsLoading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
@@ -110,7 +125,7 @@ export default function MyRequests() {
                 </div>
             </div>
         </div>
-        <Card className="w-full max-w-4xl bg-white/90 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden">
+        <Card className="w-full max-w-5xl bg-white/90 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden">
           <CardHeader className="text-center p-8 bg-blue-50">
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15 }}>
               <CardTitle className="text-3xl font-bold text-blue-900">My Document Requests</CardTitle>
@@ -125,7 +140,7 @@ export default function MyRequests() {
             )}
 
             {!isLoading && requests.length > 0 && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-8">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
                 <DataTable columns={columns(handlePay)} data={requests} />
               </motion.div>
             )}
@@ -134,6 +149,9 @@ export default function MyRequests() {
                 <div className="text-center py-10">
                     <p className="text-lg text-gray-600 font-semibold">You haven't made any requests yet.</p>
                     <p className="text-muted-foreground">When you do, they will appear here.</p>
+                    <Link to="/request">
+                      <Button className="mt-4">Make a New Request</Button>
+                    </Link>
                 </div>
             )}
 
