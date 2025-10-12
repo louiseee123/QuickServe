@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import type { DocumentRequest } from "@shared/schema";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -9,36 +9,35 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { useLocation, Link } from "wouter";
-import { getAllRequests } from "@/api/requests";
+import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import SuccessModal from "@/components/SuccessModal";
 
-const columns = (
-  onPay: (id: string) => void,
-) => [
+const columns = [
   {
-    header: "Tracking ID",
-    accessorKey: "$id",
-    cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.$id}</span>,
-  },
-  {
-    header: "Requested By",
-    accessorKey: "userId",
-    cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.userId}</span>,
-  },
-  {
-    header: "Documents",
+    header: "Document Name",
     accessorKey: "documents",
     cell: ({ row }: any) => (
-        <ul className="list-disc pl-4">
-            {row.original.documents.map((doc: any) => (
-                <li key={doc.id}>{doc.name}</li>
-            ))}
-        </ul>
+      <ul className="list-disc pl-4">
+        {row.original.documents.map((doc: any) => (
+          <li key={doc.id}>{doc.name}</li>
+        ))}
+      </ul>
     ),
   },
   {
-    header: "Date Requested",
-    accessorKey: "createdAt",
-    cell: ({ row }: any) => format(new Date(row.original.createdAt), "PPP"),
+    header: "Purpose of Request",
+    accessorKey: "purpose",
+  },
+  {
+    header: "Name of the Requestor",
+    accessorKey: "studentName",
+  },
+  {
+    header: "Price",
+    accessorKey: "totalAmount",
+    cell: ({ row }: any) => (
+      <span>₱{row.original.totalAmount.toFixed(2)}</span>
+    ),
   },
   {
     header: "Status",
@@ -61,29 +60,43 @@ const columns = (
   },
   {
     header: "Action",
-    cell: ({ row }: any) => (
-      row.original.status === 'pending_payment' && (
-        <Button onClick={() => onPay(row.original.$id)} size="sm">Pay Now</Button>
-      )
-    ),
+    cell: () => <Button variant="outline" size="sm">Action</Button>,
   },
 ];
 
 export default function MyRequests() {
-  const [, navigate] = useLocation();
-  
-  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({ 
+  const [location, navigate] = useLocation();
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("success") === "true") {
+      setIsSuccessModalOpen(true);
+    }
+  }, [location]);
+
+  const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'all'],
-      queryFn: getAllRequests,
+      queryFn: async () => {
+        const response = await databases.listDocuments(
+            DATABASE_ID,
+            DOCUMENT_REQUESTS_COLLECTION_ID
+        );
+        return response.documents.map(doc => ({
+            ...doc,
+            documents: JSON.parse(doc.documents)
+        })) as any[];
+      },
   });
 
-  const handlePay = (id: string) => {
-    navigate(`/checkout/${id}`);
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+    navigate("/my-requests"); // Navigate back to the main page
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-      <motion.main 
+      <motion.main
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -132,10 +145,10 @@ export default function MyRequests() {
 
             {!isLoading && requests.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
-                <DataTable columns={columns(handlePay)} data={requests} />
+                <DataTable columns={columns} data={requests} />
               </motion.div>
             )}
-            
+
             {!isLoading && requests.length === 0 && (
                 <div className="text-center py-10">
                     <p className="text-lg text-gray-600 font-semibold">There are no requests yet.</p>
@@ -149,6 +162,7 @@ export default function MyRequests() {
           </CardContent>
         </Card>
       </motion.main>
+      <SuccessModal isOpen={isSuccessModalOpen} onClose={handleCloseModal} />
     </div>
   );
 }
