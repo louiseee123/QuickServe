@@ -11,6 +11,14 @@ export const getRequestById = async (id: string): Promise<DocumentRequest> => {
     return response.json();
 };
 
+export const getAllRequests = async (): Promise<DocumentRequest[]> => {
+    const response = await fetch(`${API_URL}/requests/all`);
+    if (!response.ok) {
+        throw new Error("Failed to fetch all requests");
+    }
+    return response.json();
+};
+
 export const getDocuments = async (): Promise<any[]> => {
     const response = await fetch(`${API_URL}/documents`);
     if (!response.ok) {

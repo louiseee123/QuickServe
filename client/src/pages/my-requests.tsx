@@ -1,27 +1,15 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
 import type { DocumentRequest } from "@shared/schema";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Search, Loader2, FileText, Clock, CheckCircle } from "lucide-react";
+import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { useLocation, Link } from "wouter";
-import useAuth from "@/hooks/use-auth";
-
-const API_URL = import.meta.env.VITE_API_URL;
-
-const fetchUserRequests = async (userId: string): Promise<DocumentRequest[]> => {
-    const response = await fetch(`${API_URL}/requests?userId=${userId}`);
-    if (!response.ok) {
-        throw new Error('Failed to fetch requests');
-    }
-    return response.json();
-};
+import { getAllRequests } from "@/api/requests";
 
 const columns = (
   onPay: (id: string) => void,
@@ -30,6 +18,11 @@ const columns = (
     header: "Tracking ID",
     accessorKey: "$id",
     cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.$id}</span>,
+  },
+  {
+    header: "Requested By",
+    accessorKey: "userId",
+    cell: ({ row }: any) => <span className="font-mono text-sm">{row.original.userId}</span>,
   },
   {
     header: "Documents",
@@ -78,19 +71,15 @@ const columns = (
 
 export default function MyRequests() {
   const [, navigate] = useLocation();
-  const { user, isLoading: isUserLoading } = useAuth();
   
-  const { data: requests = [], isLoading: isRequestsLoading } = useQuery({
-      queryKey: ['requests', user?.$id],
-      queryFn: () => fetchUserRequests(user!.$id),
-      enabled: !!user?.$id, // only fetch if user is loaded and has an id
+  const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({ 
+      queryKey: ['requests', 'all'],
+      queryFn: getAllRequests,
   });
 
   const handlePay = (id: string) => {
     navigate(`/checkout/${id}`);
   };
-
-  const isLoading = isUserLoading || isRequestsLoading;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
@@ -130,8 +119,8 @@ export default function MyRequests() {
         <Card className="w-full max-w-5xl bg-white/90 backdrop-blur-sm shadow-2xl rounded-2xl overflow-hidden">
           <CardHeader className="text-center p-8 bg-blue-50">
             <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15 }}>
-              <CardTitle className="text-3xl font-bold text-blue-900">My Document Requests</CardTitle>
-              <CardDescription className="text-blue-800/90 pt-2">A list of all your past and current document requests.</CardDescription>
+              <CardTitle className="text-3xl font-bold text-blue-900">All Document Requests</CardTitle>
+              <CardDescription className="text-blue-800/90 pt-2">A list of all past and current document requests from all users.</CardDescription>
             </motion.div>
           </CardHeader>
           <CardContent className="p-8">
@@ -149,8 +138,8 @@ export default function MyRequests() {
             
             {!isLoading && requests.length === 0 && (
                 <div className="text-center py-10">
-                    <p className="text-lg text-gray-600 font-semibold">You haven't made any requests yet.</p>
-                    <p className="text-muted-foreground">When you do, they will appear here.</p>
+                    <p className="text-lg text-gray-600 font-semibold">There are no requests yet.</p>
+                    <p className="text-muted-foreground">When new requests are made, they will appear here.</p>
                     <Link to="/request">
                       <Button className="mt-4">Make a New Request</Button>
                     </Link>
