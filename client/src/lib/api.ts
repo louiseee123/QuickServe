@@ -1,5 +1,5 @@
 
-const API_URL = import.meta.env.VITE_API_URL || '';
+const API_URL = 'https://68eb38f20005d80dc92c.fra.appwrite.run';
 
 export async function fetchWithAuth(url: string, options: RequestInit = {}) {
   const headers = {
