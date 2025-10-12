@@ -52,7 +52,10 @@ export default function Footer() {
             © {new Date().getFullYear()} Consolatrix College of Toledo City
           </p>
           <p className="text-center text-blue-400/60 text-xs mt-2">
-            QuickServe Document Management System v2.0
+            QuickServe Document Management System
+          </p>
+          <p className="text-center text-blue-400/60 text-xs mt-1">
+            QuickServe Version: 1.11
           </p>
           
           {/* Static star particles */}
