@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -9,135 +8,108 @@ import { Loader2, FileText, Clock, CheckCircle } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
-const ActionButton = ({ row }) => {
-  const [, navigate] = useLocation();
-  if (!row || !row.original) {
-    return <Button variant="outline" size="sm" disabled>Action</Button>;
-  }
-  const { status, $id, totalAmount } = row.original;
-
-  const handleProceed = () => {
-    navigate(`/checkout?requestId=${$id}&totalAmount=${totalAmount}`);
-  };
-
-  if (status === 'pending_payment') {
-    return (
-      <Button variant="outline" size="sm" onClick={handleProceed}>
-        Proceed
-      </Button>
-    );
-  }
-
-  return <Button variant="outline" size="sm" disabled>Action</Button>;
-};
-
-const columns = [
-  {
-    header: "Document Name",
-    cell: ({ row }) => {
-      if (!row || !row.original) {
-        return <span className="text-red-500">Invalid Data</span>;
-      }
-      const docs = row.original.documents;
-      if (!Array.isArray(docs)) {
-        return <span className="text-red-500">Invalid Data</span>;
-      }
-      return (
-        <ul className="list-disc pl-4">
-          {docs.map((doc, index) => (
-            <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
-          ))}
-        </ul>
-      );
-    },
-  },
-  {
-    header: "Purpose of Request",
-    cell: ({ row }) => {
-      if (!row || !row.original) {
-        return <span className="text-gray-700">N/A</span>;
-      }
-      return <span className="text-gray-700">{row.original.purpose}</span>;
-    },
-  },
-  {
-    header: "Name of the Requestor",
-    cell: ({ row }) => {
-      if (!row || !row.original) {
-        return <span className="text-gray-700">N/A</span>;
-      }
-      return <span className="text-gray-700">{row.original.studentName}</span>;
-    },
-  },
-  {
-    header: "Price",
-    cell: ({ row }) => {
-      if (!row || !row.original) {
-        return <span className="text-gray-700">N/A</span>;
-      }
-      const amount = row.original.totalAmount;
-      return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
-    },
-  },
-  {
-    header: "Status",
-    cell: ({ row }) => {
-      if (!row || !row.original) {
-        return <Badge className="bg-gray-400 text-white">Unknown</Badge>;
-      }
-      const status = row.original.status || "unknown";
-      const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
-      return (
-        <Badge
-          className={`text-white bg-gray-400 ${
-            {
-              pending_approval: "bg-orange-400",
-              pending_payment: "bg-yellow-500",
-              processing: "bg-blue-500",
-              completed: "bg-green-500",
-              denied: "bg-red-500",
-            }[status]
-          }`}
-        >
-          {formattedStatus}
-        </Badge>
-      );
-    },
-  },
-  {
-    header: "Action",
-    cell: ActionButton,
-  },
-];
-
 export default function MyRequests() {
-  const { data: requests = [], isLoading } = useQuery<any[]>(
-    {
-      queryKey: ['requests', 'all'],
-      queryFn: async () => {
-        const response = await databases.listDocuments(
-          DATABASE_ID,
-          DOCUMENT_REQUESTS_COLLECTION_ID
-        );
-        return response.documents.map(doc => {
-          let parsedDocuments = [];
-          try {
-            if (typeof doc.documents === 'string') {
-              parsedDocuments = JSON.parse(doc.documents);
-            } else if (Array.isArray(doc.documents)) {
-              parsedDocuments = doc.documents;
-            }
-          } catch (e) {
-            console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+  const [, navigate] = useLocation();
+
+  const { data: requests = [], isLoading } = useQuery<any[]>({
+    queryKey: ['requests', 'all'],
+    queryFn: async () => {
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        DOCUMENT_REQUESTS_COLLECTION_ID
+      );
+      return response.documents.map(doc => {
+        let parsedDocuments = [];
+        try {
+          if (typeof doc.documents === 'string') {
+            parsedDocuments = JSON.parse(doc.documents);
+          } else if (Array.isArray(doc.documents)) {
+            parsedDocuments = doc.documents;
           }
-          return {
-            ...doc,
-            documents: parsedDocuments
-          };
-        });
+        } catch (e) {
+          console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+        }
+        return {
+          ...doc,
+          documents: parsedDocuments
+        };
+      });
+    },
+  });
+
+  const columns = [
+    {
+      header: "Document Name",
+      cell: (row) => {
+        const docs = row.documents;
+        if (!Array.isArray(docs)) {
+          return <span className="text-red-500">Invalid Data</span>;
+        }
+        return (
+          <ul className="list-disc pl-4">
+            {docs.map((doc, index) => (
+              <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
+            ))}
+          </ul>
+        );
       },
-    }
-  );
+    },
+    {
+      header: "Purpose of Request",
+      cell: (row) => <span className="text-gray-700">{row.purpose || 'N/A'}</span>,
+    },
+    {
+      header: "Name of the Requestor",
+      cell: (row) => <span className="text-gray-700">{row.studentName || 'N/A'}</span>,
+    },
+    {
+      header: "Price",
+      cell: (row) => {
+        const amount = row.totalAmount;
+        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+      },
+    },
+    {
+      header: "Status",
+      cell: (row) => {
+        const status = row.status || "unknown";
+        const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+        return (
+          <Badge
+            className={`text-white bg-gray-400 ${
+              {
+                pending_approval: "bg-orange-400",
+                pending_payment: "bg-yellow-500",
+                processing: "bg-blue-500",
+                completed: "bg-green-500",
+                denied: "bg-red-500",
+              }[status]
+            }`}
+          >
+            {formattedStatus}
+          </Badge>
+        );
+      },
+    },
+    {
+      header: "Action",
+      cell: (row) => {
+        const handleProceed = () => {
+          navigate(`/checkout?requestId=${row.$id}&totalAmount=${row.totalAmount}`);
+        };
+
+        if (row.status === 'pending_payment') {
+          return (
+            <Button variant="outline" size="sm" onClick={handleProceed}>
+              Proceed
+            </Button>
+          );
+        }
+
+        return <Button variant="outline" size="sm" disabled>Action</Button>;
+      },
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
