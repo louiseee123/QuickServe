@@ -11,6 +11,9 @@ import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/a
 
 const ActionButton = ({ row }) => {
   const [, navigate] = useLocation();
+  if (!row || !row.original) {
+    return <Button variant="outline" size="sm" disabled>Action</Button>;
+  }
   const { status, $id, totalAmount } = row.original;
 
   const handleProceed = () => {
@@ -32,7 +35,10 @@ const columns = [
   {
     header: "Document Name",
     cell: ({ row }) => {
-      const docs = row.original?.documents;
+      if (!row || !row.original) {
+        return <span className="text-red-500">Invalid Data</span>;
+      }
+      const docs = row.original.documents;
       if (!Array.isArray(docs)) {
         return <span className="text-red-500">Invalid Data</span>;
       }
@@ -56,14 +62,20 @@ const columns = [
   {
     header: "Price",
     cell: ({ row }) => {
-      const amount = row.original?.totalAmount;
+      if (!row || !row.original) {
+        return <span className="text-gray-700">N/A</span>;
+      }
+      const amount = row.original.totalAmount;
       return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
     },
   },
   {
     header: "Status",
     cell: ({ row }) => {
-      const status = row.original?.status || "unknown";
+      if (!row || !row.original) {
+        return <Badge className="bg-gray-400 text-white">Unknown</Badge>;
+      }
+      const status = row.original.status || "unknown";
       const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
       return (
         <Badge
