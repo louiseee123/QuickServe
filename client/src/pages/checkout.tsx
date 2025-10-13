@@ -6,7 +6,7 @@ export default function Checkout() {
   const queryParams = new URLSearchParams(location.search);
   const requestId = queryParams.get("requestId");
   const totalAmountString = queryParams.get("totalAmount");
-  const totalAmount = totalAmountString ? parseFloat(totalAmountString) : 0;
+  const totalAmount = Number(totalAmountString);
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -20,10 +20,10 @@ export default function Checkout() {
             <h3 className="font-semibold text-lg">Payment Instructions</h3>
             <p className="text-sm text-gray-800">Please transfer the total amount to the following GCash account:</p>
             <div className="flex items-center justify-center py-4">
-              <img src="/gcash-qr.png" alt="GCash QR Code" className="w-48 h-48"/>
+              <img src="/attached_assets/qr-placeholder.png" alt="GCash QR Code" className="w-48 h-48"/>
             </div>
-            <p className="text-sm text-center font-semibold">Account Name: Juan Dela Cruz</p>
-            <p className="text-lg text-center font-bold">Total Amount: ₱{totalAmount.toFixed(2)}</p>
+            <p className="text-sm text-center font-semibold">Account Name: John Louise Bergabena</p>
+            <p className="text-lg text-center font-bold">Total Amount: ₱{isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}</p>
           </div>
           <div className="text-center">
             <a href={`/upload-receipt?requestId=${requestId}`} className="text-blue-600 hover:underline">
