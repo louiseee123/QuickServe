@@ -53,11 +53,21 @@ const columns = [
   },
   {
     header: "Purpose of Request",
-    accessorKey: "purpose",
+    cell: ({ row }) => {
+      if (!row || !row.original) {
+        return <span className="text-gray-700">N/A</span>;
+      }
+      return <span className="text-gray-700">{row.original.purpose}</span>;
+    },
   },
   {
     header: "Name of the Requestor",
-    accessorKey: "studentName",
+    cell: ({ row }) => {
+      if (!row || !row.original) {
+        return <span className="text-gray-700">N/A</span>;
+      }
+      return <span className="text-gray-700">{row.original.studentName}</span>;
+    },
   },
   {
     header: "Price",
