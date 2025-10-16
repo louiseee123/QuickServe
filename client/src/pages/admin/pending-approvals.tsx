@@ -77,16 +77,16 @@ export default function PendingApprovals() {
   const columns = [
     {
         header: "Requestor",
-        accessorKey: "studentName",
+        cell: (request) => <span>{request.studentName}</span>,
     },
     {
         header: "Purpose",
-        accessorKey: "purpose",
+        cell: (request) => <span>{request.purpose}</span>,
     },
     {
         header: "Documents",
-        cell: ({ row }) => {
-            const docs = row.original.documents;
+        cell: (request) => {
+            const docs = request.documents;
             if (!Array.isArray(docs) || docs.length === 0) {
                 return <span className="text-gray-500">No documents</span>;
             }
@@ -101,23 +101,22 @@ export default function PendingApprovals() {
     },
     {
         header: "Total Amount",
-        cell: ({ row }) => {
-            const amount = row.original.totalAmount;
+        cell: (request) => {
+            const amount = request.totalAmount;
             return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
         },
     },
     {
         header: "Status",
-        cell: ({ row }) => {
-          const status = row.original.status || "unknown";
+        cell: (request) => {
+          const status = request.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
           return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">{formattedStatus}</Badge>;
         },
       },
     {
       header: "Actions",
-      cell: ({ row }) => {
-        const request = row.original;
+      cell: (request) => {
         return (
             <div className="flex items-center gap-2">
                  <Button variant="secondary" size="sm" onClick={() => handleViewDetails(request)}>

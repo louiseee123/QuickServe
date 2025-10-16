@@ -17,10 +17,10 @@ const ManageDocumentsPage = () => {
     const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
     const columns = [
-        { header: "Name", cell: ({ row }) => <span>{row.original.name}</span> },
-        { header: "Price", cell: ({ row }) => <span>PHP {row.original.price.toFixed(2)}</span> },
-        { header: "Processing Time", cell: ({ row }) => <span>{row.original.processingTimeDays} days</span> },
-        { header: "Requires Details", cell: ({ row }) => <Checkbox checked={row.original.requiresDetails} disabled /> },
+        { header: "Name", cell: (doc) => <span>{doc.name}</span> },
+        { header: "Price", cell: (doc) => <span>PHP {doc.price.toFixed(2)}</span> },
+        { header: "Processing Time", cell: (doc) => <span>{doc.processingTimeDays} days</span> },
+        { header: "Requires Details", cell: (doc) => <Checkbox checked={doc.requiresDetails} disabled /> },
         {
             header: "Actions",
             cell: () => (
