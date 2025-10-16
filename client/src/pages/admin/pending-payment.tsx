@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { Query } from 'appwrite';
 
 export default function PendingPayments() {
   const queryClient = useQueryClient();
@@ -24,11 +25,10 @@ export default function PendingPayments() {
       queryFn: async () => {
         const response = await databases.listDocuments(
             DATABASE_ID,
-            DOCUMENT_REQUESTS_COLLECTION_ID
+            DOCUMENT_REQUESTS_COLLECTION_ID,
+            [Query.equal('status', 'pending_payment')]
         );
-        return response.documents
-          .filter(doc => doc.status === 'pending_payment' && doc.receiptId)
-          .map(doc => {
+        return response.documents.map(doc => {
             let parsedDocuments = [];
             try {
               if (typeof doc.documents === 'string') {
@@ -39,11 +39,11 @@ export default function PendingPayments() {
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
             }
-            const receiptUrl = storage.getFileView(doc.receiptId, doc.receiptId);
+            const receiptUrl = doc.receiptId ? storage.getFileView(doc.receiptId, doc.receiptId).href : null;
             return {
                 ...doc,
                 documents: parsedDocuments,
-                receiptUrl: receiptUrl.href
+                receiptUrl: receiptUrl
             };
         });
       },
@@ -139,7 +139,7 @@ export default function PendingPayments() {
       {
         header: "Action",
         cell: (row: any) => (
-          <Button variant="secondary" size="sm" onClick={() => openModal(row)}>
+          <Button variant="secondary" size="sm" onClick={() => openModal(row)} disabled={!row.receiptId}>
             Manage
           </Button>
         ),
