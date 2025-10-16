@@ -27,7 +27,7 @@ export default function Checkout() {
   }, []); // The empty dependency array ensures this runs only once after the component mounts.
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col items-center justify-start p-4 pt-32 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col items-center justify-start p-4 pt-32 pb-24">
       {/* 3-Step Guide */}
       <div className="w-full max-w-5xl mb-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
