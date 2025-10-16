@@ -4,9 +4,8 @@ import { useState } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, MoreVertical } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
@@ -77,11 +76,11 @@ export default function PendingApprovals() {
   const columns = [
     {
         header: "Requestor",
-        cell: (request) => <span>{request.studentName}</span>,
+        cell: (request) => <span className="text-gray-900">{request.studentName}</span>,
     },
     {
         header: "Purpose",
-        cell: (request) => <span>{request.purpose}</span>,
+        cell: (request) => <span className="text-gray-900">{request.purpose}</span>,
     },
     {
         header: "Documents",
@@ -91,7 +90,7 @@ export default function PendingApprovals() {
                 return <span className="text-gray-500">No documents</span>;
             }
             return (
-                <ul className="list-disc pl-5">
+                <ul className="list-disc pl-5 text-gray-900">
                     {docs.map((doc: any, index: number) => (
                         <li key={index}>{doc.name}</li>
                     ))}
@@ -103,7 +102,7 @@ export default function PendingApprovals() {
         header: "Total Amount",
         cell: (request) => {
             const amount = request.totalAmount;
-            return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+            return <span className="text-gray-900">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
         },
     },
     {
@@ -120,23 +119,8 @@ export default function PendingApprovals() {
         return (
             <div className="flex items-center gap-2">
                  <Button variant="secondary" size="sm" onClick={() => handleViewDetails(request)}>
-                    View Details
+                    Manage
                 </Button>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-8 w-8">
-                            <MoreVertical className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleAction(request.$id, "pending_payment")}>
-                            Approve Request
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600" onClick={() => handleAction(request.$id, "denied")}>
-                            Deny Request
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
             </div>
         );
       },
