@@ -1,12 +1,24 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 export default function PendingPayments() {
+  const queryClient = useQueryClient();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
+
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'pending-payment'],
       queryFn: async () => {
@@ -15,7 +27,7 @@ export default function PendingPayments() {
             DOCUMENT_REQUESTS_COLLECTION_ID
         );
         return response.documents
-          .filter(doc => doc) // Filter out null/undefined documents
+          .filter(doc => doc.status === 'pending_payment' && doc.receiptId)
           .map(doc => {
             let parsedDocuments = [];
             try {
@@ -27,14 +39,48 @@ export default function PendingPayments() {
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
             }
+            const receiptUrl = storage.getFileView(doc.receiptId, doc.receiptId);
             return {
                 ...doc,
-                documents: parsedDocuments
+                documents: parsedDocuments,
+                receiptUrl: receiptUrl.href
             };
-        })
-        .filter(doc => doc.status === 'pending_payment');
+        });
       },
   });
+
+  const mutation = useMutation({
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) => {
+      const payload: { status: string; rejectionReason?: string } = { status };
+      if (status === 'denied' && rejectionReason) {
+          payload.rejectionReason = rejectionReason;
+      }
+      const response = await databases.updateDocument(
+          DATABASE_ID,
+          DOCUMENT_REQUESTS_COLLECTION_ID,
+          id,
+          payload
+      );
+      return response;
+  },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
+      queryClient.invalidateQueries({ queryKey: ['requests', 'processing'] });
+      toast.success(`Payment has been ${variables.status === 'processing' ? 'confirmed' : 'denied'}.`);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const handleAction = (id: string, status: string, rejectionReason?: string) => {
+    mutation.mutate({ id, status, rejectionReason });
+  };
+
+  const openModal = (request: any) => {
+    setSelectedRequest(request);
+    setIsModalOpen(true);
+  };
 
   const columns = [
     {
@@ -90,6 +136,14 @@ export default function PendingPayments() {
           );
         },
       },
+      {
+        header: "Action",
+        cell: (row: any) => (
+          <Button variant="secondary" size="sm" onClick={() => openModal(row)}>
+            Manage
+          </Button>
+        ),
+      },
   ];
 
   if (isLoading) {
@@ -114,6 +168,66 @@ export default function PendingPayments() {
             <DataTable columns={columns} data={requests} />
           </CardContent>
         </Card>
+
+        {selectedRequest && (
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogContent className="max-w-2xl bg-white text-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-blue-900">Payment Verification</DialogTitle>
+                <DialogDescription className="text-gray-600 pt-2">
+                  Review the payment receipt and confirm or deny the payment.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <img src={selectedRequest.receiptUrl} alt="Payment Receipt" className="rounded-lg border border-gray-200" />
+              </div>
+              <DialogFooter className="mt-4 sm:justify-end gap-2">
+                <Button variant="ghost" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+                <Button variant="destructive" onClick={() => { setIsModalOpen(false); setIsDenyModalOpen(true); }}>Deny</Button>
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { handleAction(selectedRequest.$id, "processing"); setIsModalOpen(false); }}>Confirm</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {selectedRequest && (
+            <Dialog open={isDenyModalOpen} onOpenChange={setIsDenyModalOpen}>
+                <DialogContent className="bg-white text-gray-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-900">Deny Payment</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
+                            Please provide a reason for denying this payment.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                        <div className="grid w-full gap-1.5">
+                            <Label htmlFor="reason" className="text-gray-700">Reason for Rejection</Label>
+                            <Textarea
+                                id="reason"
+                                placeholder="Please provide a clear reason for denying the payment..."
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                className="min-h-[120px] bg-gray-50 border-gray-300 focus:border-red-500 focus:ring-red-500"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsDenyModalOpen(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            disabled={!rejectionReason.trim()}
+                            onClick={() => {
+                                handleAction(selectedRequest.$id, "denied", rejectionReason);
+                                setIsDenyModalOpen(false);
+                                setRejectionReason("");
+                            }}
+                        >
+                            Submit Rejection
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
       </main>
     </div>
   );
