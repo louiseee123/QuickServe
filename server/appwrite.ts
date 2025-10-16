@@ -1,5 +1,5 @@
 
-import { Client, Account, Databases, Storage, Users } from 'node-appwrite';
+import { Client, Account, Databases, Storage, Users, Teams } from 'node-appwrite';
 import { loadEnv } from './load-env';
 
 // Explicitly load environment variables before initializing the client
@@ -24,3 +24,4 @@ export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
 export const users = new Users(client);
+export const teams = new Teams(client);
