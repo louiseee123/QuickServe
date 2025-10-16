@@ -164,6 +164,9 @@ export default function Request() {
                <CardDescription className="text-gray-600 pt-2 text-base">Complete the form below to submit your document request.</CardDescription>
             </CardHeader>
             <CardContent className="p-8">
+              {/* HIDDEN INPUT FOR TOTAL AMOUNT */}
+              <input type="hidden" {...register('totalAmount')} />
+
               {/* Student Details Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b border-gray-200">
                 <div id="studentName" className="space-y-2">
