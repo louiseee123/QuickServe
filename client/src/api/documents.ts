@@ -50,7 +50,7 @@ export async function createDocumentRequest(requestData: {
         {
             ...requestData,
             documents: JSON.stringify(requestData.documents),
-            status: 'pending_payment',
+            status: 'pending_approval',
             paymentStatus: 'unpaid',
             requestedAt: new Date().toISOString(),
             userId: userId,
