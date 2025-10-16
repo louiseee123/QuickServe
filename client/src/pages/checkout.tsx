@@ -1,13 +1,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import QrCodeImage from "/src/pages/qr-placeholder.jpg"; // Import the image
+import { useRequest } from "@/hooks/use-request";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Checkout() {
   const [location] = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const requestId = queryParams.get("requestId");
-  const totalAmountString = queryParams.get("totalAmount");
-  const totalAmount = Number(totalAmountString);
+  
+  // Fetch the request details using the new hook
+  const { data: request, isLoading, isError } = useRequest(requestId || '');
+
+  // Calculate total amount from the fetched request
+  const totalAmount = request?.totalAmount || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -24,7 +30,15 @@ export default function Checkout() {
               <img src={QrCodeImage} alt="GCash QR Code" className="w-48 h-48"/>
             </div>
             <p className="text-sm text-center font-semibold text-zinc-900">Account Name: John Louise Bergabena</p>
-            <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{isNaN(totalAmount) ? '0.00' : totalAmount.toFixed(2)}</p>
+            <div className="text-center">
+              {isLoading ? (
+                  <Skeleton className="h-8 w-32 mx-auto" />
+              ) : isError ? (
+                  <p className="text-red-500 font-bold">Error fetching amount</p>
+              ) : (
+                  <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{totalAmount.toFixed(2)}</p>
+              )}
+            </div>
           </div>
           <div className="text-center">
             <a href={`/upload-receipt?requestId=${requestId}`} className="text-blue-600 hover:underline">

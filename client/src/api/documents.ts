@@ -10,6 +10,16 @@ export async function getDocuments() {
   return response.documents;
 }
 
+export async function getRequestById(requestId: string) {
+  const response = await databases.getDocument(
+    DATABASE_ID,
+    DOCUMENT_REQUESTS_COLLECTION_ID,
+    requestId
+  );
+  return response;
+}
+
+
 async function getNextQueueNumber() {
     const response = await databases.listDocuments(
         DATABASE_ID,
