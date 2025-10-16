@@ -245,15 +245,15 @@ export default function PendingApprovals() {
 
         {selectedRequest && (
             <Dialog open={isConfirmApproveModalOpen} onOpenChange={setIsConfirmApproveModalOpen}>
-                <DialogContent>
+                <DialogContent className="bg-white text-gray-800">
                     <DialogHeader>
-                        <DialogTitle>Confirm Approval</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-blue-900">Confirm Approval</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
                             Are you sure you want to approve this request?
                         </DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="ghost" onClick={() => setIsConfirmApproveModalOpen(false)}>Cancel</Button>
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsConfirmApproveModalOpen(false)}>Not yet</Button>
                         <Button
                             className="bg-blue-600 hover:bg-blue-700 text-white"
                             onClick={() => {
@@ -262,7 +262,7 @@ export default function PendingApprovals() {
                                 setIsViewModalOpen(false);
                             }}
                         >
-                            Yes, Approve
+                            Approve
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -271,28 +271,26 @@ export default function PendingApprovals() {
 
         {selectedRequest && (
             <Dialog open={isDenyModalOpen} onOpenChange={setIsDenyModalOpen}>
-                <DialogContent>
+                <DialogContent className="bg-white text-gray-800">
                     <DialogHeader>
-                        <DialogTitle>Deny Request</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-red-900">Deny Request</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
                             Please provide a reason for denying this request. This will be sent to the student.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="reason" className="text-right">
-                                Reason
-                            </Label>
+                    <div className="py-4">
+                        <div className="grid w-full gap-1.5">
+                            <Label htmlFor="reason" className="text-gray-700">Reason for Rejection</Label>
                             <Textarea
                                 id="reason"
-                                placeholder="Enter reason for rejection..."
+                                placeholder="Please provide a clear reason for denying the request..."
                                 value={rejectionReason}
                                 onChange={(e) => setRejectionReason(e.target.value)}
-                                className="col-span-3 min-h-[100px]"
+                                className="min-h-[120px] bg-gray-50 border-gray-300 focus:border-red-500 focus:ring-red-500"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
                         <Button variant="ghost" onClick={() => setIsDenyModalOpen(false)}>Cancel</Button>
                         <Button
                             variant="destructive"
