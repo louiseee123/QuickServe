@@ -1,24 +1,27 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useLocation } from "wouter";
 import QrCodeImage from "/src/pages/qr-placeholder.jpg"; // Import the image
 import { useRequest } from "@/hooks/use-request";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 export default function Checkout() {
-  const [location] = useLocation();
-  // Correctly extract search string from wouter's location
-  const search = location.includes('?') ? location.split('?')[1] : '';
-  const queryParams = new URLSearchParams(search);
-  const requestId = queryParams.get("requestId");
-  const totalAmountStr = queryParams.get("totalAmount");
-  const totalAmount = totalAmountStr ? parseFloat(totalAmountStr) : 0;
+  const [requestId, setRequestId] = useState(null);
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  useEffect(() => {
+    // This ensures the code only runs on the client-side where window is available.
+    const queryParams = new URLSearchParams(window.location.search);
+    const id = queryParams.get("requestId");
+    const amountStr = queryParams.get("totalAmount");
+    
+    setRequestId(id);
+    setTotalAmount(amountStr ? parseFloat(amountStr) : 0);
+  }, []); // Empty dependency array means this runs once on mount.
 
   // useRequest is still useful for fetching the most up-to-date data in the background
-  const { data: request, isLoading, isError } = useRequest(requestId || '');
+  const { data: request } = useRequest(requestId || '');
 
-  // We can use the amount from the URL for immediate display,
-  // and the fetched data can be used for other purposes or to update the view if needed.
-  const displayAmount = request?.totalAmount || totalAmount;
+  // Prioritize amount from URL, fallback to fetched data, then to 0.
+  const displayAmount = totalAmount || request?.totalAmount || 0;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
