@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -55,6 +56,8 @@ const statusConfig = {
 export default function MyRequests() {
   const [, navigate] = useLocation();
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
     queryKey: ['requests', 'all'],
@@ -85,6 +88,11 @@ export default function MyRequests() {
   const filteredRequests = statusFilter === "all"
     ? requests
     : requests.filter(request => request.status === statusFilter);
+
+  const handleReview = (request) => {
+    setSelectedRequest(request);
+    setIsRejectionModalOpen(true);
+  };
 
   const columns = [
     {
@@ -145,6 +153,14 @@ export default function MyRequests() {
           return (
             <Button className="bg-green-500 hover:bg-green-600 text-white rounded-md shadow-sm" size="sm" onClick={handleProceed}>
               Proceed
+            </Button>
+          );
+        }
+
+        if (row.status === 'denied') {
+          return (
+            <Button variant="secondary" size="sm" onClick={() => handleReview(row)}>
+              Review
             </Button>
           );
         }
@@ -246,6 +262,27 @@ export default function MyRequests() {
           </CardContent>
         </Card>
       </motion.main>
+
+        {selectedRequest && (
+            <Dialog open={isRejectionModalOpen} onOpenChange={setIsRejectionModalOpen}>
+                <DialogContent className="bg-white text-gray-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-red-900">Reason for Rejection</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
+                            Your request was denied for the following reason:
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <p className="text-gray-700 bg-gray-100 p-4 rounded-md border border-gray-200">
+                        {selectedRequest.rejectionReason || "No reason provided."}
+                      </p>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsRejectionModalOpen(false)}>Close</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
     </div>
   );
 }
