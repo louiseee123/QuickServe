@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, RECEIPTS_BUCKET_ID } from "@/lib/appwrite";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from 'react';
@@ -26,7 +26,7 @@ export default function PendingPayments() {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
-            [Query.equal('status', 'pending_payment')]
+            [Query.equal('status', ['pending_payment', 'pending_verification'])]
         );
         return response.documents.map(doc => {
             let parsedDocuments = [];
@@ -39,7 +39,7 @@ export default function PendingPayments() {
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
             }
-            const receiptUrl = doc.receiptId ? storage.getFileView(doc.receiptId, doc.receiptId).href : null;
+            const receiptUrl = doc.receiptId ? storage.getFileView(RECEIPTS_BUCKET_ID, doc.receiptId).href : null;
             return {
                 ...doc,
                 documents: parsedDocuments,
@@ -125,6 +125,7 @@ export default function PendingPayments() {
                 {
                   pending_approval: "bg-orange-400",
                   pending_payment: "bg-yellow-500",
+                  pending_verification: "bg-indigo-500",
                   processing: "bg-blue-500",
                   completed: "bg-green-500",
                   denied: "bg-red-500",
@@ -162,7 +163,7 @@ export default function PendingPayments() {
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
           <CardHeader>
             <CardTitle className="text-3xl font-bold text-gray-800">Pending Payments</CardTitle>
-            <CardDescription className="text-gray-600">Requests that have been approved and are awaiting payment.</CardDescription>
+            <CardDescription className="text-gray-600">Requests that are awaiting payment or verification.</CardDescription>
           </CardHeader>
           <CardContent>
             <DataTable columns={columns} data={requests} />
