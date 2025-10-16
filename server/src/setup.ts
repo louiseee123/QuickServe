@@ -1,6 +1,6 @@
 
-import { databases, teams } from '../appwrite';
-import { DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from './db';
+import { databases, teams, storage } from '../appwrite';
+import { DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID, RECEIPTS_BUCKET_ID } from './db';
 import { Permission, ID, IndexType, Role } from 'node-appwrite';
 
 // This is a more robust setup script that handles both new and existing collections.
@@ -81,6 +81,32 @@ const setup = async () => {
                 console.log('Creating team "admin"...');
                 adminTeam = await teams.create(ID.unique(), 'admin');
                 console.log('✅ Team "admin" created.');
+            } else {
+                throw e;
+            }
+        }
+
+        try {
+            await storage.getBucket(RECEIPTS_BUCKET_ID);
+            console.log('Storage bucket "Receipts" already exists.');
+        } catch (e) {
+            if (e.code === 404) {
+                console.log('Creating storage bucket "Receipts"...');
+                await storage.createBucket(
+                    RECEIPTS_BUCKET_ID, 
+                    'Receipts', 
+                    [
+                        Permission.create(Role.users()),
+                        Permission.read(Role.team(adminTeam.$id)),
+                        Permission.read(Role.users()),
+                    ],
+                    false, // fileSecurity
+                    undefined, // allowedFileExtensions
+                    undefined, // compression
+                    undefined, // encryption
+                    undefined, // antivirus
+                );
+                console.log('✅ Storage bucket "Receipts" created.');
             } else {
                 throw e;
             }

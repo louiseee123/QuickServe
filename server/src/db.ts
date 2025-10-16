@@ -8,6 +8,7 @@ export const DOCUMENTS_COLLECTION_ID = 'documents';
 export const DOCUMENT_REQUESTS_COLLECTION_ID = 'requests';
 export const COUNTERS_COLLECTION_ID = 'counters';
 export const USERS_COLLECTION_ID = 'users';
+export const RECEIPTS_BUCKET_ID = 'receipts';
 
 // --- Document Request Operations ---
 
