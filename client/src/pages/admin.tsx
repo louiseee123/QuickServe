@@ -56,32 +56,7 @@ const statusColors = {
   ready: "bg-yellow-100 text-yellow-800",
   completed: "bg-green-100 text-green-800",
 };
-const exportCompletedRequests = () => {
-  // Filter only completed requests
-  const completedRequests = requests.filter(request => request.status === 'processing');
-  
-  // Prepare data for Excel
-  const data = completedRequests.map(request => ({
-    'Queue #': request.queueNumber,
-    'Student ID': request.studentId,
-    'Student Name': request.studentName,
-    'Document Type': request.documentType,
-    'Course': request.course,
-    'Requested At': format(new Date(request.requestedAt), "MMM d, yyyy h:mm a"),
-    'Completed At': request.updatedAt ? format(new Date(request.updatedAt), "MMM d, yyyy h:mm a") : 'N/A',
-    'Notes': request.notes || 'N/A'
-  }));
 
-  // Create worksheet
-  const ws = XLSX.utils.json_to_sheet(data);
-  
-  // Create workbook
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Completed Requests");
-  
-  // Generate Excel file
-  XLSX.writeFile(wb, `Completed_Requests_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
-};
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -94,6 +69,34 @@ export default function Admin() {
   const { data: requests = [], isLoading } = useQuery<DocumentRequest[]>({
     queryKey: ["/api/requests"],
   });
+
+  const exportCompletedRequests = () => {
+    // Filter only completed requests
+    const completedRequests = requests.filter(request => request.status === 'completed');
+    
+    // Prepare data for Excel
+    const data = completedRequests.map(request => ({
+      'Queue #': request.queueNumber,
+      'Student ID': request.studentId,
+      'Student Name': request.studentName,
+      'Document Type': request.documentType,
+      'Course': request.course,
+      'Requested At': format(new Date(request.requestedAt), "MMM d, yyyy h:mm a"),
+      'Completed At': request.updatedAt ? format(new Date(request.updatedAt), "MMM d, yyyy h:mm a") : 'N/A',
+      'Notes': request.notes || 'N/A'
+    }));
+  
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(data);
+    
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Completed Requests");
+    
+    // Generate Excel file
+    XLSX.writeFile(wb, `Completed_Requests_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    return completedRequests.length;
+  };
 
   // Filter requests based on search and filters
   // Update your filteredRequests calculation to include more searchable fields
@@ -405,7 +408,12 @@ const requestStats = {
       </div>
       {/* ... rest of your header ... */}
     </CardHeader>
-    {/* ... rest of your table ... */}
+    <CardContent>
+        <DataTable 
+            data={filteredRequests} 
+            columns={columns} 
+        />
+    </CardContent>
   </Card>
 </motion.div>
 
@@ -538,16 +546,21 @@ const requestStats = {
                   </CardHeader>
                   <CardContent className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChartIcon>
-                        // In the pie chart:
-<Pie
-  data={[
-    { name: 'Processing', value: requestStats.processing },
-    { name: 'Ready', value: requestStats.ready },
-    { name: 'Completed', value: requestStats.completed },
-  ]}
-  // ... rest of the pie chart props
->
+                      <PieChart>
+                        <Pie
+                            data={[
+                                { name: 'Processing', value: requestStats.processing },
+                                { name: 'Ready', value: requestStats.ready },
+                                { name: 'Completed', value: requestStats.completed },
+                            ]}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={80}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                            >
   {[0, 1, 2].map((entry, index) => (
     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
   ))}
@@ -561,7 +574,7 @@ const requestStats = {
                           }}
                         />
                         <Legend />
-                      </PieChartIcon>
+                      </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
@@ -605,7 +618,7 @@ const requestStats = {
                   </CardHeader>
                   <CardContent className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChartIcon>
+                      <PieChart>
                         <Pie
                           data={documentTypeData}
                           cx="50%"
@@ -629,7 +642,7 @@ const requestStats = {
                           }}
                         />
                         <Legend />
-                      </PieChartIcon>
+                      </PieChart>
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
