@@ -5,7 +5,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2 } from 'lucide-react';
+import { Loader2, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
@@ -161,51 +161,70 @@ export default function PendingApprovals() {
 
         {selectedRequest && (
           <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
-            <DialogContent className="max-w-3xl">
+            <DialogContent className="max-w-3xl bg-gradient-to-br from-gray-50 to-blue-100 border-blue-200 text-gray-800">
               <DialogHeader>
-                <DialogTitle>Request Details</DialogTitle>
-                <DialogDescription>Review the full details of the request before taking action.</DialogDescription>
+                <DialogTitle className="text-blue-900 text-2xl">Request Details</DialogTitle>
+                <p className="text-xs text-gray-500 pt-1">Request ID: {selectedRequest.$id}</p>
               </DialogHeader>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[60vh] overflow-y-auto px-2">
-                <div>
-                  <h3 className="font-semibold text-gray-600 mb-1">Student Name</h3>
-                  <p className="text-gray-900">{selectedRequest.studentName}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[60vh] overflow-y-auto px-2 -mx-2">
+                <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Student Name</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.studentName}</p>
                 </div>
-                 <div>
-                  <h3 className="font-semibold text-gray-600 mb-1">Student ID</h3>
-                  <p className="text-gray-900">{selectedRequest.studentId}</p>
+                 <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Student ID</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.studentId}</p>
                 </div>
-                 <div>
-                  <h3 className="font-semibold text-gray-600 mb-1">Course & Year</h3>
-                  <p className="text-gray-900">{selectedRequest.course} - {selectedRequest.yearLevel}</p>
+                 <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Course & Year</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.course} - {selectedRequest.yearLevel}</p>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-600 mb-1">Email</h3>
-                  <p className="text-gray-900">{selectedRequest.email}</p>
+                <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Email</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.email}</p>
+                </div>
+                <div className="md:col-span-2 bg-white/50 p-4 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Purpose of Request</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.purpose}</p>
                 </div>
                 <div className="md:col-span-2">
-                  <h3 className="font-semibold text-gray-600 mb-1">Purpose of Request</h3>
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-md border">{selectedRequest.purpose}</p>
-                </div>
-                <div className="md:col-span-2">
-                  <h3 className="font-semibold text-gray-600 mb-2">Requested Documents</h3>
+                  <h3 className="font-semibold text-blue-900/70 mb-2 text-sm">Requested Documents</h3>
                   <ul className="space-y-2">
                     {selectedRequest.documents.map((doc: any, index: number) => (
-                      <li key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-md border">
-                        <span className="text-gray-800">{doc.name}</span>
-                        <span className="font-semibold text-gray-900">₱{doc.price?.toFixed(2)}</span>
+                      <li key={index} className="flex justify-between items-center bg-white/60 p-3 rounded-lg border border-blue-200/50">
+                        <div className="flex items-center">
+                            <FileText className="h-4 w-4 mr-2 text-blue-600"/>
+                            <span className="text-blue-900">{doc.name}</span>
+                        </div>
+                        <span className="font-semibold text-blue-900">₱{doc.price?.toFixed(2)}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
-                 <div className="md:col-span-2 text-right mt-4">
-                    <h3 className="font-bold text-xl text-gray-800">Total Amount: ₱{selectedRequest.totalAmount.toFixed(2)}</h3>
+                 <div className="md:col-span-2 text-right mt-4 pr-2">
+                    <h3 className="font-bold text-xl text-blue-900">Total Amount: ₱{selectedRequest.totalAmount.toFixed(2)}</h3>
                 </div>
               </div>
-              <DialogFooter className="mt-4">
-                <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>Close</Button>
-                <Button variant="destructive" onClick={() => { handleAction(selectedRequest.$id, "denied"); setIsViewModalOpen(false); }}>Deny</Button>
-                <Button onClick={() => { handleAction(selectedRequest.$id, "pending_payment"); setIsViewModalOpen(false); }}>Approve</Button>
+              <DialogFooter className="mt-4 sm:justify-start gap-2">
+                 <Button 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => { handleAction(selectedRequest.$id, "pending_payment"); setIsViewModalOpen(false); }}
+                >
+                    Approve
+                </Button>
+                <Button 
+                    variant="destructive" 
+                    onClick={() => { handleAction(selectedRequest.$id, "denied"); setIsViewModalOpen(false); }}
+                >
+                    Deny
+                </Button>
+                <Button 
+                    variant="ghost" 
+                    className="text-gray-600 hover:bg-gray-200/50"
+                    onClick={() => setIsViewModalOpen(false)}
+                >
+                    Close
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
