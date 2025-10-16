@@ -9,11 +9,16 @@ import { Loader2, FileText } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 export default function PendingApprovals() {
   const queryClient = useQueryClient();
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [isConfirmApproveModalOpen, setIsConfirmApproveModalOpen] = useState(false);
 
   const { data: requests = [], isLoading, isError, error } = useQuery<any[]>({
       queryKey: ['requests', 'pending-approvals'],
@@ -45,27 +50,35 @@ export default function PendingApprovals() {
   });
 
   const mutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+    mutationFn: async ({ id, status, rejectionReason }: { id: string; status: string; rejectionReason?: string }) => {
+        const payload: { status: string; rejectionReason?: string } = { status };
+        if (status === 'denied' && rejectionReason) {
+            payload.rejectionReason = rejectionReason;
+        }
         const response = await databases.updateDocument(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
             id,
-            { status }
+            payload
         );
         return response;
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'pending-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
-      toast.success(`Request has been ${variables.status === 'pending_payment' ? 'approved' : 'denied'}.`);
+      if (variables.status === 'denied') {
+        toast.success(`Request has been denied.`);
+      } else {
+        toast.success(`Request has been ${variables.status === 'pending_payment' ? 'approved' : 'updated'}.`);
+      }
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
 
-  const handleAction = (id: string, status: string) => {
-    mutation.mutate({ id, status });
+  const handleAction = (id: string, status: string, rejectionReason?: string) => {
+    mutation.mutate({ id, status, rejectionReason });
   };
 
   const handleViewDetails = (request: any) => {
@@ -208,13 +221,13 @@ export default function PendingApprovals() {
               <DialogFooter className="mt-4 sm:justify-start gap-2">
                  <Button 
                     className="bg-blue-600 hover:bg-blue-700 text-white"
-                    onClick={() => { handleAction(selectedRequest.$id, "pending_payment"); setIsViewModalOpen(false); }}
+                    onClick={() => setIsConfirmApproveModalOpen(true)}
                 >
                     Approve
                 </Button>
                 <Button 
                     variant="destructive" 
-                    onClick={() => { handleAction(selectedRequest.$id, "denied"); setIsViewModalOpen(false); }}
+                    onClick={() => setIsDenyModalOpen(true)}
                 >
                     Deny
                 </Button>
@@ -228,6 +241,74 @@ export default function PendingApprovals() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        )}
+
+        {selectedRequest && (
+            <Dialog open={isConfirmApproveModalOpen} onOpenChange={setIsConfirmApproveModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Approval</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to approve this request?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsConfirmApproveModalOpen(false)}>Cancel</Button>
+                        <Button
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => {
+                                handleAction(selectedRequest.$id, "pending_payment");
+                                setIsConfirmApproveModalOpen(false);
+                                setIsViewModalOpen(false);
+                            }}
+                        >
+                            Yes, Approve
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
+
+        {selectedRequest && (
+            <Dialog open={isDenyModalOpen} onOpenChange={setIsDenyModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Deny Request</DialogTitle>
+                        <DialogDescription>
+                            Please provide a reason for denying this request. This will be sent to the student.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="reason" className="text-right">
+                                Reason
+                            </Label>
+                            <Textarea
+                                id="reason"
+                                placeholder="Enter reason for rejection..."
+                                value={rejectionReason}
+                                onChange={(e) => setRejectionReason(e.target.value)}
+                                className="col-span-3 min-h-[100px]"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={() => setIsDenyModalOpen(false)}>Cancel</Button>
+                        <Button
+                            variant="destructive"
+                            disabled={!rejectionReason.trim()}
+                            onClick={() => {
+                                handleAction(selectedRequest.$id, "denied", rejectionReason);
+                                setIsDenyModalOpen(false);
+                                setIsViewModalOpen(false);
+                                setRejectionReason(""); // Reset reason
+                            }}
+                        >
+                            Submit Rejection
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         )}
       </main>
     </div>
