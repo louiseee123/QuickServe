@@ -1,30 +1,59 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import QrCodeImage from "/src/pages/qr-placeholder.jpg"; // Import the image
-import { useRequest } from "@/hooks/use-request";
+import QrCodeImage from "/src/pages/qr-placeholder.jpg";
 import { useEffect, useState } from "react";
+import { ScanLine, ShieldCheck, Upload } from 'lucide-react';
 
 export default function Checkout() {
-  const [requestId, setRequestId] = useState(null);
-  const [totalAmount, setTotalAmount] = useState(0);
+  const [requestId, setRequestId] = useState<string>("");
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
   useEffect(() => {
-    // This ensures the code only runs on the client-side where window is available.
+    // This effect runs once on the client-side to get params directly from the browser's URL
     const queryParams = new URLSearchParams(window.location.search);
     const id = queryParams.get("requestId");
     const amountStr = queryParams.get("totalAmount");
+
+    if (id) {
+      setRequestId(id);
+    }
     
-    setRequestId(id);
-    setTotalAmount(amountStr ? parseFloat(amountStr) : 0);
-  }, []); // Empty dependency array means this runs once on mount.
-
-  // useRequest is still useful for fetching the most up-to-date data in the background
-  const { data: request } = useRequest(requestId || '');
-
-  // Prioritize amount from URL, fallback to fetched data, then to 0.
-  const displayAmount = totalAmount || request?.totalAmount || 0;
+    if (amountStr) {
+      const amount = parseFloat(amountStr);
+      if (!isNaN(amount)) {
+        setTotalAmount(amount);
+      }
+    }
+  }, []); // The empty dependency array ensures this runs only once after the component mounts.
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 pt-24 pb-12">
+      {/* 3-Step Guide */}
+      <div className="w-full max-w-5xl mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div className="flex flex-col items-center">
+                  <div className="bg-white rounded-full p-4 mb-4 shadow-md border">
+                      <ScanLine className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="font-bold text-lg text-zinc-800">Step 1: Scan QR Code</h3>
+                  <p className="text-sm text-zinc-600 px-2">Use your GCash app to scan the QR code provided below.</p>
+              </div>
+              <div className="flex flex-col items-center">
+                  <div className="bg-white rounded-full p-4 mb-4 shadow-md border">
+                      <ShieldCheck className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="font-bold text-lg text-zinc-800">Step 2: Confirm Amount</h3>
+                  <p className="text-sm text-zinc-600 px-2">Ensure the payment amount in GCash matches the total on this page.</p>
+              </div>
+              <div className="flex flex-col items-center">
+                  <div className="bg-white rounded-full p-4 mb-4 shadow-md border">
+                      <Upload className="h-8 w-8 text-blue-600" />
+                  </div>
+                  <h3 className="font-bold text-lg text-zinc-800">Step 3: Upload Receipt</h3>
+                  <p className="text-sm text-zinc-600 px-2">Once paid, save a screenshot and use the link below to upload it.</p>
+              </div>
+          </div>
+      </div>
+
       <Card className="w-full max-w-lg shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-zinc-900">Complete Your Payment</CardTitle>
@@ -39,13 +68,15 @@ export default function Checkout() {
             </div>
             <p className="text-sm text-center font-semibold text-zinc-900">Account Name: John Louise Bergabena</p>
             <div className="text-center">
-                <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{displayAmount.toFixed(2)}</p>
+                <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{totalAmount.toFixed(2)}</p>
             </div>
           </div>
           <div className="text-center">
-            <a href={`/upload-receipt?requestId=${requestId}`} className="text-blue-600 hover:underline">
-              Already paid? Upload your receipt here.
-            </a>
+            {requestId && (
+              <a href={`/upload-receipt?requestId=${requestId}`} className="text-blue-600 hover:underline">
+                Already paid? Upload your receipt here.
+              </a>
+            )}
           </div>
         </CardContent>
       </Card>
