@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, RECEIPTS_BUCKET_ID } from "@/lib/appwrite";
 import { toast } from "sonner";
 import { ID } from "appwrite";
 
@@ -40,13 +40,13 @@ export default function Checkout() {
         if (!requestId) throw new Error('Request ID is not available.');
 
         const fileId = ID.unique();
-        await storage.createFile(fileId, file);
+        await storage.createFile(RECEIPTS_BUCKET_ID, fileId, file);
 
         const response = await databases.updateDocument(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
             requestId,
-            { receiptId: fileId }
+            { receiptId: fileId, status: 'pending_verification' }
         );
 
         return response;

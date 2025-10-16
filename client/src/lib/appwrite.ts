@@ -11,6 +11,7 @@ if (!VITE_APPWRITE_ENDPOINT || !VITE_APPWRITE_PROJECT_ID) {
 export const DATABASE_ID = '68e64920003173cabdb1';
 export const DOCUMENTS_COLLECTION_ID = 'documents';
 export const DOCUMENT_REQUESTS_COLLECTION_ID = 'document_requests';
+export const RECEIPTS_BUCKET_ID = 'receipts';
 
 const client = new Client()
     .setEndpoint(VITE_APPWRITE_ENDPOINT)
