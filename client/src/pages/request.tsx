@@ -107,6 +107,23 @@ export default function Request() {
       createRequestMutation.mutate(requestData);
   };
   
+    const onError = (formErrors) => {
+        // Find the first error and scroll to it
+        const firstErrorField = Object.keys(formErrors)[0];
+        if (firstErrorField) {
+            const element = document.getElementById(firstErrorField);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+        
+        toast({
+            title: "Missing Fields",
+            description: "Please fill out all required fields before submitting.",
+            variant: "destructive",
+        });
+    };
+
   const isLoading = isUserLoading || isDocsLoading;
   const isSubmitting = createRequestMutation.isPending;
 
@@ -141,7 +158,7 @@ export default function Request() {
         </div>
 
         <Card className="w-full max-w-4xl bg-white shadow-xl rounded-2xl border border-gray-200/80">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={handleSubmit(onSubmit, onError)}>
             <CardHeader className="text-center p-8">
                <CardTitle className="text-3xl font-bold text-blue-600">Request a Document</CardTitle>
                <CardDescription className="text-gray-600 pt-2 text-base">Complete the form below to submit your document request.</CardDescription>
@@ -149,22 +166,22 @@ export default function Request() {
             <CardContent className="p-8">
               {/* Student Details Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8 pb-8 border-b border-gray-200">
-                <div className="space-y-2">
+                <div id="studentName" className="space-y-2">
                   <Label htmlFor="student-name" className="form-label">Full Name</Label>
                   {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-name" {...register('studentName', { required: 'Full name is required' })} className="form-input" />}
                   {errors.studentName && <p className="text-red-500 text-xs mt-1">{errors.studentName.message}</p>}
                 </div>
-                <div className="space-y-2">
+                <div id="studentId" className="space-y-2">
                   <Label htmlFor="student-id" className="form-label">Student ID</Label>
                   {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="student-id" {...register('studentId', { required: 'Student ID is required' })} className="form-input" />}
                    {errors.studentId && <p className="text-red-500 text-xs mt-1">{errors.studentId.message}</p>}
                 </div>
-                <div className="space-y-2">
+                <div id="email" className="space-y-2">
                   <Label htmlFor="email" className="form-label">Email</Label>
                   {isLoading ? <Skeleton className="h-10 w-full" /> : <Input id="email" type="email" {...register('email', { required: 'Email is required' })} className="form-input" />}
                   {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
                 </div>
-                <div className="space-y-2">
+                <div id="course" className="space-y-2">
                   <Label htmlFor="course" className="form-label">Course</Label>
                    <Controller
                         name="course"
@@ -174,19 +191,19 @@ export default function Request() {
                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                                 <SelectTrigger className="form-select"><SelectValue placeholder="Select your course..." /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="BSIT">BSIT</SelectItem>
-                                    <SelectItem value="BSHM">BSHM</SelectItem>
-                                    <SelectItem value="BSED">BSED</SelectItem>
-                                    <SelectItem value="BEED">BEED</SelectItem>
-                                    <SelectItem value="BPED">BPED</SelectItem>
-                                    <SelectItem value="BSEntrep">BSEntrep</SelectItem>
+                                    <SelectItem value="BSIT">Bachelor of Science in Information Technology</SelectItem>
+                                    <SelectItem value="BSHM">Bachelor of Science in Hospitality Management</SelectItem>
+                                    <SelectItem value="BSED">Bachelor of Secondary Education</SelectItem>
+                                    <SelectItem value="BEED">Bachelor of Elementary Education</SelectItem>
+                                    <SelectItem value="BPED">Bachelor of Physical Education</SelectItem>
+                                    <SelectItem value="BSEntrep">Bachelor of Science in Entrepreneurship</SelectItem>
                                 </SelectContent>
                             </Select>
                         )}
                     />
                   {errors.course && <p className="text-red-500 text-xs mt-1">{errors.course.message}</p>}
                 </div>
-                <div className="space-y-2">
+                <div id="yearLevel" className="space-y-2">
                   <Label htmlFor="year-level" className="form-label">Year Level</Label>
                    <Controller
                         name="yearLevel"
@@ -209,7 +226,7 @@ export default function Request() {
               </div>
 
               {/* Document Selection */}
-                <div className="space-y-4 mb-8 pb-8 border-b border-gray-200">
+                <div id="documents" className="space-y-4 mb-8 pb-8 border-b border-gray-200">
                     <Label className="text-lg font-bold text-blue-600">Select Documents</Label>
                     <Controller
                         name="documents"
@@ -260,7 +277,7 @@ export default function Request() {
 
               
               {/* Detailed Purpose */}
-              <div className="space-y-2 mb-8">
+              <div id="purpose" className="space-y-2 mb-8">
                 <Label htmlFor="purpose" className="form-label">Detailed Purpose for Request</Label>
                 <Textarea 
                   id="purpose" 

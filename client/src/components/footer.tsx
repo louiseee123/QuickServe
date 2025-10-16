@@ -4,7 +4,7 @@ import logo from "./../Assets/logocctc.png";
 export default function Footer() {
   return (
     <motion.footer
-      className="bg-[#0a1a2f] py-16 pt-24 relative z-20 border-t border-blue-900/50"
+      className="bg-[#0a1a2f] py-16 pt-24 relative z-10 border-t border-blue-900/50"
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ 
@@ -14,7 +14,7 @@ export default function Footer() {
       }}
     >
       {/* 🌟 FIXED POSITION LOGO (NO HOVER EFFECT) 🌟 */}
-      <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-1.5 shadow-2xl shadow-blue-500/20 z-30">
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 p-1.5 shadow-2xl shadow-blue-500/20 z-30">
         <div className="bg-[#0a1a2f] rounded-full w-full h-full flex items-center justify-center overflow-hidden border-2 border-blue-400/30">
           <img 
             src={logo} 
