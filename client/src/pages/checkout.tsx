@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import QrCodeImage from "/src/pages/qr-placeholder.jpg";
 import { useEffect, useState } from "react";
@@ -26,7 +27,7 @@ export default function Checkout() {
   }, []); // The empty dependency array ensures this runs only once after the component mounts.
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4 pt-24 pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300 flex flex-col items-center justify-start p-4 pt-32 pb-12">
       {/* 3-Step Guide */}
       <div className="w-full max-w-5xl mb-12">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
@@ -54,7 +55,7 @@ export default function Checkout() {
           </div>
       </div>
 
-      <Card className="w-full max-w-lg shadow-lg">
+      <Card className="w-full max-w-lg shadow-lg mt-8">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-zinc-900">Complete Your Payment</CardTitle>
           <CardDescription className="text-zinc-600">Follow the instructions below to complete your payment.</CardDescription>
