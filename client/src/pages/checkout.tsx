@@ -5,8 +5,9 @@ import { useRequest } from "@/hooks/use-request";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Checkout() {
-  const [location] = useLocation();
-  const queryParams = new URLSearchParams(location.search);
+  const [path] = useLocation();
+  const search = path.split('?')[1] || '';
+  const queryParams = new URLSearchParams(search);
   const requestId = queryParams.get("requestId");
   
   // Fetch the request details using the new hook
