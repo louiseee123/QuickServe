@@ -1,4 +1,5 @@
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -8,6 +9,13 @@ import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Define a mapping for status properties
 const statusConfig = {
@@ -46,32 +54,34 @@ const statusConfig = {
 
 export default function MyRequests() {
   const [, navigate] = useLocation();
+  const [statusFilter, setStatusFilter] = useState("all");
 
-  const { data: requests = [], isLoading } = useQuery<any[]>({
-    queryKey: ['requests', 'all'],
-    queryFn: async () => {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        DOCUMENT_REQUESTS_COLLECTION_ID
-      );
-      return response.documents.map(doc => {
-        let parsedDocuments = [];
-        try {
-          if (typeof doc.documents === 'string') {
-            parsedDocuments = JSON.parse(doc.documents);
-          } else if (Array.isArray(doc.documents)) {
-            parsedDocuments = doc.documents;
-          }
-        } catch (e) {
-          console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+  const { data: requests = [], isLoading } = useQuery<any[]>(["requests", "all"], async () => {
+    const response = await databases.listDocuments(
+      DATABASE_ID,
+      DOCUMENT_REQUESTS_COLLECTION_ID
+    );
+    return response.documents.map(doc => {
+      let parsedDocuments = [];
+      try {
+        if (typeof doc.documents === 'string') {
+          parsedDocuments = JSON.parse(doc.documents);
+        } else if (Array.isArray(doc.documents)) {
+          parsedDocuments = doc.documents;
         }
-        return {
-          ...doc,
-          documents: parsedDocuments
-        };
-      });
-    },
+      } catch (e) {
+        console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+      }
+      return {
+        ...doc,
+        documents: parsedDocuments
+      };
+    });
   });
+
+  const filteredRequests = statusFilter === "all"
+    ? requests
+    : requests.filter(request => request.status === statusFilter);
 
   const columns = [
     {
@@ -189,22 +199,44 @@ export default function MyRequests() {
             </motion.div>
           </CardHeader>
           <CardContent className="p-6 sm:p-8">
+            <div className="flex justify-end mb-4">
+              <Select onValueChange={setStatusFilter} value={statusFilter}>
+                <SelectTrigger className="w-[200px] bg-white/80 border-blue-200">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {Object.keys(statusConfig).filter(key => key !== 'unknown').map(status => (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center">
+                        {statusConfig[status].icon}
+                        <span>{statusConfig[status].text}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {isLoading && (
               <div className="flex justify-center items-center py-10">
                   <Loader2 className="h-10 w-10 animate-spin text-blue-600" />
               </div>
             )}
 
-            {!isLoading && requests.length > 0 && (
+            {!isLoading && filteredRequests.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="pt-4">
-                <DataTable columns={columns} data={requests} />
+                <DataTable columns={columns} data={filteredRequests} />
               </motion.div>
             )}
 
-            {!isLoading && requests.length === 0 && (
+            {!isLoading && filteredRequests.length === 0 && (
                 <div className="text-center py-10">
-                    <p className="text-lg text-gray-600 font-semibold">There are no requests yet.</p>
-                    <p className="text-muted-foreground">When new requests are made, they will appear here.</p>
+                    <p className="text-lg text-gray-600 font-semibold">
+                      {statusFilter === 'all' ? 'There are no requests yet.' : `There are no requests with the status "${statusConfig[statusFilter].text}".`}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {statusFilter === 'all' ? 'When new requests are made, they will appear here.' : 'Try selecting a different status.'}
+                    </p>
                 </div>
             )}
 
