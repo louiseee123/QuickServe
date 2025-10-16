@@ -5,16 +5,20 @@ import { useRequest } from "@/hooks/use-request";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Checkout() {
-  const [path] = useLocation();
-  const search = path.split('?')[1] || '';
+  const [location] = useLocation();
+  // Correctly extract search string from wouter's location
+  const search = location.includes('?') ? location.split('?')[1] : '';
   const queryParams = new URLSearchParams(search);
   const requestId = queryParams.get("requestId");
-  
-  // Fetch the request details using the new hook
+  const totalAmountStr = queryParams.get("totalAmount");
+  const totalAmount = totalAmountStr ? parseFloat(totalAmountStr) : 0;
+
+  // useRequest is still useful for fetching the most up-to-date data in the background
   const { data: request, isLoading, isError } = useRequest(requestId || '');
 
-  // Calculate total amount from the fetched request
-  const totalAmount = request?.totalAmount || 0;
+  // We can use the amount from the URL for immediate display,
+  // and the fetched data can be used for other purposes or to update the view if needed.
+  const displayAmount = request?.totalAmount || totalAmount;
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -32,13 +36,7 @@ export default function Checkout() {
             </div>
             <p className="text-sm text-center font-semibold text-zinc-900">Account Name: John Louise Bergabena</p>
             <div className="text-center">
-              {isLoading ? (
-                  <Skeleton className="h-8 w-32 mx-auto" />
-              ) : isError ? (
-                  <p className="text-red-500 font-bold">Error fetching amount</p>
-              ) : (
-                  <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{totalAmount.toFixed(2)}</p>
-              )}
+                <p className="text-lg text-center font-bold text-zinc-900">Total Amount: ₱{displayAmount.toFixed(2)}</p>
             </div>
           </div>
           <div className="text-center">
