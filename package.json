@@ -7,7 +7,7 @@
     "dev": "concurrently \"npm:dev:server\" \"npm:dev:client\"",
     "dev:client": "vite",
     "dev:server": "PORT=5001 tsx server/index.ts",
-    "build": "npm run setup && npm run build:client && npm run build:server",
+    "build": "npm run build:client && npm run build:server",
     "build:client": "vite build",
     "build:server": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outfile=dist/server.js",
     "start": "NODE_ENV=production node dist/server.js",
