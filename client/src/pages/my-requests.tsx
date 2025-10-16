@@ -1,3 +1,4 @@
+
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
@@ -156,7 +157,6 @@ export default function MyRequests() {
                     </div>
                     <h3 className="font-bold text-lg text-blue-800">Step 1: Submit a Request</h3>
                     <p className="text-sm text-gray-600">Start by filling out the request form.</p>
-                    <Link to="/request"><Button variant="link" className="mt-2">New Request</Button></Link>
                 </div>
                 <div className="flex flex-col items-center">
                     <div className="bg-white rounded-full p-4 mb-4 shadow-md">
@@ -173,6 +173,13 @@ export default function MyRequests() {
                     <p className="text-sm text-gray-600">Get notified when your documents are ready for pickup or download.</p>
                 </div>
             </div>
+        </div>
+        <div className="text-center mb-12">
+          <Link to="/request">
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full shadow-lg text-lg transition-transform transform hover:scale-105">
+                  Create a New Request
+              </Button>
+          </Link>
         </div>
         <Card className="w-full bg-white/90 backdrop-blur-sm shadow-xl rounded-2xl overflow-hidden border border-blue-100">
           <CardHeader className="text-center p-8 bg-blue-50/80">
