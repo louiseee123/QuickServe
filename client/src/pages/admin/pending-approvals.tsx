@@ -1,16 +1,21 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Loader2, MoreVertical } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 
 export default function PendingApprovals() {
   const queryClient = useQueryClient();
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+
   const { data: requests = [], isLoading, isError, error } = useQuery<any[]>({
       queryKey: ['requests', 'pending-approvals'],
       queryFn: async () => {
@@ -19,12 +24,13 @@ export default function PendingApprovals() {
             DOCUMENT_REQUESTS_COLLECTION_ID
         );
         return response.documents
-          .filter(doc => doc) // Filter out null/undefined documents
+          .filter(doc => doc.status === 'pending_approval')
           .map(doc => {
             let parsedDocuments = [];
             try {
-              if (typeof doc.documents === 'string') {
-                parsedDocuments = JSON.parse(doc.documents);
+              if (doc.documents && typeof doc.documents === 'string') {
+                const parsed = JSON.parse(doc.documents);
+                parsedDocuments = Array.isArray(parsed) ? parsed : [];
               } else if (Array.isArray(doc.documents)) {
                 parsedDocuments = doc.documents;
               }
@@ -35,8 +41,7 @@ export default function PendingApprovals() {
                 ...doc,
                 documents: parsedDocuments
             };
-        })
-        .filter(doc => doc.status === 'pending_approval');
+        });
       },
   });
 
@@ -50,10 +55,10 @@ export default function PendingApprovals() {
         );
         return response;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'pending-approvals'] });
       queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
-      toast.success(`Request status has been updated.`);
+      toast.success(`Request has been ${variables.status === 'pending_payment' ? 'approved' : 'denied'}.`);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -64,80 +69,76 @@ export default function PendingApprovals() {
     mutation.mutate({ id, status });
   };
 
+  const handleViewDetails = (request: any) => {
+    setSelectedRequest(request);
+    setIsViewModalOpen(true);
+  };
+
   const columns = [
     {
-      header: "Document Name",
-      cell: (row: any) => {
-        const docs = row.documents;
-        if (!Array.isArray(docs)) {
-          return <span className="text-red-500">Invalid Data</span>;
-        }
-        return (
-          <ul className="list-disc pl-4">
-            {docs.map((doc: any, index: number) => (
-              <li key={doc.id || index} className="text-gray-700">{doc.name || "Unnamed Document"}</li>
-            ))}
-          </ul>
-        );
-      },
+        header: "Requestor",
+        accessorKey: "studentName",
     },
     {
-        header: "Purpose of Request",
-        cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
+        header: "Purpose",
+        accessorKey: "purpose",
     },
     {
-        header: "Name of the Requestor",
-        cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
+        header: "Documents",
+        cell: ({ row }) => {
+            const docs = row.original.documents;
+            if (!Array.isArray(docs) || docs.length === 0) {
+                return <span className="text-gray-500">No documents</span>;
+            }
+            return (
+                <ul className="list-disc pl-5">
+                    {docs.map((doc: any, index: number) => (
+                        <li key={index}>{doc.name}</li>
+                    ))}
+                </ul>
+            );
+        },
     },
     {
-        header: "Price",
-        cell: (row: any) => {
-            const amount = row.totalAmount;
-            return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+        header: "Total Amount",
+        cell: ({ row }) => {
+            const amount = row.original.totalAmount;
+            return <span>{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
         },
     },
     {
         header: "Status",
-        cell: (row: any) => {
-          const status = row.status || "unknown";
+        cell: ({ row }) => {
+          const status = row.original.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
-          return (
-            <Badge
-              className={`text-white bg-gray-400 ${
-                {
-                  pending_approval: "bg-orange-400",
-                  pending_payment: "bg-yellow-500",
-                  processing: "bg-blue-500",
-                  completed: "bg-green-500",
-                  denied: "bg-red-500",
-                }[status]
-              }`}
-            >
-              {formattedStatus}
-            </Badge>
-          );
+          return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">{formattedStatus}</Badge>;
         },
       },
     {
-      header: 'Actions',
-      cell: (row: any) => {
-        const { $id } = row;
-        if (!$id) return null;
-
+      header: "Actions",
+      cell: ({ row }) => {
+        const request = row.original;
         return (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">Action</Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => handleAction($id, "pending_payment")}>
-                    Accept
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleAction($id, "denied")}>
-                    Deny
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+                 <Button variant="secondary" size="sm" onClick={() => handleViewDetails(request)}>
+                    View Details
+                </Button>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleAction(request.$id, "pending_payment")}>
+                            Approve Request
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-red-600" onClick={() => handleAction(request.$id, "denied")}>
+                            Deny Request
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         );
       },
     },
@@ -145,23 +146,19 @@ export default function PendingApprovals() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-        <main className="container mx-auto py-8 pt-24 flex justify-center items-center h-screen">
-          <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
-        </main>
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
       </div>
     );
   }
 
   if (isError) {
       return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-            <main className="container mx-auto py-8 pt-24 flex justify-center items-center h-screen">
-                <div className="text-red-500 text-center">
-                    <h2 className="text-2xl font-bold mb-2">Error</h2>
-                    <p>{error?.message || "An unexpected error occurred."}</p>
-                </div>
-            </main>
+        <div className="flex justify-center items-center h-screen text-red-500">
+            <div className="text-center">
+                <h2 className="text-2xl font-bold mb-2">Error Loading Requests</h2>
+                <p>{error?.message || "An unexpected error occurred."}</p>
+            </div>
         </div>
       )
   }
@@ -178,7 +175,60 @@ export default function PendingApprovals() {
             <DataTable columns={columns} data={requests} />
           </CardContent>
         </Card>
+
+        {selectedRequest && (
+          <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Request Details</DialogTitle>
+                <DialogDescription>Review the full details of the request before taking action.</DialogDescription>
+              </DialogHeader>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[60vh] overflow-y-auto px-2">
+                <div>
+                  <h3 className="font-semibold text-gray-600 mb-1">Student Name</h3>
+                  <p className="text-gray-900">{selectedRequest.studentName}</p>
+                </div>
+                 <div>
+                  <h3 className="font-semibold text-gray-600 mb-1">Student ID</h3>
+                  <p className="text-gray-900">{selectedRequest.studentId}</p>
+                </div>
+                 <div>
+                  <h3 className="font-semibold text-gray-600 mb-1">Course & Year</h3>
+                  <p className="text-gray-900">{selectedRequest.course} - {selectedRequest.yearLevel}</p>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-600 mb-1">Email</h3>
+                  <p className="text-gray-900">{selectedRequest.email}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold text-gray-600 mb-1">Purpose of Request</h3>
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-md border">{selectedRequest.purpose}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold text-gray-600 mb-2">Requested Documents</h3>
+                  <ul className="space-y-2">
+                    {selectedRequest.documents.map((doc: any, index: number) => (
+                      <li key={index} className="flex justify-between items-center bg-gray-50 p-3 rounded-md border">
+                        <span className="text-gray-800">{doc.name}</span>
+                        <span className="font-semibold text-gray-900">₱{doc.price?.toFixed(2)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                 <div className="md:col-span-2 text-right mt-4">
+                    <h3 className="font-bold text-xl text-gray-800">Total Amount: ₱{selectedRequest.totalAmount.toFixed(2)}</h3>
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <Button variant="secondary" onClick={() => setIsViewModalOpen(false)}>Close</Button>
+                <Button variant="destructive" onClick={() => { handleAction(selectedRequest.$id, "denied"); setIsViewModalOpen(false); }}>Deny</Button>
+                <Button onClick={() => { handleAction(selectedRequest.$id, "pending_payment"); setIsViewModalOpen(false); }}>Approve</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </main>
     </div>
   );
 }
+r
