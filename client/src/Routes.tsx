@@ -14,7 +14,6 @@ import AdminPendingPayments from "./pages/admin/pending-payment";
 import AdminRequests from "./pages/admin/requests";
 import NotFound from "./pages/not-found";
 import { ProtectedRoute } from "./components/protected-route";
-import UploadReceiptPage from "./pages/upload-receipt";
 
 const Routes = () => (
   <Switch>
@@ -24,7 +23,6 @@ const Routes = () => (
     <ProtectedRoute path="/my-requests" component={MyRequests} />
     <ProtectedRoute path="/request-success" component={RequestSuccess} />
     <ProtectedRoute path="/request" component={Request} />
-    <ProtectedRoute path="/upload-receipt" component={UploadReceiptPage} />
     <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
     <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
