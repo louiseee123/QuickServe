@@ -115,7 +115,7 @@ export default function MyRequests() {
       header: "Price",
       cell: (row) => {
         const amount = row.totalAmount;
-        return <span className="text-gray-700">{typeof amount === 'number' ? `$${amount.toFixed(2)}` : 'N/A'}</span>;
+        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
       },
     },
     {
