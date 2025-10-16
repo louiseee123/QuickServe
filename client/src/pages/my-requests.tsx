@@ -115,7 +115,7 @@ export default function MyRequests() {
       header: "Price",
       cell: (row) => {
         const amount = row.totalAmount;
-        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+        return <span className="text-gray-700">{typeof amount === 'number' ? `$${amount.toFixed(2)}` : 'N/A'}</span>;
       },
     },
     {
@@ -126,7 +126,7 @@ export default function MyRequests() {
 
         return (
           <div className="flex items-center justify-center h-full">
-            <Badge className={`text-white text-center flex items-center ${color}`}>
+            <Badge className={`text-black text-center flex items-center ${color}`}>
               {icon}
               <span>{text}</span>
             </Badge>
@@ -204,7 +204,7 @@ export default function MyRequests() {
           <CardContent className="p-6 sm:p-8">
             <div className="flex justify-end mb-4">
               <Select onValueChange={setStatusFilter} value={statusFilter}>
-                <SelectTrigger className="w-[200px] bg-blue-600 text-white border-blue-600 focus:ring-blue-500">
+                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
