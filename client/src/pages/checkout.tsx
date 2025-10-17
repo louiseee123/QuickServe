@@ -39,26 +39,37 @@ export default function Checkout() {
     mutationFn: async (file: File) => {
         if (!requestId) throw new Error('Request ID is not available.');
 
+        // 1. Create a unique ID for the file
         const fileId = ID.unique();
+
+        // 2. Upload the file to the 'receipts' bucket
         await storage.createFile(RECEIPTS_BUCKET_ID, fileId, file);
 
+        // 3. Get the public URL of the uploaded file
+        const receiptUrl = storage.getFileView(RECEIPTS_BUCKET_ID, fileId);
+
+        // 4. Update the document with the URL in the 'receipt' field
         const response = await databases.updateDocument(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
             requestId,
-            { receiptId: fileId, status: 'pending_verification' }
+            { receipt: receiptUrl.href, status: 'pending_verification' } // CORRECTED
         );
 
         return response;
     },
     onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
+        queryClient.invalidateQueries({ queryKey: ['requests', 'all'] });
+        queryClient.invalidateQueries({ queryKey: ['requests', 'pending_payment'] });
         toast.success("Receipt uploaded successfully! Your payment is now being verified.");
         setIsModalOpen(false);
         setSelectedFile(null);
+        // Optional: Redirect user after successful upload
+        // navigate('/my-requests');
     },
     onError: (error) => {
-        toast.error(error.message || "Failed to upload receipt. Please try again.");
+        console.error("Upload failed:", error);
+        toast.error(error.message || "Failed to upload receipt. Please check the console for details.");
     },
   });
 

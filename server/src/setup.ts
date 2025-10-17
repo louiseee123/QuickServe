@@ -11,24 +11,24 @@ const setup = async () => {
         console.log('Force-checking critical attributes in Document Requests collection...');
         try {
             await databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'receiptFileId', 50, false);
-            console.log('  - SUCCESS: Created attribute 'receiptFileId'.');
+            console.log("  - SUCCESS: Created attribute 'receiptFileId'.");
         } catch (e) {
             if (e.code === 409) { // 409 is the error code for "already exists"
-                console.log('  - INFO: Attribute 'receiptFileId' already exists.');
+                console.log("  - INFO: Attribute 'receiptFileId' already exists.");
             } else {
-                console.error('  - FAILED: Could not create attribute 'receiptFileId'.', e);
+                console.error("  - FAILED: Could not create attribute 'receiptFileId'.", e);
                 throw e; // Rethrow if it's a different error
             }
         }
 
         try {
             await databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'rejectionReason', 500, false);
-            console.log('  - SUCCESS: Created attribute 'rejectionReason'.');
+            console.log("  - SUCCESS: Created attribute 'rejectionReason'.");
         } catch (e) {
             if (e.code === 409) {
-                console.log('  - INFO: Attribute 'rejectionReason' already exists.');
+                console.log("  - INFO: Attribute 'rejectionReason' already exists.");
             } else {
-                console.error('  - FAILED: Could not create attribute 'rejectionReason'.', e);
+                console.error("  - FAILED: Could not create attribute 'rejectionReason'.", e);
                 throw e;
             }
         }
@@ -63,7 +63,7 @@ const setup = async () => {
                         Permission.read(Role.team(adminTeam.$id)),
                         Permission.read(Role.users()),
                     ],
-                    true, // fileSecurity - THIS IS THE FIX FOR VIEWING
+                    true, // fileSecurity
                     undefined, // allowedFileExtensions
                     undefined, // compression
                     undefined, // encryption
@@ -75,7 +75,9 @@ const setup = async () => {
             }
         }
 
-        // The rest of the setup script remains the same...
+        // The rest of the setup script can proceed now
+        // This part is less critical for the immediate fix, but we'll leave it
+        // to ensure collections are created if they don't exist at all.
 
     } catch (error) {
         console.error('❌ Error during database setup:', error);
