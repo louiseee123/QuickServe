@@ -26,7 +26,7 @@ export default function OngoingRequests() {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
-            [Query.equal('status', ['pending_payment', 'pending_verification'])]
+            [Query.equal('status', ['pending_payment', 'pending_verification', 'processing'])]
         );
         return response.documents.map(doc => {
             let parsedDocuments = [];
@@ -154,6 +154,13 @@ export default function OngoingRequests() {
                     </Button>
                 );
             }
+            if (request.status === 'processing') {
+              return (
+                  <Button variant="outline" size="sm" disabled>
+                      Processing
+                  </Button>
+              );
+          }
             return <span className="text-sm text-gray-500">No action</span>;
         },
       },

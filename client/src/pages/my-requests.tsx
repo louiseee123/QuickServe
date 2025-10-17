@@ -63,6 +63,7 @@ export default function MyRequests() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
@@ -170,6 +171,14 @@ export default function MyRequests() {
               </Button>
             );
         }
+
+        if (row.status === 'processing') {
+          return (
+            <Button variant="secondary" size="sm" onClick={() => setIsProcessingModalOpen(true)}>
+              View
+            </Button>
+          );
+      }
 
         if (row.status === 'denied') {
           return (
@@ -308,6 +317,20 @@ export default function MyRequests() {
                 </DialogHeader>
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
                     <Button variant="ghost" onClick={() => setIsVerificationModalOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isProcessingModalOpen} onOpenChange={setIsProcessingModalOpen}>
+            <DialogContent className="bg-white text-gray-800">
+                <DialogHeader>
+                    <DialogTitle className="text-blue-900">Request is Processing</DialogTitle>
+                    <DialogDescription className="text-gray-600 pt-2">
+                        Thank you for your payment. Your requested document is now being processed. This will take a couple of days. You will be notified when it is ready.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4 sm:justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setIsProcessingModalOpen(false)}>Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
