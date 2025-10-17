@@ -4,7 +4,7 @@ import { DATABASE_ID, DOCUMENTS_COLLECTION_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 
 import { Permission, ID, IndexType, Role } from 'node-appwrite';
 
 // This is a more robust setup script that handles both new and existing collections.
-// It will create indexes even if the collection already exists.
+// It will create indexes and add missing attributes even if the collection already exists.
 async function setupCollection(
     collectionId: string, 
     name: string, 
@@ -17,7 +17,33 @@ async function setupCollection(
         await databases.getCollection(DATABASE_ID, collectionId);
         console.log(`Collection '${name}' already exists. Ensuring attributes and indexes are up-to-date.`);
 
-        // 2. Ensure all indexes exist.
+        // 2. Get existing attributes and check for missing ones.
+        const { attributes: existingAttributes } = await databases.listAttributes(DATABASE_ID, collectionId);
+        const existingAttrNames = new Set(existingAttributes.map(a => a.key));
+        
+        console.log(`Checking for missing attributes in '${name}'...`);
+        for (const attr of attributes) {
+            if (!existingAttrNames.has(attr.name)) {
+                try {
+                    console.log(`  - Creating missing attribute: ${attr.name}`);
+                    await attr.create();
+                    // Wait for attribute to be created before next step.
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (e) {
+                     // If the attribute already exists (409 Conflict), it's not an error.
+                    if (e.code === 409) {
+                        console.log(`  - INFO: Attribute '${attr.name}' was created by another process. Skipping.`);
+                    } else {
+                        console.error(`  - FAILED: Could not create attribute '${attr.name}'.`, e);
+                        throw e;
+                    }
+                }
+            }
+        }
+        console.log(`✅ Attributes for collection '${name}' are now up-to-date.`);
+
+
+        // 3. Ensure all indexes exist.
         console.log(`Creating indexes for '${name}'...`);
         for (const idx of indexes) {
             try {
@@ -39,7 +65,7 @@ async function setupCollection(
         console.log(`✅ Indexes for collection '${name}' are now up-to-date.`);
 
     } catch (e) {
-        // 3. If the collection doesn't exist (404 Not Found), create it from scratch.
+        // 4. If the collection doesn't exist (404 Not Found), create it from scratch.
         if (e.code === 404) {
             console.log(`Creating collection '${name}' from scratch...`);
             await databases.createCollection(DATABASE_ID, collectionId, name, permissions);
@@ -151,7 +177,6 @@ const setup = async () => {
                 { create: () => databases.createDatetimeAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'requestedAt', false), name: 'requestedAt' }
             ],
             [
-                // THIS IS THE CRITICAL INDEX THAT WAS MISSING
                 { create: () => databases.createIndex(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId_index', IndexType.Key, ['userId']), name: 'userId_index' }
             ]
         );
