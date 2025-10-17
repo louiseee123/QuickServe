@@ -2,9 +2,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Clock, CreditCard, Hourglass, ShoppingCart, FileText, CheckCircle2, XCircle } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
+import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from 'react';
@@ -12,13 +12,54 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Query } from 'appwrite';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const statusConfig = {
+    pending_payment: {
+      icon: <CreditCard className="h-4 w-4 mr-2" />,
+      text: "Pending Payment",
+      color: "bg-yellow-500",
+    },
+    pending_verification: {
+      icon: <Clock className="h-4 w-4 mr-2" />,
+      text: "Pending Verification",
+      color: "bg-indigo-500",
+    },
+    processing: {
+      icon: <Hourglass className="h-4 w-4 mr-2" />,
+      text: "Processing",
+      color: "bg-blue-500",
+    },
+    ready_for_pickup: {
+        icon: <ShoppingCart className="h-4 w-4 mr-2" />,
+        text: "Ready for Pickup",
+        color: "bg-teal-500",
+    },
+    completed: {
+        icon: <CheckCircle2 className="h-4 w-4 mr-2" />,
+        text: "Completed",
+        color: "bg-green-500",
+    },
+    denied: {
+        icon: <XCircle className="h-4 w-4 mr-2" />,
+        text: "Denied",
+        color: "bg-red-500",
+    },
+    unknown: {
+        icon: <FileText className="h-4 w-4 mr-2" />,
+        text: "Unknown",
+        color: "bg-gray-400",
+    }
+  };
 
 export default function OngoingRequests() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
+  const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'ongoing'],
@@ -26,7 +67,7 @@ export default function OngoingRequests() {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
-            [Query.equal('status', ['pending_payment', 'pending_verification', 'processing'])]
+            [Query.equal('status', ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup'])]
         );
         return response.documents.map(doc => {
             let parsedDocuments = [];
@@ -63,9 +104,18 @@ export default function OngoingRequests() {
       return response;
   },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['requests', 'ongoing'] });
-      queryClient.invalidateQueries({ queryKey: ['requests', 'processing'] });
-      toast.success(`Payment has been ${variables.status === 'processing' ? 'confirmed' : 'denied'}.`);
+        queryClient.invalidateQueries({ queryKey: ['requests', 'ongoing'] });
+        queryClient.invalidateQueries({ queryKey: ['requests', 'all'] });
+
+        let message = 'Request status has been updated.';
+        if (variables.status === 'processing') {
+            message = 'Payment has been confirmed.';
+        } else if (variables.status === 'denied') {
+            message = 'Payment has been denied.';
+        } else if (variables.status === 'ready_for_pickup') {
+            message = 'Request is now ready for pickup.';
+        }
+        toast.success(message);
     },
     onError: (error) => {
       toast.error(error.message);
@@ -80,6 +130,15 @@ export default function OngoingRequests() {
     setSelectedRequest(request);
     setIsModalOpen(true);
   };
+
+  const openPickupModal = (request: any) => {
+    setSelectedRequest(request);
+    setIsPickupModalOpen(true);
+  };
+
+  const filteredRequests = statusFilter === "all"
+  ? requests
+  : requests.filter(request => request.status === statusFilter);
 
   const columns = [
     {
@@ -116,24 +175,17 @@ export default function OngoingRequests() {
     {
         header: "Status",
         cell: (row: any) => {
-          const status = row?.status || "unknown";
-          const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
-          return (
-            <Badge
-              className={`text-white bg-gray-400 ${
-                {
-                  pending_approval: "bg-orange-400",
-                  pending_payment: "bg-yellow-500",
-                  pending_verification: "bg-indigo-500",
-                  processing: "bg-blue-500",
-                  completed: "bg-green-500",
-                  denied: "bg-red-500",
-                }[status]
-              }`}
-            >
-              {formattedStatus}
-            </Badge>
-          );
+            const status = row?.status || "unknown";
+            const { icon, text, color } = statusConfig[status] || statusConfig.unknown;
+    
+            return (
+              <div className="flex items-center justify-center h-full">
+                <Badge className={`text-black text-center flex items-center ${color}`}>
+                  {icon}
+                  <span>{text}</span>
+                </Badge>
+              </div>
+            );
         },
       },
       {
@@ -156,11 +208,11 @@ export default function OngoingRequests() {
             }
             if (request.status === 'processing') {
               return (
-                  <Button variant="outline" size="sm" disabled>
-                      Processing
-                  </Button>
+                <Button variant="secondary" size="sm" onClick={() => openPickupModal(request)}>
+                    Set as Ready
+                </Button>
               );
-          }
+            }
             return <span className="text-sm text-gray-500">No action</span>;
         },
       },
@@ -185,7 +237,25 @@ export default function OngoingRequests() {
             <CardDescription className="text-gray-600">Manage and track all active document requests.</CardDescription>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={requests} />
+          <div className="flex justify-end mb-4">
+              <Select onValueChange={setStatusFilter} value={statusFilter}>
+                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {Object.keys(statusConfig).filter(key => ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup'].includes(key)).map(status => (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center">
+                        {statusConfig[status].icon}
+                        <span>{statusConfig[status].text}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DataTable columns={columns} data={filteredRequests} />
           </CardContent>
         </Card>
 
@@ -244,6 +314,23 @@ export default function OngoingRequests() {
                         >
                             Submit Rejection
                         </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
+
+        {selectedRequest && (
+            <Dialog open={isPickupModalOpen} onOpenChange={setIsPickupModalOpen}>
+                <DialogContent className="bg-white text-gray-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-blue-900">Mark as Ready for Pickup</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
+                            Are you sure this request is ready for pickup? The user will be notified of the change in status.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Cancel</Button>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleAction(selectedRequest.$id, "ready_for_pickup"); setIsPickupModalOpen(false); }}>Confirm</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

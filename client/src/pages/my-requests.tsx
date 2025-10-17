@@ -6,7 +6,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
-import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2, ShoppingCart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -40,6 +40,11 @@ const statusConfig = {
     text: "Processing",
     color: "bg-blue-500",
   },
+  ready_for_pickup: {
+    icon: <ShoppingCart className="h-4 w-4 mr-2" />,
+    text: "Ready for Pickup",
+    color: "bg-teal-500",
+  },
   completed: {
     icon: <CheckCircle2 className="h-4 w-4 mr-2" />,
     text: "Completed",
@@ -64,6 +69,7 @@ export default function MyRequests() {
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
+  const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
@@ -178,7 +184,15 @@ export default function MyRequests() {
               View
             </Button>
           );
-      }
+        }
+
+        if (row.status === 'ready_for_pickup') {
+            return (
+              <Button variant="secondary" size="sm" onClick={() => setIsPickupModalOpen(true)}>
+                View
+              </Button>
+            );
+        }
 
         if (row.status === 'denied') {
           return (
@@ -332,6 +346,20 @@ export default function MyRequests() {
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
                     <Button variant="ghost" onClick={() => setIsProcessingModalOpen(false)}>Close</Button>
                 </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isPickupModalOpen} onOpenChange={setIsPickupModalOpen}>
+            <DialogContent className="bg-white text-gray-800">
+                <DialogHeader>
+                    <DialogTitle className="text-teal-900">Ready for Pickup</DialogTitle>
+                    <DialogDescription className="text-gray-600 pt-2">
+                        Your request is now ready for pickup. Please proceed to the designated office to claim your document.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4 sm:justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Close</Button>
+a                </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>
