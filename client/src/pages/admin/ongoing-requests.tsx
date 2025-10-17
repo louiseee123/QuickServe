@@ -42,7 +42,7 @@ export default function OngoingRequests() {
             return {
                 ...doc,
                 documents: parsedDocuments,
-                receiptUrl: doc.receipt // Corrected: Use the direct URL from the 'receipt' field
+                receiptUrl: doc.receipt
             };
         });
       },
@@ -63,7 +63,7 @@ export default function OngoingRequests() {
       return response;
   },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['requests', 'ongoing'] }); // Use the new query key
+      queryClient.invalidateQueries({ queryKey: ['requests', 'ongoing'] });
       queryClient.invalidateQueries({ queryKey: ['requests', 'processing'] });
       toast.success(`Payment has been ${variables.status === 'processing' ? 'confirmed' : 'denied'}.`);
     },
@@ -84,8 +84,8 @@ export default function OngoingRequests() {
   const columns = [
     {
       header: "Document Name",
-      cell: ({ row }: any) => {
-        const docs = row.original?.documents;
+      cell: (row: any) => {
+        const docs = row?.documents;
         if (!Array.isArray(docs)) {
           return <span className="text-red-500">Invalid Data</span>;
         }
@@ -99,24 +99,24 @@ export default function OngoingRequests() {
       },
     },
     {
-        header: "Purpose of Request",
-        cell: ({ row }: any) => <span className="text-gray-700">{row.original.purpose}</span>,
+      header: "Purpose of Request",
+      cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
     },
     {
-        header: "Name of the Requestor",
-        cell: ({ row }: any) => <span className="text-gray-700">{row.original.studentName}</span>,
+      header: "Name of the Requestor",
+      cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
     },
     {
-        header: "Price",
-        cell: ({ row }: any) => {
-            const amount = row.original?.totalAmount;
-            return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
-        },
+      header: "Price",
+      cell: (row: any) => {
+        const amount = row?.totalAmount;
+        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+      },
     },
     {
         header: "Status",
-        cell: ({ row }: any) => {
-          const status = row.original?.status || "unknown";
+        cell: (row: any) => {
+          const status = row?.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
           return (
             <Badge
@@ -138,8 +138,8 @@ export default function OngoingRequests() {
       },
       {
         header: "Action",
-        cell: ({ row }: any) => {
-            const request = row.original;
+        cell: (row: any) => {
+            const request = row;
             if (request.status === 'pending_verification') {
                 return (
                     <Button variant="secondary" size="sm" onClick={() => openModal(request)} disabled={!request.receiptUrl}>
