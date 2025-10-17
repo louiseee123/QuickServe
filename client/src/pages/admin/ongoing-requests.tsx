@@ -4,7 +4,7 @@ import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, RECEIPTS_BUCKET_ID } from "@/lib/appwrite";
+import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { useState } from 'react';
@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Query } from 'appwrite';
 
-export default function PendingPayments() {
+export default function OngoingRequests() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
@@ -21,7 +21,7 @@ export default function PendingPayments() {
   const [rejectionReason, setRejectionReason] = useState("");
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
-      queryKey: ['requests', 'pending-payment'],
+      queryKey: ['requests', 'ongoing'],
       queryFn: async () => {
         const response = await databases.listDocuments(
             DATABASE_ID,
@@ -39,11 +39,10 @@ export default function PendingPayments() {
             } catch (e) {
               console.error(`Failed to parse documents for request ${doc.$id}:`, e);
             }
-            const receiptUrl = doc.receiptId ? storage.getFileView(RECEIPTS_BUCKET_ID, doc.receiptId).href : null;
             return {
                 ...doc,
                 documents: parsedDocuments,
-                receiptUrl: receiptUrl
+                receiptUrl: doc.receipt // Corrected: Use the direct URL from the 'receipt' field
             };
         });
       },
@@ -64,7 +63,7 @@ export default function PendingPayments() {
       return response;
   },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['requests', 'pending-payment'] });
+      queryClient.invalidateQueries({ queryKey: ['requests', 'ongoing'] }); // Use the new query key
       queryClient.invalidateQueries({ queryKey: ['requests', 'processing'] });
       toast.success(`Payment has been ${variables.status === 'processing' ? 'confirmed' : 'denied'}.`);
     },
@@ -85,8 +84,8 @@ export default function PendingPayments() {
   const columns = [
     {
       header: "Document Name",
-      cell: (row: any) => {
-        const docs = row?.documents;
+      cell: ({ row }: any) => {
+        const docs = row.original?.documents;
         if (!Array.isArray(docs)) {
           return <span className="text-red-500">Invalid Data</span>;
         }
@@ -100,24 +99,24 @@ export default function PendingPayments() {
       },
     },
     {
-      header: "Purpose of Request",
-      cell: (row: any) => <span className="text-gray-700">{row.purpose}</span>,
+        header: "Purpose of Request",
+        cell: ({ row }: any) => <span className="text-gray-700">{row.original.purpose}</span>,
     },
     {
-      header: "Name of the Requestor",
-      cell: (row: any) => <span className="text-gray-700">{row.studentName}</span>,
+        header: "Name of the Requestor",
+        cell: ({ row }: any) => <span className="text-gray-700">{row.original.studentName}</span>,
     },
     {
-      header: "Price",
-      cell: (row: any) => {
-        const amount = row?.totalAmount;
-        return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
-      },
+        header: "Price",
+        cell: ({ row }: any) => {
+            const amount = row.original?.totalAmount;
+            return <span className="text-gray-700">{typeof amount === 'number' ? `₱${amount.toFixed(2)}` : 'N/A'}</span>;
+        },
     },
     {
         header: "Status",
-        cell: (row: any) => {
-          const status = row?.status || "unknown";
+        cell: ({ row }: any) => {
+          const status = row.original?.status || "unknown";
           const formattedStatus = status.replace(/_/g, ' ').replace(/\b\w/g, (char: string) => char.toUpperCase());
           return (
             <Badge
@@ -139,11 +138,24 @@ export default function PendingPayments() {
       },
       {
         header: "Action",
-        cell: (row: any) => (
-          <Button variant="secondary" size="sm" onClick={() => openModal(row)} disabled={!row.receiptId}>
-            Manage
-          </Button>
-        ),
+        cell: ({ row }: any) => {
+            const request = row.original;
+            if (request.status === 'pending_verification') {
+                return (
+                    <Button variant="secondary" size="sm" onClick={() => openModal(request)} disabled={!request.receiptUrl}>
+                        View
+                    </Button>
+                );
+            }
+            if (request.status === 'pending_payment') {
+                return (
+                    <Button variant="outline" size="sm" disabled>
+                        Awaiting Payment
+                    </Button>
+                );
+            }
+            return <span className="text-sm text-gray-500">No action</span>;
+        },
       },
   ];
 
@@ -162,8 +174,8 @@ export default function PendingPayments() {
       <main className="container mx-auto py-8 pt-32">
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-3xl font-bold text-gray-800">Pending Payments</CardTitle>
-            <CardDescription className="text-gray-600">Requests that are awaiting payment or verification.</CardDescription>
+            <CardTitle className="text-3xl font-bold text-gray-800">Ongoing Requests</CardTitle>
+            <CardDescription className="text-gray-600">Manage and track all active document requests.</CardDescription>
           </CardHeader>
           <CardContent>
             <DataTable columns={columns} data={requests} />

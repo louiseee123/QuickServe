@@ -10,7 +10,7 @@ import AdminDashboard from "./pages/admin/dashboard";
 import AdminDocuments from "./pages/admin/documents";
 import AdminPaymentLogs from "./pages/admin/payment-logs";
 import AdminPendingApprovals from "./pages/admin/pending-approvals";
-import AdminPendingPayments from "./pages/admin/pending-payment";
+import AdminOngoingRequests from "./pages/admin/ongoing-requests";
 import AdminRequests from "./pages/admin/requests";
 import NotFound from "./pages/not-found";
 import { ProtectedRoute } from "./components/protected-route";
@@ -27,7 +27,7 @@ const Routes = () => (
     <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
     <ProtectedRoute path="/admin/pending-approvals" component={AdminPendingApprovals} />
-    <ProtectedRoute path="/admin/pending-payment" component={AdminPendingPayments} />
+    <ProtectedRoute path="/admin/ongoing-requests" component={AdminOngoingRequests} />
     <ProtectedRoute path="/admin/requests" component={AdminRequests} />
     <Route component={NotFound} />
   </Switch>
