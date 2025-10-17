@@ -30,6 +30,11 @@ const statusConfig = {
     text: "Pending Payment",
     color: "bg-yellow-500",
   },
+  pending_verification: {
+    icon: <Clock className="h-4 w-4 mr-2" />,
+    text: "Pending Verification",
+    color: "bg-yellow-500",
+  },
   processing: {
     icon: <Clock className="h-4 w-4 mr-2" />,
     text: "Processing",
@@ -57,6 +62,7 @@ export default function MyRequests() {
   const [, navigate] = useLocation();
   const [statusFilter, setStatusFilter] = useState("all");
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
@@ -155,6 +161,14 @@ export default function MyRequests() {
               Proceed
             </Button>
           );
+        }
+
+        if (row.status === 'pending_verification') {
+            return (
+              <Button variant="secondary" size="sm" onClick={() => setIsVerificationModalOpen(true)}>
+                View
+              </Button>
+            );
         }
 
         if (row.status === 'denied') {
@@ -283,6 +297,20 @@ export default function MyRequests() {
                 </DialogContent>
             </Dialog>
         )}
+
+        <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
+            <DialogContent className="bg-white text-gray-800">
+                <DialogHeader>
+                    <DialogTitle className="text-blue-900">Under Verification</DialogTitle>
+                    <DialogDescription className="text-gray-600 pt-2">
+                        This Request is currently under verification, please come back later.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="mt-4 sm:justify-end gap-2">
+                    <Button variant="ghost" onClick={() => setIsVerificationModalOpen(false)}>Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }

@@ -10,10 +10,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { databases, storage, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, RECEIPTS_BUCKET_ID } from "@/lib/appwrite";
 import { toast } from "sonner";
 import { ID } from "appwrite";
+import { useLocation } from "wouter";
 
 export default function Checkout() {
   const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [requestId, setRequestId] = useState<string>("");
   const [totalAmount, setTotalAmount] = useState<number>(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -61,11 +64,9 @@ export default function Checkout() {
     onSuccess: () => {
         queryClient.invalidateQueries({ queryKey: ['requests', 'all'] });
         queryClient.invalidateQueries({ queryKey: ['requests', 'pending_payment'] });
-        toast.success("Receipt uploaded successfully! Your payment is now being verified.");
         setIsModalOpen(false);
+        setIsSuccessModalOpen(true);
         setSelectedFile(null);
-        // Optional: Redirect user after successful upload
-        // navigate('/my-requests');
     },
     onError: (error) => {
         console.error("Upload failed:", error);
@@ -168,6 +169,25 @@ export default function Checkout() {
                     className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                     {mutation.isPending ? "Uploading..." : "Upload & Submit"}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    <Dialog open={isSuccessModalOpen} onOpenChange={setIsSuccessModalOpen}>
+        <DialogContent className="bg-white text-gray-800">
+            <DialogHeader>
+                <DialogTitle className="text-blue-900">Upload Successful!</DialogTitle>
+                <DialogDescription className="text-gray-600 pt-2">
+                    Your receipt has been uploaded and is now pending verification.
+                </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="mt-4 sm:justify-end gap-2">
+                <Button
+                    onClick={() => navigate('/my-requests')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                    Done
                 </Button>
             </DialogFooter>
         </DialogContent>
