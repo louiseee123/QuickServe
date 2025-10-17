@@ -9,7 +9,7 @@ async function setupCollection(
     collectionId: string, 
     name: string, 
     permissions: string[], 
-    attributes: { create: () => Promise<any>, name: string }[], 
+    attributes: { create: () => Promise<any>, name: string, isOptional: boolean }[], 
     indexes: { create: () => Promise<any>, name: string }[]
 ) {
     try {
@@ -19,7 +19,7 @@ async function setupCollection(
 
         // 2. Get existing attributes and check for missing ones.
         const { attributes: existingAttributes } = await databases.listAttributes(DATABASE_ID, collectionId);
-        const existingAttrNames = new Set(existingAttributes.map(a => a.key));
+        const existingAttrNames = new Set(existingAttributes.map((a: any) => a.key));
         
         console.log(`Checking for missing attributes in '${name}'...`);
         for (const attr of attributes) {
@@ -143,9 +143,9 @@ const setup = async () => {
             'Documents',
             [Permission.read(Role.any())], 
             [
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'name', 255, true), name: 'name' },
-                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'price', true), name: 'price' },
-                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'processingTimeDays', true), name: 'processingTimeDays' },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'name', 255, true), name: 'name', isOptional: false },
+                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'price', true), name: 'price', isOptional: false },
+                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'processingTimeDays', true), name: 'processingTimeDays', isOptional: false },
             ],
             [
                 { create: () => databases.createIndex(DATABASE_ID, DOCUMENTS_COLLECTION_ID, 'name_unique', IndexType.Unique, ['name']), name: 'name_unique' }
@@ -164,19 +164,19 @@ const setup = async () => {
                 Permission.update(Role.users()),        
             ],
             [
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'studentId', 50, true), name: 'studentId' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'studentName', 255, true), name: 'studentName' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'yearLevel', 50, true), name: 'yearLevel' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'course', 255, true), name: 'course' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'documents', 10000, true), name: 'documents' },
-                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'totalAmount', true), name: 'totalAmount' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'status', 50, false, 'pending_payment'), name: 'status' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'paymentStatus', 50, false, 'unpaid'), name: 'paymentStatus' },
-                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'queueNumber', true), name: 'queueNumber' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId', 50, true), name: 'userId' },
-                { create: () => databases.createDatetimeAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'requestedAt', false), name: 'requestedAt' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'receiptFileId', 50, false), name: 'receiptFileId' },
-                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'rejectionReason', 500, false), name: 'rejectionReason' }
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'studentId', 50, true), name: 'studentId', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'studentName', 255, true), name: 'studentName', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'yearLevel', 50, true), name: 'yearLevel', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'course', 255, true), name: 'course', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'documents', 10000, true), name: 'documents', isOptional: false },
+                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'totalAmount', true), name: 'totalAmount', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'status', 50, false, 'pending_payment'), name: 'status', isOptional: true },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'paymentStatus', 50, false, 'unpaid'), name: 'paymentStatus', isOptional: true },
+                { create: () => databases.createIntegerAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'queueNumber', true), name: 'queueNumber', isOptional: false },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId', 50, true), name: 'userId', isOptional: false },
+                { create: () => databases.createDatetimeAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'requestedAt', false), name: 'requestedAt', isOptional: true },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'receiptFileId', 50, false), name: 'receiptFileId', isOptional: true },
+                { create: () => databases.createStringAttribute(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'rejectionReason', 500, false), name: 'rejectionReason', isOptional: true }
             ],
             [
                 { create: () => databases.createIndex(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID, 'userId_index', IndexType.Key, ['userId']), name: 'userId_index' }
