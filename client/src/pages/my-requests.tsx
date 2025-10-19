@@ -17,9 +17,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import ProgressBar from "@/components/ui/progress-bar";
+import ProcessingProgressBar from "@/components/ui/processing-progress-bar";
 
-// Define a mapping for status properties
 const statusConfig = {
   pending_approval: {
     icon: <Hourglass className="h-4 w-4 mr-2" />,
@@ -91,9 +90,13 @@ export default function MyRequests() {
         } catch (e) {
           console.error(`Failed to parse documents for request ${doc.$id}:`, e);
         }
+
+        const processingTimeDays = parsedDocuments.reduce((total, doc) => total + (doc.processingTimeDays || 0), 0);
+
         return {
           ...doc,
-          documents: parsedDocuments
+          documents: parsedDocuments,
+          processingTimeDays,
         };
       });
     }
@@ -347,7 +350,12 @@ export default function MyRequests() {
                     <DialogTitle className="text-blue-900">Request is Processing</DialogTitle>
                 </DialogHeader>
                 <div className="py-4">
-                  <ProgressBar currentStatus={selectedRequest?.status} />
+                  {selectedRequest && (
+                    <ProcessingProgressBar
+                      processingTimeDays={selectedRequest.processingTimeDays}
+                      estimatedCompletionDays={selectedRequest.estimatedCompletionDays}
+                    />
+                  )}
                   <p className="text-gray-600 pt-4 text-center">
                       Thank you for your payment. Your requested document is now being processed. This will take a couple of days. You will be notified when it is ready.
                   </p>
