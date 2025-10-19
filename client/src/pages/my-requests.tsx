@@ -3,7 +3,6 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2, ShoppingCart } from "lucide-react";
@@ -17,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ProgressBar from "@/components/ui/progress-bar";
 
 // Define a mapping for status properties
 const statusConfig = {
@@ -143,16 +143,7 @@ export default function MyRequests() {
       header: "Status",
       cell: (row) => {
         const status = row.status || "unknown";
-        const { icon, text, color } = statusConfig[status] || statusConfig.unknown;
-
-        return (
-          <div className="flex items-center justify-center h-full">
-            <Badge className={`text-black text-center flex items-center ${color}`}>
-              {icon}
-              <span>{text}</span>
-            </Badge>
-          </div>
-        );
+        return <ProgressBar currentStatus={status} />;
       },
     },
     {
