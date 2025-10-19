@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { Loader2, FileText, Clock, CheckCircle, Hourglass, CreditCard, XCircle, CheckCircle2, ShoppingCart } from "lucide-react";
@@ -106,6 +107,11 @@ export default function MyRequests() {
     setSelectedRequest(request);
     setIsRejectionModalOpen(true);
   };
+  
+  const handleOpenModal = (request, setModalOpen) => {
+    setSelectedRequest(request);
+    setModalOpen(true);
+  };
 
   const columns = [
     {
@@ -143,7 +149,16 @@ export default function MyRequests() {
       header: "Status",
       cell: (row) => {
         const status = row.status || "unknown";
-        return <ProgressBar currentStatus={status} />;
+        const { icon, text, color } = statusConfig[status] || statusConfig.unknown;
+
+        return (
+          <div className="flex items-center justify-center h-full">
+            <Badge className={`text-black text-center flex items-center ${color}`}>
+              {icon}
+              <span>{text}</span>
+            </Badge>
+          </div>
+        );
       },
     },
     {
@@ -163,7 +178,7 @@ export default function MyRequests() {
 
         if (row.status === 'pending_verification') {
             return (
-              <Button variant="secondary" size="sm" onClick={() => setIsVerificationModalOpen(true)}>
+              <Button variant="secondary" size="sm" onClick={() => handleOpenModal(row, setIsVerificationModalOpen)}>
                 View
               </Button>
             );
@@ -171,7 +186,7 @@ export default function MyRequests() {
 
         if (row.status === 'processing') {
           return (
-            <Button variant="secondary" size="sm" onClick={() => setIsProcessingModalOpen(true)}>
+            <Button variant="secondary" size="sm" onClick={() => handleOpenModal(row, setIsProcessingModalOpen)}>
               View
             </Button>
           );
@@ -179,7 +194,7 @@ export default function MyRequests() {
 
         if (row.status === 'ready_for_pickup') {
             return (
-              <Button variant="secondary" size="sm" onClick={() => setIsPickupModalOpen(true)}>
+              <Button variant="secondary" size="sm" onClick={() => handleOpenModal(row, setIsPickupModalOpen)}>
                 View
               </Button>
             );
@@ -330,10 +345,13 @@ export default function MyRequests() {
             <DialogContent className="bg-white text-gray-800">
                 <DialogHeader>
                     <DialogTitle className="text-blue-900">Request is Processing</DialogTitle>
-                    <DialogDescription className="text-gray-600 pt-2">
-                        Thank you for your payment. Your requested document is now being processed. This will take a couple of days. You will be notified when it is ready.
-                    </DialogDescription>
                 </DialogHeader>
+                <div className="py-4">
+                  <ProgressBar currentStatus={selectedRequest?.status} />
+                  <p className="text-gray-600 pt-4 text-center">
+                      Thank you for your payment. Your requested document is now being processed. This will take a couple of days. You will be notified when it is ready.
+                  </p>
+                </div>
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
                     <Button variant="ghost" onClick={() => setIsProcessingModalOpen(false)}>Close</Button>
                 </DialogFooter>
@@ -350,7 +368,7 @@ export default function MyRequests() {
                 </DialogHeader>
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
                     <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Close</Button>
-a                </DialogFooter>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>
