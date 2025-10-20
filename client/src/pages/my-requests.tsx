@@ -70,6 +70,7 @@ export default function MyRequests() {
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [isProcessingModalOpen, setIsProcessingModalOpen] = useState(false);
   const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
@@ -372,10 +373,53 @@ export default function MyRequests() {
                   </p>
                 </div>
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
+                    <Button variant="outline" onClick={() => { setIsPickupModalOpen(false); handleOpenModal(selectedRequest, setIsDetailsModalOpen); }}>Details</Button>
                     <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        {selectedRequest && (
+          <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
+            <DialogContent className="bg-white text-gray-800">
+              <DialogHeader>
+                <DialogTitle className="text-blue-900">Request Details</DialogTitle>
+                <DialogDescription className="text-gray-600 pt-2">
+                  Here is a summary of your request.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                <div>
+                  <h4 className="font-semibold text-gray-700">Request ID</h4>
+                  <p className="text-gray-600 bg-gray-100 p-2 rounded-md">{selectedRequest.$id}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700">Documents Requested</h4>
+                  <ul className="list-disc pl-5 text-gray-600 bg-gray-100 p-2 rounded-md">
+                    {selectedRequest.documents.map((doc, index) => (
+                      <li key={index}>{doc.name}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700">Price</h4>
+                  <p className="text-gray-600 bg-gray-100 p-2 rounded-md">₱{selectedRequest.totalAmount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-700">Requestor Details</h4>
+                  <div className="text-gray-600 bg-gray-100 p-2 rounded-md">
+                    <p><strong>Name:</strong> {selectedRequest.studentName}</p>
+                    <p><strong>Student ID:</strong> {selectedRequest.studentId}</p>
+                    <p><strong>Email:</strong> {selectedRequest.studentEmail}</p>
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setIsDetailsModalOpen(false)}>Close</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
     </div>
   );
 }

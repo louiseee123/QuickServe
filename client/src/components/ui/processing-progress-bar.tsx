@@ -46,9 +46,9 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
     }
 
     const startDate = new Date(processingStartedAt).getTime();
-    const totalDurationMs = estimatedCompletionDays * 24 * 60 * 60 * 1000;
+    const totalDurationMs = (estimatedCompletionDays ?? 0) * 24 * 60 * 60 * 1000;
 
-    if (isNaN(startDate) || !totalDurationMs || totalDurationMs <= 0 || startDate === 0) {
+    if (isNaN(startDate) || totalDurationMs <= 0 || startDate === 0) {
       springProgress.set(10);
       return;
     }
@@ -89,7 +89,7 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
         <span className="text-3xl font-bold text-gray-800">
           <motion.span>{roundedProgress}</motion.span>%
         </span>
-        <p className="text-base text-gray-500">Processing your request...</p>
+        <p className="text-base text-gray-500">{isCompleted ? 'Request Complete' : 'Processing your request...'}</p>
       </div>
 
       <div className="relative h-4 bg-gray-200/70 rounded-full">
@@ -98,27 +98,25 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
           style={{ width }}
         />
         <motion.div
-          className="absolute top-1/2 -translate-y-1/2"
+          className="absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center"
           style={{ left: width, x: '-50%' }}
+          animate={{
+            scale: isCompleted ? 1 : [1, 1.1, 1],
+            boxShadow: isCompleted
+              ? '0 0 12px 3px rgba(59, 130, 246, 0.5)'
+              : [
+                  "0 0 0px 0px rgba(59, 130, 246, 0.5)",
+                  "0 0 0px 8px rgba(59, 130, 246, 0)",
+                  "0 0 0px 0px rgba(59, 130, 246, 0.5)",
+                ],
+          }}
+          transition={{
+            duration: 2,
+            repeat: Infinity,
+            ease: 'easeInOut'
+          }}
         >
-          <motion.div
-            className="w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center"
-            animate={{
-              scale: [1, 1.1, 1],
-              boxShadow: [
-                "0 0 0px 0px rgba(59, 130, 246, 0.5)",
-                "0 0 0px 8px rgba(59, 130, 246, 0)",
-                "0 0 0px 0px rgba(59, 130, 246, 0.5)",
-              ],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
-          >
-            <FileText className="w-5 h-5 text-blue-600" />
-          </motion.div>
+          <FileText className="w-5 h-5 text-blue-600" />
         </motion.div>
       </div>
 
