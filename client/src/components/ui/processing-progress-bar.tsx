@@ -32,10 +32,15 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
   });
 
   useEffect(() => {
+    if (!processingStartedAt) {
+      springProgress.set(10);
+      return;
+    }
+
     const startDate = new Date(processingStartedAt).getTime();
     const totalDurationMs = estimatedCompletionDays * 24 * 60 * 60 * 1000;
 
-    if (isNaN(startDate) || totalDurationMs <= 0) {
+    if (isNaN(startDate) || totalDurationMs <= 0 || startDate === 0) {
       springProgress.set(10);
       return;
     }
