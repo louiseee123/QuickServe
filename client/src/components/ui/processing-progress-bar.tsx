@@ -98,7 +98,7 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
           style={{ width }}
         />
         <motion.div
-          className="absolute top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center"
+          className="absolute -top-2 w-8 h-8 rounded-full bg-white shadow-lg flex items-center justify-center"
           style={{ left: width, x: '-50%' }}
           animate={{
             scale: isCompleted ? 1 : [1, 1.1, 1],

@@ -381,37 +381,48 @@ export default function MyRequests() {
 
         {selectedRequest && (
           <Dialog open={isDetailsModalOpen} onOpenChange={setIsDetailsModalOpen}>
-            <DialogContent className="bg-white text-gray-800">
+            <DialogContent className="max-w-3xl bg-gradient-to-br from-gray-50 to-blue-100 border-blue-200 text-gray-800">
               <DialogHeader>
-                <DialogTitle className="text-blue-900">Request Details</DialogTitle>
-                <DialogDescription className="text-gray-600 pt-2">
-                  Here is a summary of your request.
-                </DialogDescription>
+                <DialogTitle className="text-blue-900 text-2xl">Request Details</DialogTitle>
+                <p className="text-xs text-gray-500 pt-1">Request ID: {selectedRequest.$id}</p>
               </DialogHeader>
-              <div className="py-4 space-y-4">
-                <div>
-                  <h4 className="font-semibold text-gray-700">Request ID</h4>
-                  <p className="text-gray-600 bg-gray-100 p-2 rounded-md">{selectedRequest.$id}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 py-4 max-h-[60vh] overflow-y-auto px-2 -mx-2">
+                <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Student Name</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.studentName}</p>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-700">Documents Requested</h4>
-                  <ul className="list-disc pl-5 text-gray-600 bg-gray-100 p-2 rounded-md">
-                    {selectedRequest.documents.map((doc, index) => (
-                      <li key={index}>{doc.name}</li>
+                 <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Student ID</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.studentId}</p>
+                </div>
+                 <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Course & Year</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.course} - {selectedRequest.yearLevel}</p>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Email</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.email}</p>
+                </div>
+                <div className="md:col-span-2 bg-white/50 p-4 rounded-lg border border-blue-200/30">
+                  <h3 className="font-semibold text-blue-900/70 mb-1 text-sm">Purpose of Request</h3>
+                  <p className="text-blue-900 font-medium">{selectedRequest.purpose}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <h3 className="font-semibold text-blue-900/70 mb-2 text-sm">Requested Documents</h3>
+                  <ul className="space-y-2">
+                    {selectedRequest.documents.map((doc: any, index: number) => (
+                      <li key={index} className="flex justify-between items-center bg-white/60 p-3 rounded-lg border border-blue-200/50">
+                        <div className="flex items-center">
+                            <FileText className="h-4 w-4 mr-2 text-blue-600"/>
+                            <span className="text-blue-900">{doc.name}</span>
+                        </div>
+                        <span className="font-semibold text-blue-900">₱{doc.price?.toFixed(2)}</span>
+                      </li>
                     ))}
                   </ul>
                 </div>
-                <div>
-                  <h4 className="font-semibold text-gray-700">Price</h4>
-                  <p className="text-gray-600 bg-gray-100 p-2 rounded-md">₱{selectedRequest.totalAmount.toFixed(2)}</p>
-                </div>
-                <div>
-                  <h4 className="font-semibold text-gray-700">Requestor Details</h4>
-                  <div className="text-gray-600 bg-gray-100 p-2 rounded-md">
-                    <p><strong>Name:</strong> {selectedRequest.studentName}</p>
-                    <p><strong>Student ID:</strong> {selectedRequest.studentId}</p>
-                    <p><strong>Email:</strong> {selectedRequest.studentEmail}</p>
-                  </div>
+                 <div className="md:col-span-2 text-right mt-4 pr-2">
+                    <h3 className="font-bold text-xl text-blue-900">Total Amount: ₱{selectedRequest.totalAmount.toFixed(2)}</h3>
                 </div>
               </div>
               <DialogFooter>
