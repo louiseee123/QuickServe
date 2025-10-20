@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { motion, useSpring, useTransform, animate } from 'framer-motion';
+import { motion, useSpring, useTransform, useMotionValueEvent } from 'framer-motion';
 import {
   FileText,
   ClipboardList,
@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 
 interface ProcessingProgressBarProps {
-  processingStartedAt: string; 
+  processingStartedAt: string;
   estimatedCompletionDays: number;
 }
 
@@ -27,24 +27,34 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
     restDelta: 0.001,
   });
 
+  useMotionValueEvent(springProgress, "change", (latest) => {
+    setProgress(latest);
+  });
+
   useEffect(() => {
     const startDate = new Date(processingStartedAt).getTime();
     const totalDurationMs = estimatedCompletionDays * 24 * 60 * 60 * 1000;
 
     if (isNaN(startDate) || totalDurationMs <= 0) {
+      springProgress.set(10);
       return;
     }
 
-    const interval = setInterval(() => {
+    const calculateAndSetProgress = () => {
       const now = Date.now();
       const elapsedMs = now - startDate;
-      const currentProgress = Math.min((elapsedMs / totalDurationMs) * 100, 100);
-      
-      const displayProgress = 10 + (currentProgress / 100) * 90;
+      let currentProgress = (elapsedMs / totalDurationMs) * 100;
+      currentProgress = Math.min(currentProgress, 100);
 
-      setProgress(displayProgress);
+      let displayProgress = 10 + (currentProgress / 100) * 90;
+      displayProgress = Math.min(displayProgress, 99);
+
       springProgress.set(displayProgress);
-    }, 1000);
+    };
+
+    calculateAndSetProgress();
+
+    const interval = setInterval(calculateAndSetProgress, 30000);
 
     return () => clearInterval(interval);
   }, [processingStartedAt, estimatedCompletionDays, springProgress]);
@@ -58,27 +68,13 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
   ];
 
   const width = useTransform(springProgress, val => `${val}%`);
-
-  const Counter = ({ value }) => {
-    const [displayValue, setDisplayValue] = React.useState(0);
-
-    React.useEffect(() => {
-      const controls = animate(displayValue, value, {
-        duration: 0.5,
-        ease: 'easeOut',
-        onUpdate: (latest) => setDisplayValue(Math.round(latest)),
-      });
-      return controls.stop;
-    }, [value]);
-
-    return <>{displayValue}</>;
-  };
+  const roundedProgress = useTransform(springProgress, latest => Math.round(latest));
 
   return (
     <div className="w-full px-2 sm:px-4 py-6 bg-white rounded-2xl shadow-lg">
       <div className="text-center mb-4">
         <span className="text-2xl font-bold text-blue-900">
-          <Counter value={progress} />%
+          <motion.span>{roundedProgress}</motion.span>%
         </span>
         <p className="text-sm text-gray-500">Processing your request...</p>
       </div>
