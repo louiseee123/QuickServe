@@ -364,10 +364,13 @@ export default function MyRequests() {
             <DialogContent className="bg-white text-gray-800">
                 <DialogHeader>
                     <DialogTitle className="text-teal-900">Ready for Pickup</DialogTitle>
-                    <DialogDescription className="text-gray-600 pt-2">
-                        Your request is now ready for pickup. Please proceed to the designated office to claim your document.
-                    </DialogDescription>
                 </DialogHeader>
+                <div className="py-4">
+                  <ProcessingProgressBar isCompleted={true} />
+                  <p className="text-gray-600 pt-4 text-center">
+                      Your request is now ready for pickup. Please proceed to the designated office to claim your document.
+                  </p>
+                </div>
                 <DialogFooter className="mt-4 sm:justify-end gap-2">
                     <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Close</Button>
                 </DialogFooter>

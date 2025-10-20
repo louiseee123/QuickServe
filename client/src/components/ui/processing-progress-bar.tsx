@@ -11,17 +11,20 @@ import {
 } from 'lucide-react';
 
 interface ProcessingProgressBarProps {
-  processingStartedAt: string;
-  estimatedCompletionDays: number;
+  processingStartedAt?: string;
+  estimatedCompletionDays?: number;
+  isCompleted?: boolean;
 }
 
 const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
   processingStartedAt,
   estimatedCompletionDays,
+  isCompleted = false,
 }) => {
-  const [progress, setProgress] = useState(10);
+  const initialProgress = isCompleted ? 100 : 10;
+  const [progress, setProgress] = useState(initialProgress);
 
-  const springProgress = useSpring(10, {
+  const springProgress = useSpring(initialProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001,
@@ -32,6 +35,11 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
   });
 
   useEffect(() => {
+    if (isCompleted) {
+      springProgress.set(100);
+      return;
+    }
+
     if (!processingStartedAt) {
       springProgress.set(10);
       return;
@@ -40,7 +48,7 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
     const startDate = new Date(processingStartedAt).getTime();
     const totalDurationMs = estimatedCompletionDays * 24 * 60 * 60 * 1000;
 
-    if (isNaN(startDate) || totalDurationMs <= 0 || startDate === 0) {
+    if (isNaN(startDate) || !totalDurationMs || totalDurationMs <= 0 || startDate === 0) {
       springProgress.set(10);
       return;
     }
@@ -62,7 +70,7 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
     const interval = setInterval(calculateAndSetProgress, 30000);
 
     return () => clearInterval(interval);
-  }, [processingStartedAt, estimatedCompletionDays, springProgress]);
+  }, [processingStartedAt, estimatedCompletionDays, springProgress, isCompleted]);
 
   const milestones = [
     { name: 'Preparing', progress: 10, icon: <ClipboardList className="w-5 h-5" /> },
