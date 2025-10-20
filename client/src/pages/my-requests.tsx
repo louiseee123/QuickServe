@@ -72,34 +72,25 @@ export default function MyRequests() {
   const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
-  const { data: requests = [], isLoading } = useQuery<any[]>({
-    queryKey: ['requests', 'all'],
-    queryFn: async () => {
-      const response = await databases.listDocuments(
-        DATABASE_ID,
-        DOCUMENT_REQUESTS_COLLECTION_ID
-      );
-      return response.documents.map(doc => {
-        let parsedDocuments = [];
-        try {
-          if (typeof doc.documents === 'string') {
-            parsedDocuments = JSON.parse(doc.documents);
-          } else if (Array.isArray(doc.documents)) {
-            parsedDocuments = doc.documents;
-          }
-        } catch (e) {
-          console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+  const { data: requests = [], isLoading } = useQuery<any[]>(['requests', 'all'], async () => {
+    const response = await databases.listDocuments(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID);
+    return response.documents.map(doc => {
+      let parsedDocuments = [];
+      try {
+        if (typeof doc.documents === 'string') {
+          parsedDocuments = JSON.parse(doc.documents);
+        } else if (Array.isArray(doc.documents)) {
+          parsedDocuments = doc.documents;
         }
+      } catch (e) {
+        console.error(`Failed to parse documents for request ${doc.$id}:`, e);
+      }
 
-        const processingTimeDays = parsedDocuments.reduce((total, doc) => total + (doc.processingTimeDays || 0), 0);
-
-        return {
-          ...doc,
-          documents: parsedDocuments,
-          processingTimeDays,
-        };
-      });
-    }
+      return {
+        ...doc,
+        documents: parsedDocuments,
+      };
+    });
   });
 
   const filteredRequests = statusFilter === "all"
@@ -352,7 +343,7 @@ export default function MyRequests() {
                 <div className="py-4">
                   {selectedRequest && (
                     <ProcessingProgressBar
-                      processingTimeDays={selectedRequest.processingTimeDays}
+                      processingStartedAt={selectedRequest.processingStartedAt}
                       estimatedCompletionDays={selectedRequest.estimatedCompletionDays}
                     />
                   )}

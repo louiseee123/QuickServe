@@ -1,5 +1,5 @@
 
-import React, { useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, useSpring, useTransform, animate } from 'framer-motion';
 import {
   FileText,
@@ -11,29 +11,43 @@ import {
 } from 'lucide-react';
 
 interface ProcessingProgressBarProps {
-  processingTimeDays: number;
+  processingStartedAt: string; 
   estimatedCompletionDays: number;
 }
 
 const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
-  processingTimeDays,
+  processingStartedAt,
   estimatedCompletionDays,
 }) => {
-  const progress = useMemo(() => {
-    if (!estimatedCompletionDays) return 0;
-    // Cap progress at 100
-    return Math.min((processingTimeDays / estimatedCompletionDays) * 100, 100);
-  }, [processingTimeDays, estimatedCompletionDays]);
+  const [progress, setProgress] = useState(10);
 
-  const springProgress = useSpring(0, {
+  const springProgress = useSpring(10, {
     stiffness: 100,
     damping: 30,
-    restDelta: 0.001
+    restDelta: 0.001,
   });
 
-  React.useEffect(() => {
-    springProgress.set(progress);
-  }, [springProgress, progress]);
+  useEffect(() => {
+    const startDate = new Date(processingStartedAt).getTime();
+    const totalDurationMs = estimatedCompletionDays * 24 * 60 * 60 * 1000;
+
+    if (isNaN(startDate) || totalDurationMs <= 0) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsedMs = now - startDate;
+      const currentProgress = Math.min((elapsedMs / totalDurationMs) * 100, 100);
+      
+      const displayProgress = 10 + (currentProgress / 100) * 90;
+
+      setProgress(displayProgress);
+      springProgress.set(displayProgress);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [processingStartedAt, estimatedCompletionDays, springProgress]);
 
   const milestones = [
     { name: 'Preparing', progress: 0, icon: <ClipboardList className="w-5 h-5" /> },
@@ -50,8 +64,8 @@ const ProcessingProgressBar: React.FC<ProcessingProgressBarProps> = ({
 
     React.useEffect(() => {
       const controls = animate(displayValue, value, {
-        duration: 1.5,
-        ease: 'easeInOut',
+        duration: 0.5,
+        ease: 'easeOut',
         onUpdate: (latest) => setDisplayValue(Math.round(latest)),
       });
       return controls.stop;
