@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const statusConfig = {
     pending_payment: {
       icon: <CreditCard className="h-4 w-4 mr-2" />,
-      text: "Pending Payment",
+      text: "Needs Payment",
       color: "bg-yellow-500",
     },
     pending_verification: {
@@ -52,6 +52,18 @@ const statusConfig = {
     }
   };
 
+  const courses = [
+    "Bachelor of Science in Information Technology",
+    "Bachelor of Science in Computer Science",
+    "Bachelor of Science in Hospitality Management",
+    "Bachelor of Science in Tourism Management",
+    "Bachelor of Science in Business Administration",
+    "Bachelor of Science in Accountancy",
+    "Bachelor of Arts in Communication",
+    "Bachelor of Arts in Political Science",
+  ];
+  const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"];
+
 export default function OngoingRequests() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -71,7 +83,7 @@ export default function OngoingRequests() {
         const response = await databases.listDocuments(
             DATABASE_ID,
             DOCUMENT_REQUESTS_COLLECTION_ID,
-            [Query.equal('status', ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup'])]
+            [Query.equal('status', ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup', 'completed'])]
         );
         return response.documents.map(doc => {
             let parsedDocuments = [];
@@ -146,9 +158,6 @@ export default function OngoingRequests() {
     setSelectedRequest(request);
     setIsCompletionModalOpen(true);
   };
-  
-  const courses = [...new Set(requests.map(req => req.course))];
-  const yearLevels = [...new Set(requests.map(req => req.yearLevel))];
 
   const sortedAndFilteredRequests = requests
   .filter(request => {
@@ -225,7 +234,7 @@ export default function OngoingRequests() {
             if (request.status === 'pending_payment') {
                 return (
                     <Button variant="outline" size="sm" disabled>
-                        Awaiting Payment
+                        Needs Payment
                     </Button>
                 );
             }
@@ -274,7 +283,7 @@ export default function OngoingRequests() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
-                  {Object.keys(statusConfig).filter(key => ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup'].includes(key)).map(status => (
+                  {Object.keys(statusConfig).filter(key => ['pending_payment', 'pending_verification', 'processing', 'ready_for_pickup', 'completed'].includes(key)).map(status => (
                     <SelectItem key={status} value={status}>
                       <div className="flex items-center">
                         {statusConfig[status].icon}
@@ -343,7 +352,7 @@ export default function OngoingRequests() {
 
         {selectedRequest && (
             <Dialog open={isDenyModalOpen} onOpenChange={setIsDenyModalOpen}>
-                <DialogContent className="bg-white text-gray-800">
+                <DialogContent className="bg-.white text-gray-800">
                     <DialogHeader>
                         <DialogTitle className="text-red-900">Deny Payment</DialogTitle>
                         <DialogDescription className="text-gray-600 pt-2">
