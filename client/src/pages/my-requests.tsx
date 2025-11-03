@@ -18,6 +18,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ProcessingProgressBar from "@/components/ui/processing-progress-bar";
+import useAuth from "@/hooks/use-auth";
+import { Query } from "appwrite";
 
 const statusConfig = {
   pending_approval: {
@@ -65,6 +67,7 @@ const statusConfig = {
 
 export default function MyRequests() {
   const [, navigate] = useLocation();
+  const { user } = useAuth();
   const [statusFilter, setStatusFilter] = useState("all");
   const [isRejectionModalOpen, setIsRejectionModalOpen] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -74,9 +77,14 @@ export default function MyRequests() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
 
   const { data: requests = [], isLoading } = useQuery({
-    queryKey: ['requests', 'all'],
+    queryKey: ['requests', user?.$id],
     queryFn: async () => {
-      const response = await databases.listDocuments(DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID);
+      if (!user) return [];
+      const response = await databases.listDocuments(
+        DATABASE_ID,
+        DOCUMENT_REQUESTS_COLLECTION_ID,
+        [Query.equal("userId", user.$id)]
+      );
       return response.documents.map(doc => {
         let parsedDocuments = [];
         try {
@@ -94,7 +102,8 @@ export default function MyRequests() {
           documents: parsedDocuments,
         };
       });
-    }
+    },
+    enabled: !!user,
   });
 
   const filteredRequests = statusFilter === "all"
