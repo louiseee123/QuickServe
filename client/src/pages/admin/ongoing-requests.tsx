@@ -52,18 +52,6 @@ const statusConfig = {
     }
   };
 
-  const courses = [
-    "Bachelor of Science in Information Technology",
-    "Bachelor of Science in Computer Science",
-    "Bachelor of Science in Hospitality Management",
-    "Bachelor of Science in Tourism Management",
-    "Bachelor of Science in Business Administration",
-    "Bachelor of Science in Accountancy",
-    "Bachelor of Arts in Communication",
-    "Bachelor of Arts in Political Science",
-  ];
-  const yearLevels = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"];
-
 export default function OngoingRequests() {
   const queryClient = useQueryClient();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -158,6 +146,9 @@ export default function OngoingRequests() {
     setSelectedRequest(request);
     setIsCompletionModalOpen(true);
   };
+
+  const courses = [...new Set(requests.map(req => req.course))];
+  const yearLevels = [...new Set(requests.map(req => req.yearLevel))];
 
   const sortedAndFilteredRequests = requests
   .filter(request => {
