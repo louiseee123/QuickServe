@@ -89,68 +89,68 @@ export default function PaymentLogs() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
       <motion.main
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="container mx-auto pt-32 px-4 pb-8"
+        className="container mx-auto pt-24 px-4 pb-8"
       >
         <div className="flex flex-col gap-8">
           <header>
-            <h1 className="text-3xl font-bold text-blue-900">Payment Logs</h1>
-            <p className="text-blue-800/90">Track all successful GCash payments via Stripe.</p>
+            <h1 className="text-4xl font-bold text-gray-800">Payment Logs</h1>
+            <p className="text-gray-600">Track all successful GCash payments via Stripe.</p>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">Total Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-700">Total Revenue</CardTitle>
                 <DollarSign className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-900">PHP {summaryStats.totalRevenue.toFixed(2)}</div>
-                <p className="text-xs text-blue-800/80">from {summaryStats.transactionCount} transactions</p>
+                <div className="text-2xl font-bold text-gray-800">PHP {summaryStats.totalRevenue.toFixed(2)}</div>
+                <p className="text-xs text-gray-600">from {summaryStats.transactionCount} transactions</p>
               </CardContent>
             </Card>
-             <Card className="bg-white/90 backdrop-blur-sm">
+             <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">Stripe Fees</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-700">Stripe Fees</CardTitle>
                 <TrendingDown className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-900">PHP {summaryStats.totalFees.toFixed(2)}</div>
-                 <p className="text-xs text-blue-800/80">~3% of total revenue</p>
+                <div className="text-2xl font-bold text-gray-800">PHP {summaryStats.totalFees.toFixed(2)}</div>
+                 <p className="text-xs text-gray-600">~3% of total revenue</p>
               </CardContent>
             </Card>
-             <Card className="bg-white/90 backdrop-blur-sm">
+             <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">Net Revenue</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-700">Net Revenue</CardTitle>
                 <Wallet className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-green-600">PHP {summaryStats.netRevenue.toFixed(2)}</div>
-                <p className="text-xs text-blue-800/80">After all fees</p>
+                <p className="text-xs text-gray-600">After all fees</p>
               </CardContent>
             </Card>
-            <Card className="bg-white/90 backdrop-blur-sm">
+            <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-blue-900">Total Transactions</CardTitle>
+                <CardTitle className="text-sm font-medium text-gray-700">Total Transactions</CardTitle>
                 <TrendingUp className="h-4 w-4 text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-900">{summaryStats.transactionCount}</div>
-                <p className="text-xs text-blue-800/80">Successful payments</p>
+                <div className="text-2xl font-bold text-gray-800">{summaryStats.transactionCount}</div>
+                <p className="text-xs text-gray-600">Successful payments</p>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="bg-white/90 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-blue-900">All Transactions</CardTitle>
-              <CardDescription className="text-blue-800/90">A detailed log of every payment received.</CardDescription>
+          <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl overflow-hidden">
+            <CardHeader className="bg-blue-50/50 border-b-2 border-blue-100/50 px-6 py-4">
+              <CardTitle className="text-xl font-semibold text-gray-700">All Transactions</CardTitle>
+              <CardDescription className="text-gray-600">A detailed log of every payment received.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <DataTable data={payments} columns={columns} />
             </CardContent>
           </Card>

@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/ui/data-table';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Clock, CreditCard, Hourglass, ShoppingCart, FileText, CheckCircle2, XCircle } from 'lucide-react';
+import { Loader2, Clock, CreditCard, Hourglass, ShoppingCart, FileText, CheckCircle2, XCircle, ChevronDown } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { databases, DATABASE_ID, DOCUMENT_REQUESTS_COLLECTION_ID } from "@/lib/appwrite";
 import { Button } from '@/components/ui/button';
@@ -259,18 +259,25 @@ export default function OngoingRequests() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <main className="container mx-auto py-8 pt-32">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-gray-800">Ongoing Requests</CardTitle>
-            <CardDescription className="text-gray-600">Manage and track all active document requests.</CardDescription>
-          </CardHeader>
-          <CardContent>
-          <div className="flex flex-wrap justify-end gap-4 mb-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <main className="container mx-auto py-8 pt-24">
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800">Ongoing Requests</h1>
+            <Badge variant="outline" className="text-lg bg-white/60 backdrop-blur-sm border-gray-300 text-gray-700 shadow-sm">
+                {sortedAndFilteredRequests.length} Requests
+            </Badge>
+        </div>
+
+        <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl overflow-hidden">
+          <CardHeader className="flex flex-row items-center justify-between bg-blue-50/50 border-b-2 border-blue-100/50 px-6 py-4">
+            <div className="flex items-center">
+                <h2 className="text-xl font-semibold text-gray-700">All Active Requests</h2>
+            </div>
+            <div className="flex items-center gap-4">
               <Select onValueChange={setStatusFilter} value={statusFilter}>
-                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
-                  <SelectValue placeholder="Filter by status" />
+                <SelectTrigger className="w-[200px] bg-white/80 text-gray-800 border-gray-300 focus:ring-blue-500 shadow-sm">
+                    <SelectValue placeholder="Filter by status" />
+                    <ChevronDown className="h-4 w-4 opacity-50" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
@@ -285,7 +292,7 @@ export default function OngoingRequests() {
                 </SelectContent>
               </Select>
               <Select onValueChange={setCourseFilter} value={courseFilter}>
-                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                <SelectTrigger className="w-[200px] bg-white/80 text-gray-800 border-gray-300 focus:ring-blue-500 shadow-sm">
                   <SelectValue placeholder="Filter by course" />
                 </SelectTrigger>
                 <SelectContent>
@@ -296,7 +303,7 @@ export default function OngoingRequests() {
                 </SelectContent>
               </Select>
               <Select onValueChange={setYearLevelFilter} value={yearLevelFilter}>
-                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                <SelectTrigger className="w-[200px] bg-white/80 text-gray-800 border-gray-300 focus:ring-blue-500 shadow-sm">
                   <SelectValue placeholder="Filter by year level" />
                 </SelectTrigger>
                 <SelectContent>
@@ -307,7 +314,7 @@ export default function OngoingRequests() {
                 </SelectContent>
               </Select>
               <Select onValueChange={setSortOrder} value={sortOrder}>
-                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                <SelectTrigger className="w-[200px] bg-white/80 text-gray-800 border-gray-300 focus:ring-blue-500 shadow-sm">
                   <SelectValue placeholder="Sort by" />
                 </SelectTrigger>
                 <SelectContent>
@@ -316,6 +323,8 @@ export default function OngoingRequests() {
                 </SelectContent>
               </Select>
             </div>
+          </CardHeader>
+          <CardContent className="p-0">
             <DataTable columns={columns} data={sortedAndFilteredRequests} />
           </CardContent>
         </Card>
