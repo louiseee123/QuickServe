@@ -51,11 +51,8 @@ const useAuth = () => {
       // New users are explicitly given the 'user' role.
       await account.updatePrefs({ role: 'user' });
     },
-    onSuccess: (data, variables, context) => {
-      const onSuccess = (context as any)?.onSuccess;
-      if (onSuccess) {
-        onSuccess(data);
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user"] });
     },
   });
 
@@ -97,7 +94,7 @@ const useAuth = () => {
     isAdmin: user?.role === 'admin' || user?.role === 'super-admin',
     login: loginMutation.mutate,
     logout: logoutMutation.mutate,
-    register: (vars: any, options: any) => registerMutation.mutate(vars, options),
+    register: registerMutation.mutate,
     loginWithGoogle,
     forceLogout,
   };
