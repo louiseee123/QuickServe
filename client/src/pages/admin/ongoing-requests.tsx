@@ -60,6 +60,9 @@ export default function OngoingRequests() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [courseFilter, setCourseFilter] = useState("all");
+  const [yearLevelFilter, setYearLevelFilter] = useState("all");
+  const [sortOrder, setSortOrder] = useState("most-recent");
 
   const { data: requests = [], isLoading } = useQuery<any[]>({
       queryKey: ['requests', 'ongoing'],
@@ -135,10 +138,22 @@ export default function OngoingRequests() {
     setSelectedRequest(request);
     setIsPickupModalOpen(true);
   };
+  
+  const courses = [...new Set(requests.map(req => req.course))];
+  const yearLevels = [...new Set(requests.map(req => req.yearLevel))];
 
-  const filteredRequests = statusFilter === "all"
-  ? requests
-  : requests.filter(request => request.status === statusFilter);
+  const sortedAndFilteredRequests = requests
+  .filter(request => {
+    const statusMatch = statusFilter === "all" || request.status === statusFilter;
+    const courseMatch = courseFilter === "all" || request.course === courseFilter;
+    const yearLevelMatch = yearLevelFilter === "all" || request.yearLevel === yearLevelFilter;
+    return statusMatch && courseMatch && yearLevelMatch;
+  })
+  .sort((a, b) => {
+    const dateA = new Date(a.$createdAt).getTime();
+    const dateB = new Date(b.$createdAt).getTime();
+    return sortOrder === 'most-recent' ? dateB - dateA : dateA - dateB;
+  });
 
   const columns = [
     {
@@ -237,7 +252,7 @@ export default function OngoingRequests() {
             <CardDescription className="text-gray-600">Manage and track all active document requests.</CardDescription>
           </CardHeader>
           <CardContent>
-          <div className="flex justify-end mb-4">
+          <div className="flex flex-wrap justify-end gap-4 mb-4">
               <Select onValueChange={setStatusFilter} value={statusFilter}>
                 <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
                   <SelectValue placeholder="Filter by status" />
@@ -254,8 +269,39 @@ export default function OngoingRequests() {
                   ))}
                 </SelectContent>
               </Select>
+              <Select onValueChange={setCourseFilter} value={courseFilter}>
+                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                  <SelectValue placeholder="Filter by course" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Courses</SelectItem>
+                  {courses.map(course => (
+                    <SelectItem key={course} value={course}>{course}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select onValueChange={setYearLevelFilter} value={yearLevelFilter}>
+                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                  <SelectValue placeholder="Filter by year level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Year Levels</SelectItem>
+                  {yearLevels.map(year => (
+                    <SelectItem key={year} value={year}>{year}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select onValueChange={setSortOrder} value={sortOrder}>
+                <SelectTrigger className="w-[200px] bg-gray-100 text-gray-800 border-gray-300 focus:ring-blue-500">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="most-recent">Most Recent</SelectItem>
+                  <SelectItem value="oldest">Oldest</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <DataTable columns={columns} data={filteredRequests} />
+            <DataTable columns={columns} data={sortedAndFilteredRequests} />
           </CardContent>
         </Card>
 
