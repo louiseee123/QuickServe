@@ -57,6 +57,7 @@ export default function OngoingRequests() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDenyModalOpen, setIsDenyModalOpen] = useState(false);
   const [isPickupModalOpen, setIsPickupModalOpen] = useState(false);
+  const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -117,6 +118,8 @@ export default function OngoingRequests() {
             message = 'Payment has been denied.';
         } else if (variables.status === 'ready_for_pickup') {
             message = 'Request is now ready for pickup.';
+        } else if (variables.status === 'completed') {
+          message = 'Request has been marked as completed.';
         }
         toast.success(message);
     },
@@ -137,6 +140,11 @@ export default function OngoingRequests() {
   const openPickupModal = (request: any) => {
     setSelectedRequest(request);
     setIsPickupModalOpen(true);
+  };
+
+  const openCompletionModal = (request: any) => {
+    setSelectedRequest(request);
+    setIsCompletionModalOpen(true);
   };
   
   const courses = [...new Set(requests.map(req => req.course))];
@@ -226,6 +234,13 @@ export default function OngoingRequests() {
                 <Button variant="secondary" size="sm" onClick={() => openPickupModal(request)}>
                     Set as Ready
                 </Button>
+              );
+            }
+            if (request.status === 'ready_for_pickup') {
+              return (
+                  <Button variant="secondary" size="sm" onClick={() => openCompletionModal(request)}>
+                      Complete
+                  </Button>
               );
             }
             return <span className="text-sm text-gray-500">No action</span>;
@@ -377,6 +392,23 @@ export default function OngoingRequests() {
                     <DialogFooter className="mt-4 sm:justify-end gap-2">
                         <Button variant="ghost" onClick={() => setIsPickupModalOpen(false)}>Cancel</Button>
                         <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleAction(selectedRequest.$id, "ready_for_pickup"); setIsPickupModalOpen(false); }}>Confirm</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
+
+        {selectedRequest && (
+            <Dialog open={isCompletionModalOpen} onOpenChange={setIsCompletionModalOpen}>
+                <DialogContent className="bg-white text-gray-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-green-900">Confirm Completion</DialogTitle>
+                        <DialogDescription className="text-gray-600 pt-2">
+                            Are you sure you want to mark this request as completed? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-4 sm:justify-end gap-2">
+                        <Button variant="ghost" onClick={() => setIsCompletionModalOpen(false)}>Cancel</Button>
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => { handleAction(selectedRequest.$id, "completed"); setIsCompletionModalOpen(false); }}>Confirm Completion</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
