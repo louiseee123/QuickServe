@@ -142,7 +142,7 @@ export default function PendingApprovals() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex justify-center items-center">
         <Loader2 className="h-12 w-12 animate-spin text-blue-500" />
       </div>
     );
@@ -150,8 +150,8 @@ export default function PendingApprovals() {
 
   if (isError) {
       return (
-        <div className="flex justify-center items-center h-screen text-red-500">
-            <div className="text-center">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex justify-center items-center text-red-500">
+            <div className="text-center p-8 bg-white/50 rounded-lg shadow-xl">
                 <h2 className="text-2xl font-bold mb-2">Error Loading Requests</h2>
                 <p>{error?.message || "An unexpected error occurred."}</p>
             </div>
@@ -160,16 +160,23 @@ export default function PendingApprovals() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
-      <main className="container mx-auto py-8 pt-32">
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-gray-800">Pending Approvals</CardTitle>
-            <CardDescription className="text-gray-600">Review and approve or deny document requests.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DataTable columns={columns} data={requests} />
-          </CardContent>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+      <main className="container mx-auto py-8 pt-24">
+        <div className="flex justify-between items-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-800">Pending Approvals</h1>
+            <Badge variant="outline" className="text-lg bg-white/60 backdrop-blur-sm border-gray-300 text-gray-700 shadow-sm">
+                {requests.length} Requests
+            </Badge>
+        </div>
+
+        <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl overflow-hidden">
+            <CardHeader className="bg-blue-50/50 border-b-2 border-blue-100/50 px-6 py-4">
+                <CardTitle className="text-xl font-semibold text-gray-700">New Requests for Review</CardTitle>
+                <CardDescription className="text-gray-600">Review and approve or deny document requests.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+                <DataTable columns={columns} data={requests} />
+            </CardContent>
         </Card>
 
         {selectedRequest && (
