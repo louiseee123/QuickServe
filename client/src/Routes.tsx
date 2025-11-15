@@ -7,7 +7,6 @@ import MyRequests from "./pages/my-requests";
 import RequestSuccess from "./pages/request-success";
 import Request from "./pages/request";
 import AdminDashboard from "./pages/admin/dashboard";
-import AdminDocuments from "./pages/admin/documents";
 import AdminPaymentLogs from "./pages/admin/payment-logs";
 import AdminPendingApprovals from "./pages/admin/pending-approvals";
 import AdminOngoingRequests from "./pages/admin/ongoing-requests";
@@ -24,7 +23,6 @@ const Routes = () => (
     <ProtectedRoute path="/request-success" component={RequestSuccess} />
     <ProtectedRoute path="/request" component={Request} />
     <ProtectedRoute path="/admin/dashboard" component={AdminDashboard} />
-    <ProtectedRoute path="/admin/documents" component={AdminDocuments} />
     <ProtectedRoute path="/admin/payment-logs" component={AdminPaymentLogs} />
     <ProtectedRoute path="/admin/pending-approvals" component={AdminPendingApprovals} />
     <ProtectedRoute path="/admin/ongoing-requests" component={AdminOngoingRequests} />
