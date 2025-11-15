@@ -248,41 +248,44 @@ export default function AdminDashboardPage() {
 
       {/* Add Document Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="bg-white text-gray-800">
+        <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Create New Document</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-gray-800">Create New Document</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
+          <div className="grid gap-6 py-6">
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="name" className="text-left text-gray-600 font-medium">
+                Document Name
               </Label>
               <Input
                 id="name"
+                placeholder="e.g. Transcript of Records"
                 className="col-span-3"
                 value={newDocumentName}
                 onChange={(e) => setNewDocumentName(e.target.value)}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price (PHP)
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="price" className="text-left text-gray-600 font-medium">
+                Price (in PHP)
               </Label>
               <Input
                 id="price"
                 type="number"
+                placeholder="e.g. 150.00"
                 className="col-span-3"
                 value={newDocumentPrice}
                 onChange={(e) => setNewDocumentPrice(parseFloat(e.target.value))}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="processingTime" className="text-right">
-                Processing Time (Days)
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="processingTime" className="text-left text-gray-600 font-medium">
+                Processing Time (in Days)
               </Label>
               <Input
                 id="processingTime"
                 type="number"
+                placeholder="e.g. 3"
                 className="col-span-3"
                 value={newDocumentProcessingTime}
                 onChange={(e) => setNewDocumentProcessingTime(parseInt(e.target.value))}
@@ -293,7 +296,7 @@ export default function AdminDashboardPage() {
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddDocument}>Save</Button>
+            <Button onClick={handleAddDocument}>Save Document</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

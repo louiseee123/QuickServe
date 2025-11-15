@@ -8,19 +8,21 @@ const router = Router();
 
 router.get('/', async (_req, res) => {
   try {
-    const response = await databases.listDocuments(
+    const { documents } = await databases.listDocuments(
       DATABASE_ID,
       DOCUMENTS_COLLECTION_ID
     );
-    res.json(response.documents.map(doc => ({
+
+    res.json(documents.map(doc => ({
       id: doc.$id,
       name: doc.name,
       price: doc.price,
       processingTimeDays: doc.processingTimeDays
     })));
+
   } catch (error) {
     console.error('Error fetching documents:', error);
-    res.status(500).send('Internal Server Error');
+    res.status(500).json({ message: 'Failed to fetch documents', error: error.message });
   }
 });
 
