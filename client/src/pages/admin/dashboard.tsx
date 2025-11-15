@@ -186,20 +186,18 @@ export default function AdminDashboardPage() {
             </Card>
         </div>
 
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl mt-8">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle className="text-3xl font-bold text-gray-800">Manage Documents</CardTitle>
-            </div>
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-3xl font-bold text-gray-800">Manage Documents</h2>
             <Button className="flex items-center gap-2" onClick={openAddDialog}>
               <PlusCircle className="h-5 w-5" />
               Add Document
             </Button>
-          </CardHeader>
-          <CardContent>
+          </div>
+          <div className="relative z-10">
             <DataTable columns={documentTableColumns} data={documents} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </main>
 
       <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
