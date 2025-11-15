@@ -2,7 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 import { Document, DocumentRequest } from "@shared/schema";
-import { Clock, FileText, CheckCircle, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Clock, FileText, CheckCircle, PlusCircle, Edit, Trash2, PackageCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
 import { getDocuments, getAllDocumentRequests } from "@/api/documents";
+import { DocumentRequestsTable } from "@/components/DocumentRequestsTable";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminDashboardPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
@@ -37,10 +39,7 @@ export default function AdminDashboardPage() {
         getAllDocumentRequests(),
         getDocuments(),
       ]);
-      setRequests(requestsData.map((req: any) => ({
-        ...req,
-        id: req.$id,
-      })));
+      setRequests(requestsData.map((req: any) => ({ ...req, id: req.$id })));
       setDocuments(documentsData.map((doc: any) => ({ ...doc, id: doc.$id })));
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -51,9 +50,7 @@ export default function AdminDashboardPage() {
     try {
       await fetch("/api/documents", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newDocumentName,
           price: newDocumentPrice,
@@ -62,7 +59,6 @@ export default function AdminDashboardPage() {
       });
       setAddDialogOpen(false);
       fetchDocumentsAndRequests();
-      // Reset form
       setNewDocumentName("");
       setNewDocumentPrice(0);
       setNewDocumentProcessingTime(1);
@@ -77,9 +73,7 @@ export default function AdminDashboardPage() {
       await fetch(`/api/documents/${selectedDocument.id}`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newDocumentName,
           price: newDocumentPrice,
@@ -96,9 +90,7 @@ export default function AdminDashboardPage() {
   const handleDeleteDocument = async () => {
     if (!selectedDocument) return;
     try {
-      await fetch(`/api/documents/${selectedDocument.id}`, {
-        method: "DELETE",
-      });
+      await fetch(`/api/documents/${selectedDocument.id}`, { method: "DELETE" });
       setDeleteDialogOpen(false);
       fetchDocumentsAndRequests();
     } catch (error) {
@@ -107,7 +99,6 @@ export default function AdminDashboardPage() {
   };
 
   const openAddDialog = () => {
-    // Reset form fields
     setSelectedDocument(null);
     setNewDocumentName("");
     setNewDocumentPrice(0);
@@ -128,17 +119,12 @@ export default function AdminDashboardPage() {
     setDeleteDialogOpen(true);
   };
 
-  const pendingRequests = requests.filter(
-    (req) => req.status === "pending_approval"
-  ).length;
-  const ongoingRequests = requests.filter(
-    (req) => req.status === "processing" || req.status === "ready_for_pickup"
-  ).length;
-  const completedRequests = requests.filter(
-    (req) => req.status === "completed"
-  ).length;
+  const pendingRequests = requests.filter((req) => req.status === "pending_approval");
+  const ongoingRequests = requests.filter((req) => req.status === "processing");
+  const readyForPickupRequests = requests.filter((req) => req.status === "ready_for_pickup");
+  const completedRequests = requests.filter((req) => req.status === "completed");
 
-  const columns = [
+  const documentTableColumns = [
     { header: "Name", cell: (doc: Document) => <span>{doc.name}</span> },
     { header: "Price", cell: (doc: Document) => <span>PHP {doc.price.toFixed(2)}</span> },
     { header: "Processing Time", cell: (doc: Document) => <span>{doc.processingTimeDays} days</span> },
@@ -162,87 +148,93 @@ export default function AdminDashboardPage() {
       <main className="container mx-auto py-8 pt-32">
         <div className="mb-8">
             <h1 className="text-4xl font-bold text-gray-800">Admin Dashboard</h1>
-            <p className="text-gray-600 mt-2">
-              Welcome to the admin dashboard. Here you can manage document
-              requests.
-            </p>
+            <p className="text-gray-600 mt-2">Manage document requests and available documents.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">
-                        Pending Approvals
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">Pending Approvals</CardTitle>
                     <Clock className="h-5 w-5 text-yellow-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">
-                        {pendingRequests}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Requests waiting for approval
-                    </p>
+                    <div className="text-3xl font-bold text-[#003366]">{pendingRequests.length}</div>
+                    <p className="text-xs text-gray-500 mt-1">Requests waiting for approval</p>
                 </CardContent>
             </Card>
 
             <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">
-                        Ongoing Requests
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">Ongoing Requests</CardTitle>
                     <FileText className="h-5 w-5 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">
-                        {ongoingRequests}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Requests being processed
-                    </p>
+                    <div className="text-3xl font-bold text-[#003366]">{ongoingRequests.length}</div>
+                    <p className="text-xs text-gray-500 mt-1">Requests being processed</p>
                 </CardContent>
             </Card>
 
             <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-gray-600">
-                        Completed Requests
-                    </CardTitle>
+                    <CardTitle className="text-sm font-medium text-gray-600">Ready for Pickup</CardTitle>
+                    <PackageCheck className="h-5 w-5 text-indigo-500" />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-3xl font-bold text-[#003366]">{readyForPickupRequests.length}</div>
+                    <p className="text-xs text-gray-500 mt-1">Requests ready for client</p>
+                </CardContent>
+            </Card>
+
+            <Card className="bg-white/60 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl">
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">Completed Requests</CardTitle>
                     <CheckCircle className="h-5 w-5 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">
-                        {completedRequests}
-                    </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                        Successfully fulfilled requests
-                    </p>
+                    <div className="text-3xl font-bold text-[#003366]">{completedRequests.length}</div>
+                    <p className="text-xs text-gray-500 mt-1">Successfully fulfilled requests</p>
                 </CardContent>
             </Card>
         </div>
 
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl mt-8">
+          <CardHeader>
+            <CardTitle className="text-3xl font-bold text-gray-800">Document Requests</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Tabs defaultValue="all">
+              <TabsList>
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="pending">Pending</TabsTrigger>
+                <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
+                <TabsTrigger value="pickup">Ready for Pickup</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all"><DocumentRequestsTable requests={requests} /></TabsContent>
+              <TabsContent value="pending"><DocumentRequestsTable requests={pendingRequests} /></TabsContent>
+              <TabsContent value="ongoing"><DocumentRequestsTable requests={ongoingRequests} /></TabsContent>
+              <TabsContent value="pickup"><DocumentRequestsTable requests={readyForPickupRequests} /></TabsContent>
+              <TabsContent value="completed"><DocumentRequestsTable requests={completedRequests} /></TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl mt-8">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-3xl font-bold text-gray-800">
-                Manage Documents
-              </CardTitle>
+              <CardTitle className="text-3xl font-bold text-gray-800">Manage Documents</CardTitle>
             </div>
-            <Button
-              className="flex items-center gap-2"
-              onClick={openAddDialog}
-            >
+            <Button className="flex items-center gap-2" onClick={openAddDialog}>
               <PlusCircle className="h-5 w-5" />
               Add Document
             </Button>
           </CardHeader>
           <CardContent>
-            <DataTable columns={columns} data={documents} />
+            <DataTable columns={documentTableColumns} data={documents} />
           </CardContent>
         </Card>
       </main>
 
-      {/* Add/Edit Document Dialog */}
       <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={isAddDialogOpen ? setAddDialogOpen : setEditDialogOpen}>
         <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
@@ -252,56 +244,25 @@ export default function AdminDashboardPage() {
           </DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="grid grid-cols-1 items-center gap-3">
-              <Label htmlFor="name" className="text-left text-gray-600 font-medium">
-                Document Name
-              </Label>
-              <Input
-                id="name"
-                placeholder="e.g. Transcript of Records"
-                className="col-span-3"
-                value={newDocumentName}
-                onChange={(e) => setNewDocumentName(e.target.value)}
-              />
+              <Label htmlFor="name" className="text-left text-gray-600 font-medium">Document Name</Label>
+              <Input id="name" placeholder="e.g. Transcript of Records" className="col-span-3" value={newDocumentName} onChange={(e) => setNewDocumentName(e.target.value)} />
             </div>
             <div className="grid grid-cols-1 items-center gap-3">
-              <Label htmlFor="price" className="text-left text-gray-600 font-medium">
-                Price (in PHP)
-              </Label>
-              <Input
-                id="price"
-                type="number"
-                placeholder="e.g. 150.00"
-                className="col-span-3"
-                value={newDocumentPrice}
-                onChange={(e) => setNewDocumentPrice(parseFloat(e.target.value))}
-              />
+              <Label htmlFor="price" className="text-left text-gray-600 font-medium">Price (in PHP)</Label>
+              <Input id="price" type="number" placeholder="e.g. 150.00" className="col-span-3" value={newDocumentPrice} onChange={(e) => setNewDocumentPrice(parseFloat(e.target.value))} />
             </div>
             <div className="grid grid-cols-1 items-center gap-3">
-              <Label htmlFor="processingTime" className="text-left text-gray-600 font-medium">
-                Processing Time (in Days)
-              </Label>
-              <Input
-                id="processingTime"
-                type="number"
-                placeholder="e.g. 3"
-                className="col-span-3"
-                value={newDocumentProcessingTime}
-                onChange={(e) => setNewDocumentProcessingTime(parseInt(e.target.value))}
-              />
+              <Label htmlFor="processingTime" className="text-left text-gray-600 font-medium">Processing Time (in Days)</Label>
+              <Input id="processingTime" type="number" placeholder="e.g. 3" className="col-span-3" value={newDocumentProcessingTime} onChange={(e) => setNewDocumentProcessingTime(parseInt(e.target.value))} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => isAddDialogOpen ? setAddDialogOpen(false) : setEditDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={isAddDialogOpen ? handleAddDocument : handleEditDocument}>
-              {isAddDialogOpen ? 'Save Document' : 'Save Changes'}
-            </Button>
+            <Button variant="outline" onClick={() => isAddDialogOpen ? setAddDialogOpen(false) : setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={isAddDialogOpen ? handleAddDocument : handleEditDocument}>{isAddDialogOpen ? 'Save Document' : 'Save Changes'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Delete Document Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-red-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
@@ -313,9 +274,7 @@ export default function AdminDashboardPage() {
             "? This action cannot be undone.
           </p>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeleteDocument}>Delete Document</Button>
           </DialogFooter>
         </DialogContent>
