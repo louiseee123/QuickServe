@@ -15,8 +15,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
 import { getDocuments, getAllDocumentRequests } from "@/api/documents";
-import { DocumentRequestsTable } from "@/components/DocumentRequestsTable";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function AdminDashboardPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
@@ -158,7 +156,7 @@ export default function AdminDashboardPage() {
                     <Clock className="h-5 w-5 text-yellow-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">{pendingRequests.length}</div>
+                    <div className="text-3xl font-bold text-gray-800">{pendingRequests.length}</div>
                     <p className="text-xs text-gray-500 mt-1">Requests waiting for approval</p>
                 </CardContent>
             </Card>
@@ -169,7 +167,7 @@ export default function AdminDashboardPage() {
                     <FileText className="h-5 w-5 text-blue-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">{ongoingRequests.length}</div>
+                    <div className="text-3xl font-bold text-gray-800">{ongoingRequests.length}</div>
                     <p className="text-xs text-gray-500 mt-1">Requests being processed</p>
                 </CardContent>
             </Card>
@@ -180,7 +178,7 @@ export default function AdminDashboardPage() {
                     <PackageCheck className="h-5 w-5 text-indigo-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">{readyForPickupRequests.length}</div>
+                    <div className="text-3xl font-bold text-gray-800">{readyForPickupRequests.length}</div>
                     <p className="text-xs text-gray-500 mt-1">Requests ready for client</p>
                 </CardContent>
             </Card>
@@ -191,33 +189,11 @@ export default function AdminDashboardPage() {
                     <CheckCircle className="h-5 w-5 text-green-500" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-3xl font-bold text-[#003366]">{completedRequests.length}</div>
+                    <div className="text-3xl font-bold text-gray-800">{completedRequests.length}</div>
                     <p className="text-xs text-gray-500 mt-1">Successfully fulfilled requests</p>
                 </CardContent>
             </Card>
         </div>
-
-        <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl mt-8">
-          <CardHeader>
-            <CardTitle className="text-3xl font-bold text-gray-800">Document Requests</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="all">
-              <TabsList>
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="pending">Pending</TabsTrigger>
-                <TabsTrigger value="ongoing">Ongoing</TabsTrigger>
-                <TabsTrigger value="pickup">Ready for Pickup</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-              </TabsList>
-              <TabsContent value="all"><DocumentRequestsTable requests={requests} /></TabsContent>
-              <TabsContent value="pending"><DocumentRequestsTable requests={pendingRequests} /></TabsContent>
-              <TabsContent value="ongoing"><DocumentRequestsTable requests={ongoingRequests} /></TabsContent>
-              <TabsContent value="pickup"><DocumentRequestsTable requests={readyForPickupRequests} /></TabsContent>
-              <TabsContent value="completed"><DocumentRequestsTable requests={completedRequests} /></TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
 
         <Card className="bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl mt-8">
           <CardHeader className="flex flex-row items-center justify-between">
