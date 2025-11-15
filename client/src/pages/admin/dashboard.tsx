@@ -202,11 +202,11 @@ export default function AdminDashboardPage() {
         </Card>
       </main>
 
-      <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={isAddDialogOpen ? setAddDialogOpen : setEditDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
         <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-gray-800">
-              {isAddDialogOpen ? 'Create New Document' : 'Edit Document'}
+              Create New Document
             </DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-6">
@@ -224,8 +224,36 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => isAddDialogOpen ? setAddDialogOpen(false) : setEditDialogOpen(false)}>Cancel</Button>
-            <Button onClick={isAddDialogOpen ? handleAddDocument : handleEditDocument}>{isAddDialogOpen ? 'Save Document' : 'Save Changes'}</Button>
+            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddDocument}>Save Document</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-gray-800">
+              Edit Document
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-6">
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="name" className="text-left text-gray-600 font-medium">Document Name</Label>
+              <Input id="name" placeholder="e.g. Transcript of Records" className="col-span-3" value={newDocumentName} onChange={(e) => setNewDocumentName(e.target.value)} />
+            </div>
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="price" className="text-left text-gray-600 font-medium">Price (in PHP)</Label>
+              <Input id="price" type="number" placeholder="e.g. 150.00" className="col-span-3" value={newDocumentPrice} onChange={(e) => setNewDocumentPrice(parseFloat(e.target.value))} />
+            </div>
+            <div className="grid grid-cols-1 items-center gap-3">
+              <Label htmlFor="processingTime" className="text-left text-gray-600 font-medium">Processing Time (in Days)</Label>
+              <Input id="processingTime" type="number" placeholder="e.g. 3" className="col-span-3" value={newDocumentProcessingTime} onChange={(e) => setNewDocumentProcessingTime(parseInt(e.target.value))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleEditDocument}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
