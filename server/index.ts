@@ -1,30 +1,20 @@
 
 import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import apiRoutes from './api';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import cors from 'cors';
+import documentsRouter from './routes/documents';
+import requestsRouter from './routes/requests';
+import uploadsRouter from './routes/uploads';
 
 const app = express();
+const port = 3000;
 
-// --- Middleware ---
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(cors());
+app.use(express.json()); // Add this line
 
-// --- API Routes (for uploads, etc.) ---
-app.use('/api', apiRoutes);
+app.use('/api/documents', documentsRouter);
+app.use('/api/requests', requestsRouter);
+app.use('/api/uploads', uploadsRouter);
 
-// --- Client Serving ---
-const clientDistPath = path.join(__dirname, '../client');
-app.use(express.static(clientDistPath));
-app.get('*', (req, res) => {
-  res.sendFile(path.join(clientDistPath, 'index.html'));
-});
-
-// --- Server Start ---
-const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+  console.log(`Server listening on port ${port}`);
 });

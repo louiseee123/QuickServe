@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
-import { getDocuments, getAllDocumentRequests } from "@/api/documents";
+import { getDocuments, getAllDocumentRequests, createDocument, updateDocument, deleteDocument } from "@/api/documents";
 
 export default function AdminDashboardPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
@@ -46,14 +46,10 @@ export default function AdminDashboardPage() {
 
   const handleAddDocument = async () => {
     try {
-      await fetch("/api/documents", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newDocumentName,
-          price: newDocumentPrice,
-          processingTimeDays: newDocumentProcessingTime,
-        }),
+      await createDocument({
+        name: newDocumentName,
+        price: newDocumentPrice,
+        processingTimeDays: newDocumentProcessingTime,
       });
       setAddDialogOpen(false);
       fetchDocumentsAndRequests();
@@ -68,15 +64,10 @@ export default function AdminDashboardPage() {
   const handleEditDocument = async () => {
     if (!selectedDocument) return;
     try {
-      await fetch(`/api/documents/${selectedDocument.id}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: newDocumentName,
-          price: newDocumentPrice,
-          processingTimeDays: newDocumentProcessingTime,
-        }),
+      await updateDocument(selectedDocument.id, {
+        name: newDocumentName,
+        price: newDocumentPrice,
+        processingTimeDays: newDocumentProcessingTime,
       });
       setEditDialogOpen(false);
       fetchDocumentsAndRequests();
@@ -88,7 +79,7 @@ export default function AdminDashboardPage() {
   const handleDeleteDocument = async () => {
     if (!selectedDocument) return;
     try {
-      await fetch(`/api/documents/${selectedDocument.id}`, { method: "DELETE" });
+      await deleteDocument(selectedDocument.id);
       setDeleteDialogOpen(false);
       fetchDocumentsAndRequests();
     } catch (error) {
