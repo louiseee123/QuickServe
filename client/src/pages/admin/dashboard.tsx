@@ -123,9 +123,9 @@ export default function AdminDashboardPage() {
   const completedRequests = requests.filter((req) => req.status === "completed");
 
   const documentTableColumns = [
-    { header: "Name", cell: (doc: Document) => <span>{doc.name}</span> },
-    { header: "Price", cell: (doc: Document) => <span>PHP {doc.price.toFixed(2)}</span> },
-    { header: "Processing Time", cell: (doc: Document) => <span>{doc.processingTimeDays} days</span> },
+    { header: "Name", cell: (doc: Document) => <span className="font-medium text-gray-900">{doc.name}</span> },
+    { header: "Price", cell: (doc: Document) => <span className="font-medium text-gray-900">PHP {doc.price.toFixed(2)}</span> },
+    { header: "Processing Time", cell: (doc: Document) => <span className="font-medium text-gray-900">{doc.processingTimeDays} days</span> },
     {
       header: "Actions",
       cell: (doc: Document) => (
