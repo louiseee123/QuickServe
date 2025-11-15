@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { DataTable } from "@/components/ui/data-table";
+import { getDocuments, getAllDocumentRequests } from "@/api/documents";
 
 export default function AdminDashboardPage() {
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
@@ -27,27 +28,22 @@ export default function AdminDashboardPage() {
   const [newDocumentProcessingTime, setNewDocumentProcessingTime] = useState(1);
 
   useEffect(() => {
-    fetchRequests();
-    fetchDocuments();
+    fetchDocumentsAndRequests();
   }, []);
 
-  const fetchRequests = async () => {
+  const fetchDocumentsAndRequests = async () => {
     try {
-      const response = await fetch("/api/requests");
-      const data = await response.json();
-      setRequests(data);
+      const [requestsData, documentsData] = await Promise.all([
+        getAllDocumentRequests(),
+        getDocuments(),
+      ]);
+      setRequests(requestsData.map((req: any) => ({
+        ...req,
+        id: req.$id,
+      })));
+      setDocuments(documentsData.map((doc: any) => ({ ...doc, id: doc.$id })));
     } catch (error) {
-      console.error("Error fetching document requests:", error);
-    }
-  };
-
-  const fetchDocuments = async () => {
-    try {
-      const response = await fetch("/api/documents");
-      const data = await response.json();
-      setDocuments(data);
-    } catch (error) {
-      console.error("Error fetching documents:", error);
+      console.error("Error fetching data:", error);
     }
   };
 
@@ -65,7 +61,7 @@ export default function AdminDashboardPage() {
         }),
       });
       setAddDialogOpen(false);
-      fetchDocuments();
+      fetchDocumentsAndRequests();
       // Reset form
       setNewDocumentName("");
       setNewDocumentPrice(0);
@@ -91,7 +87,7 @@ export default function AdminDashboardPage() {
         }),
       });
       setEditDialogOpen(false);
-      fetchDocuments();
+      fetchDocumentsAndRequests();
     } catch (error) {
       console.error("Error editing document:", error);
     }
@@ -104,7 +100,7 @@ export default function AdminDashboardPage() {
         method: "DELETE",
       });
       setDeleteDialogOpen(false);
-      fetchDocuments();
+      fetchDocumentsAndRequests();
     } catch (error) {
       console.error("Error deleting document:", error);
     }
@@ -246,11 +242,13 @@ export default function AdminDashboardPage() {
         </Card>
       </main>
 
-      {/* Add Document Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+      {/* Add/Edit Document Dialog */}
+      <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={isAddDialogOpen ? setAddDialogOpen : setEditDialogOpen}>
         <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-blue-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-800">Create New Document</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-gray-800">
+              {isAddDialogOpen ? 'Create New Document' : 'Edit Document'}
+            </DialogTitle>
           </DialogHeader>
           <div className="grid gap-6 py-6">
             <div className="grid grid-cols-1 items-center gap-3">
@@ -293,78 +291,32 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => isAddDialogOpen ? setAddDialogOpen(false) : setEditDialogOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddDocument}>Save Document</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Document Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="bg-white text-gray-800">
-          <DialogHeader>
-            <DialogTitle>Edit Document</DialogTitle>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                className="col-span-3"
-                value={newDocumentName}
-                onChange={(e) => setNewDocumentName(e.target.value)}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price (PHP)
-              </Label>
-              <Input
-                id="price"
-                type="number"
-                className="col-span-3"
-                value={newDocumentPrice}
-                onChange={(e) => setNewDocumentPrice(parseFloat(e.target.value))}
-              />
-            </div>
-             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="processingTime" className="text-right">
-                Processing Time (Days)
-              </Label>
-              <Input
-                id="processingTime"
-                type="number"
-                className="col-span-3"
-                value={newDocumentProcessingTime}
-                onChange={(e) => setNewDocumentProcessingTime(parseInt(e.target.value))}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
-              Cancel
+            <Button onClick={isAddDialogOpen ? handleAddDocument : handleEditDocument}>
+              {isAddDialogOpen ? 'Save Document' : 'Save Changes'}
             </Button>
-            <Button onClick={handleEditDocument}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Document Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="bg-white text-gray-800">
+        <DialogContent className="bg-white/90 text-gray-800 backdrop-blur-sm border-2 border-red-100/50 shadow-lg rounded-2xl sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Delete Document</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-red-600">Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete this document?</p>
+          <p className="text-gray-600 py-4">
+            Are you sure you want to delete the document "
+            <span className="font-semibold text-gray-800">{selectedDocument?.name}</span>
+            "? This action cannot be undone.
+          </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleDeleteDocument}>Delete</Button>
+            <Button variant="destructive" onClick={handleDeleteDocument}>Delete Document</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
