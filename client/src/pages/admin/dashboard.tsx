@@ -64,6 +64,7 @@ export default function AdminDashboardPage() {
   const handleEditDocument = async () => {
     if (!selectedDocument) return;
     try {
+      console.log("Updating document:", selectedDocument.id, { name: newDocumentName, price: newDocumentPrice, processingTimeDays: newDocumentProcessingTime });
       await updateDocument(selectedDocument.id, {
         name: newDocumentName,
         price: newDocumentPrice,
@@ -79,6 +80,7 @@ export default function AdminDashboardPage() {
   const handleDeleteDocument = async () => {
     if (!selectedDocument) return;
     try {
+      console.log("Deleting document:", selectedDocument.id);
       await deleteDocument(selectedDocument.id);
       setDeleteDialogOpen(false);
       fetchDocumentsAndRequests();
